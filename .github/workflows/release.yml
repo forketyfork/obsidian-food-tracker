@@ -1,0 +1,44 @@
+name: Release Obsidian plugin
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x"
+      - name: Build plugin
+        run: |
+          yarn install
+          yarn build
+      - name: Fail if build modified files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Build modified files. Commit the output of 'yarn build'."
+            git status --porcelain
+            exit 1
+          fi
+      - name: Create plugin archives
+        run: |
+          mkdir -p obsidian-food-tracker
+          cp main.js manifest.json styles.css obsidian-food-tracker/
+          zip -r obsidian-food-tracker.zip obsidian-food-tracker/
+          tar -czf obsidian-food-tracker.tar.gz obsidian-food-tracker/
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+
+          gh release create "$tag" \
+            --title="$tag" \
+            --draft \
+            main.js manifest.json styles.css obsidian-food-tracker.zip obsidian-food-tracker.tar.gz
