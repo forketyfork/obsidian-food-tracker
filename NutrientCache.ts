@@ -16,7 +16,6 @@ export default class NutrientCache {
 	private cache: Map<string, string> = new Map();
 	private nameToFileMap: Map<string, string> = new Map();
 	private nutritionDataCache: Map<string, NutrientData> = new Map();
-	private isInitialized = false;
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
@@ -27,7 +26,6 @@ export default class NutrientCache {
 		this.cache.clear();
 		this.nameToFileMap.clear();
 		this.nutritionDataCache.clear();
-		this.isInitialized = false;
 
 		try {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
@@ -36,8 +34,6 @@ export default class NutrientCache {
 			for (const file of nutrientFiles) {
 				this.processNutrientFile(file);
 			}
-
-			this.isInitialized = true;
 		} catch (error) {
 			console.error("Error initializing nutrient cache:", error);
 		}
