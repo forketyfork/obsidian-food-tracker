@@ -15,9 +15,34 @@ interface NutrientData {
 	sodium: number;
 }
 
+interface OpenFoodFactsProduct {
+	id: string;
+	product_name: string;
+	brands?: string;
+	categories?: string;
+	quantity?: string;
+	nutriments: {
+		"energy-kcal_100g"?: number;
+		fat_100g?: number;
+		"saturated-fat_100g"?: number;
+		carbohydrates_100g?: number;
+		sugars_100g?: number;
+		fiber_100g?: number;
+		proteins_100g?: number;
+		sodium_100g?: number;
+	};
+}
+
+interface OpenFoodFactsSearchResponse {
+	products?: OpenFoodFactsProduct[];
+	[key: string]: unknown;
+}
+
 export default class NutrientModal extends Modal {
 	plugin: FoodTrackerPlugin;
 	nutrientData: NutrientData;
+	searchResults: OpenFoodFactsProduct[] = [];
+	searchResultsEl: HTMLElement | null = null;
 
 	constructor(app: App, plugin: FoodTrackerPlugin) {
 		super(app);
@@ -50,7 +75,18 @@ export default class NutrientModal extends Modal {
 				text.setValue(this.nutrientData.name).onChange(value => {
 					this.nutrientData.name = value;
 				})
+			)
+			.addButton(button =>
+				button
+					.setButtonText("🔍 Search")
+					.setTooltip("Search OpenFoodFacts database")
+					.onClick(async () => {
+						await this.searchOpenFoodFacts();
+					})
 			);
+
+		// Container for search results
+		this.searchResultsEl = contentEl.createDiv({ cls: "search-results-container" });
 
 		new Setting(contentEl).setName("🔥 Calories").addText(text =>
 			text.setValue(this.nutrientData.calories.toString()).onChange(value => {
@@ -170,5 +206,108 @@ sodium: ${this.nutrientData.sodium}
 		} catch (error) {
 			console.error("Error creating nutrient file:", error);
 		}
+	}
+
+	async searchOpenFoodFacts() {
+		if (!this.nutrientData.name.trim()) {
+			return;
+		}
+
+		try {
+			const searchTerm = encodeURIComponent(this.nutrientData.name.trim());
+			const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1?page_size=5`;
+
+			const response = await fetch(url);
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = (await response.json()) as OpenFoodFactsSearchResponse;
+
+			// Handle different response formats and limit to 5 results
+			if (data.products && Array.isArray(data.products)) {
+				this.searchResults = data.products.slice(0, 5);
+			} else if (Array.isArray(data)) {
+				this.searchResults = (data as OpenFoodFactsProduct[]).slice(0, 5);
+			} else {
+				console.error("Unexpected response format from OpenFoodFacts API");
+				this.searchResults = [];
+			}
+
+			this.displaySearchResults();
+		} catch (error) {
+			console.error("Error searching OpenFoodFacts:", error);
+			if (this.searchResultsEl) {
+				this.searchResultsEl.innerHTML = `<div class="search-error">Search failed. Please check your internet connection and try again.</div>`;
+			}
+		}
+	}
+
+	displaySearchResults() {
+		if (!this.searchResultsEl) return;
+
+		this.searchResultsEl.empty();
+
+		if (this.searchResults.length === 0) {
+			this.searchResultsEl.createDiv({ text: "No results found.", cls: "search-no-results" });
+			return;
+		}
+
+		const resultsContainer = this.searchResultsEl.createDiv({ cls: "search-results" });
+		resultsContainer.createEl("h3", { text: "🔍 Search results from OpenFoodFacts:" });
+
+		this.searchResults.forEach(product => {
+			const productEl = resultsContainer.createDiv({ cls: "search-result-item" });
+
+			const productName = productEl.createDiv({ cls: "product-name" });
+			productName.textContent = product.product_name ?? "Unknown product";
+
+			// Add brand and category information
+			const productInfo = productEl.createDiv({ cls: "product-info" });
+			const brandText = product.brands ? `Brand: ${product.brands}` : "";
+			const categoryText = product.categories ? `Category: ${product.categories.split(",")[0]}` : "";
+			const quantityText = product.quantity ? `Size: ${product.quantity}` : "";
+
+			const infoItems = [brandText, categoryText, quantityText].filter(item => item);
+			if (infoItems.length > 0) {
+				productInfo.textContent = infoItems.join(" • ");
+			}
+
+			const nutritionInfo = productEl.createDiv({ cls: "nutrition-preview" });
+			const nutriments = product.nutriments;
+
+			const calories = Number(nutriments["energy-kcal_100g"] ?? 0);
+			const carbs = Number(nutriments["carbohydrates_100g"] ?? 0);
+			const protein = Number(nutriments["proteins_100g"] ?? 0);
+			const fat = Number(nutriments["fat_100g"] ?? 0);
+
+			nutritionInfo.textContent = `Calories: ${calories.toFixed(1)}, Carbs: ${carbs.toFixed(1)}g, Protein: ${protein.toFixed(1)}g, Fat: ${fat.toFixed(1)}g (per 100g)`;
+
+			const selectButton = productEl.createEl("button", { text: "Use this product", cls: "mod-cta" });
+			selectButton.onclick = () => this.fillFromOpenFoodFacts(product);
+		});
+	}
+
+	fillFromOpenFoodFacts(product: OpenFoodFactsProduct) {
+		const nutriments = product.nutriments;
+
+		this.nutrientData.name = product.product_name ?? this.nutrientData.name;
+		this.nutrientData.calories = Number(nutriments["energy-kcal_100g"] ?? 0);
+		this.nutrientData.totalFats = Number(nutriments["fat_100g"] ?? 0);
+		this.nutrientData.saturatedFats = Number(nutriments["saturated-fat_100g"] ?? 0);
+		this.nutrientData.carbs = Number(nutriments["carbohydrates_100g"] ?? 0);
+		this.nutrientData.sugar = Number(nutriments["sugars_100g"] ?? 0);
+		this.nutrientData.fiber = Number(nutriments["fiber_100g"] ?? 0);
+		this.nutrientData.protein = Number(nutriments["proteins_100g"] ?? 0);
+		this.nutrientData.sodium = Number(nutriments["sodium_100g"] ?? 0) * 1000; // Convert from g to mg
+
+		// Clear search results
+		if (this.searchResultsEl) {
+			this.searchResultsEl.empty();
+		}
+
+		// Recreate the form to update all field values
+		this.onOpen();
 	}
 }

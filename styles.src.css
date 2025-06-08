@@ -8,3 +8,51 @@
 	z-index: 100;
 	margin-top: 8px;
 }
+
+.search-results-container {
+	margin: 16px 0;
+}
+
+.search-results h3 {
+	margin-bottom: 12px;
+	color: var(--text-accent);
+}
+
+.search-result-item {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 12px;
+	margin-bottom: 8px;
+	background-color: var(--background-secondary);
+}
+
+.search-result-item:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.product-name {
+	font-weight: bold;
+	margin-bottom: 4px;
+	color: var(--text-normal);
+}
+
+.product-info {
+	font-size: 0.8em;
+	color: var(--text-faint);
+	margin-bottom: 6px;
+	font-style: italic;
+}
+
+.nutrition-preview {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-bottom: 8px;
+}
+
+.search-error,
+.search-no-results {
+	padding: 12px;
+	text-align: center;
+	color: var(--text-muted);
+	font-style: italic;
+}
