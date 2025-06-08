@@ -1,5 +1,4 @@
 import { App, TFile } from "obsidian";
-import FoodTrackerPlugin from "./FoodTrackerPlugin";
 
 interface NutrientData {
 	calories?: number;
@@ -19,16 +18,15 @@ interface FoodEntry {
 
 export default class NutritionTally {
 	private app: App;
-	private plugin: FoodTrackerPlugin;
+	private nutrientDirectory: string;
 
-	constructor(app: App, plugin: FoodTrackerPlugin) {
+	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
-		this.plugin = plugin;
+		this.nutrientDirectory = nutrientDirectory;
 	}
 
-	async calculateTotalNutrients(file: TFile): Promise<string> {
+	calculateTotalNutrients(content: string): string {
 		try {
-			const content = await this.app.vault.read(file);
 			const foodEntries = this.parseFoodEntries(content);
 
 			if (foodEntries.length === 0) {
@@ -98,7 +96,7 @@ export default class NutritionTally {
 	private getNutrientDataForFile(filename: string): NutrientData | null {
 		try {
 			const nutrientFile = this.app.vault.getAbstractFileByPath(
-				`${this.plugin.settings.nutrientDirectory}/${filename}.md`
+				`${this.nutrientDirectory}/${filename}.md`
 			);
 			if (!(nutrientFile instanceof TFile)) {
 				return null;

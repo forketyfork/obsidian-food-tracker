@@ -33,7 +33,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEditorSuggest(this.foodSuggest);
 
 		// Initialize nutrition tally
-		this.nutritionTally = new NutritionTally(this.app, this);
+		this.nutritionTally = new NutritionTally(this.app, this.settings.nutrientDirectory);
 		this.statusBarItem = this.addStatusBarItem();
 		this.statusBarItem.setText("");
 
@@ -128,6 +128,11 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
 		}
 
+		// Recreate nutrition tally with new directory
+		if (this.nutritionTally) {
+			this.nutritionTally = new NutritionTally(this.app, this.settings.nutrientDirectory);
+		}
+
 		// Update tally display when settings change
 		void this.updateNutritionTally();
 	}
@@ -148,7 +153,8 @@ export default class FoodTrackerPlugin extends Plugin {
 				return;
 			}
 
-			const tallyText = await this.nutritionTally.calculateTotalNutrients(activeView.file);
+			const content = await this.app.vault.read(activeView.file);
+			const tallyText = this.nutritionTally.calculateTotalNutrients(content);
 
 			if (this.settings.tallyDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(tallyText);
