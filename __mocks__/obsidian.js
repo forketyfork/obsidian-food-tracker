@@ -17,6 +17,7 @@ module.exports = {
 			return {};
 		}
 		registerEvent() {}
+		registerEditorSuggest() {}
 	},
 	PluginSettingTab: class PluginSettingTab {
 		constructor() {}
@@ -78,6 +79,19 @@ module.exports = {
 	},
 	TFile: class TFile {},
 	TFolder: class TFolder {},
+	EditorSuggest: class EditorSuggest {
+		constructor(app) {
+			this.app = app;
+		}
+		onTrigger() {
+			return null;
+		}
+		getSuggestions() {
+			return [];
+		}
+		renderSuggestion() {}
+		selectSuggestion() {}
+	},
 	getFrontMatterInfo: () => ({ exists: false }),
 	normalizePath: path => path,
 	requestUrl: () =>

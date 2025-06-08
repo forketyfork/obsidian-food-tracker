@@ -41,6 +41,7 @@ This file provides guidance to AI agents when working with code in this reposito
 - Any text in UI elements should use "Sentence case" instead of "Title Case"
 - Avoid committing changes in `yarn.lock` if you didn't change the `package.json` file, reset the `yarn.lock` file instead
 - Avoid committing package-lock.json, since we use yarn; if this file is created as a result of your actions, remove it
+- **Create separate files for new classes**: As a rule, add new classes as separate files unless they are tightly coupled to existing code
 
 ## Obsidian API Best Practices
 

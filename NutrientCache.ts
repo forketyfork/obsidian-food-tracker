@@ -4,6 +4,7 @@ export default class NutrientCache {
 	private app: App;
 	private nutrientDirectory: string;
 	private cache: Map<string, string> = new Map();
+	private nameToFileMap: Map<string, string> = new Map();
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
@@ -12,6 +13,7 @@ export default class NutrientCache {
 
 	initialize() {
 		this.cache.clear();
+		this.nameToFileMap.clear();
 
 		try {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
@@ -21,6 +23,7 @@ export default class NutrientCache {
 				const nutrientName = this.extractNutrientName(file);
 				if (nutrientName) {
 					this.cache.set(file.path, nutrientName);
+					this.nameToFileMap.set(nutrientName, file.basename);
 				}
 			}
 		} catch (error) {
@@ -39,15 +42,30 @@ export default class NutrientCache {
 	updateCache(file: TFile, action: "create" | "delete" | "modify") {
 		try {
 			if (action === "delete") {
+				const oldNutrientName = this.cache.get(file.path);
+				if (oldNutrientName) {
+					this.nameToFileMap.delete(oldNutrientName);
+				}
 				this.cache.delete(file.path);
 				return;
 			}
 
 			const nutrientName = this.extractNutrientName(file);
 			if (nutrientName) {
+				// Remove old mapping if it exists
+				const oldNutrientName = this.cache.get(file.path);
+				if (oldNutrientName && oldNutrientName !== nutrientName) {
+					this.nameToFileMap.delete(oldNutrientName);
+				}
+
 				this.cache.set(file.path, nutrientName);
+				this.nameToFileMap.set(nutrientName, file.basename);
 			} else {
 				// If nutrient name is null/undefined, remove from cache
+				const oldNutrientName = this.cache.get(file.path);
+				if (oldNutrientName) {
+					this.nameToFileMap.delete(oldNutrientName);
+				}
 				this.cache.delete(file.path);
 			}
 		} catch (error) {
@@ -70,6 +88,10 @@ export default class NutrientCache {
 
 	getNutrientNames(): string[] {
 		return Array.from(this.cache.values()).sort();
+	}
+
+	getFileNameFromNutrientName(nutrientName: string): string | null {
+		return this.nameToFileMap.get(nutrientName) ?? null;
 	}
 
 	updateNutrientDirectory(newDirectory: string) {
