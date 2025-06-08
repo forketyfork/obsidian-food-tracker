@@ -33,7 +33,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEditorSuggest(this.foodSuggest);
 
 		// Initialize nutrition tally
-		this.nutritionTally = new NutritionTally(this.app, this.settings.nutrientDirectory);
+		this.nutritionTally = new NutritionTally(this.nutrientCache);
 		this.statusBarItem = this.addStatusBarItem();
 		this.statusBarItem.setText("");
 
@@ -130,7 +130,7 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		// Recreate nutrition tally with new directory
 		if (this.nutritionTally) {
-			this.nutritionTally = new NutritionTally(this.app, this.settings.nutrientDirectory);
+			this.nutritionTally = new NutritionTally(this.nutrientCache);
 		}
 
 		// Update tally display when settings change

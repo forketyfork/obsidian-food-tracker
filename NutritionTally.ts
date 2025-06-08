@@ -1,4 +1,4 @@
-import { App, TFile } from "obsidian";
+import NutrientCache from "./NutrientCache";
 
 interface NutrientData {
 	calories?: number;
@@ -17,12 +17,10 @@ interface FoodEntry {
 }
 
 export default class NutritionTally {
-	private app: App;
-	private nutrientDirectory: string;
+	private nutrientCache: NutrientCache;
 
-	constructor(app: App, nutrientDirectory: string) {
-		this.app = app;
-		this.nutrientDirectory = nutrientDirectory;
+	constructor(nutrientCache: NutrientCache) {
+		this.nutrientCache = nutrientCache;
 	}
 
 	calculateTotalNutrients(content: string): string {
@@ -47,7 +45,7 @@ export default class NutritionTally {
 
 		for (const line of lines) {
 			// Match #food [[filename]] amount
-			const match = line.match(/#food\s+\[\[([^\]]+)\]\]\s+(\d+(?:\.\d+)?)(g|kg|ml|l|oz|lb|cups?|tbsp|tsp)/i);
+			const match = line.match(/#food\s+\[\[([^\]]+)\]\]\s+(\d+(?:\.\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)/i);
 			if (match) {
 				const filename = match[1];
 				const amount = parseFloat(match[2]);
@@ -95,42 +93,14 @@ export default class NutritionTally {
 
 	private getNutrientDataForFile(filename: string): NutrientData | null {
 		try {
-			const nutrientFile = this.app.vault.getAbstractFileByPath(
-				`${this.nutrientDirectory}/${filename}.md`
-			);
-			if (!(nutrientFile instanceof TFile)) {
-				return null;
-			}
-
-			const cache = this.app.metadataCache.getFileCache(nutrientFile);
-			const frontmatter = cache?.frontmatter;
-
-			if (!frontmatter) {
-				return null;
-			}
-
-			return {
-				calories: this.parseNumber(frontmatter.calories),
-				fat: this.parseNumber(frontmatter.fat),
-				protein: this.parseNumber(frontmatter.protein),
-				carbs: this.parseNumber(frontmatter.carbs ?? frontmatter.carbohydrates),
-				fiber: this.parseNumber(frontmatter.fiber),
-				sugar: this.parseNumber(frontmatter.sugar),
-				sodium: this.parseNumber(frontmatter.sodium),
-			};
+			return this.nutrientCache.getNutritionData(filename);
 		} catch (error) {
-			console.error(`Error reading nutrient data for ${filename}:`, error);
+			console.error(
+				`Error reading nutrient data for ${filename}:`,
+				error instanceof Error ? error.message : String(error)
+			);
 			return null;
 		}
-	}
-
-	private parseNumber(value: unknown): number {
-		if (typeof value === "number") return value;
-		if (typeof value === "string") {
-			const parsed = parseFloat(value);
-			return isNaN(parsed) ? 0 : parsed;
-		}
-		return 0;
 	}
 
 	private getMultiplier(amount: number, unit: string): number {
