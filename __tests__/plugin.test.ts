@@ -13,6 +13,6 @@ describe("FoodTrackerPlugin", () => {
 		await plugin.loadSettings();
 
 		expect(plugin.settings).toBeDefined();
-		expect(plugin.settings.hello).toBe("world");
+		expect(plugin.settings.nutrientDirectory).toBe("nutrients");
 	});
 });

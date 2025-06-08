@@ -1,11 +1,12 @@
 import { Plugin } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
+import NutrientModal from "./NutrientModal";
 interface FoodTrackerPluginSettings {
-	hello: string;
+	nutrientDirectory: string;
 }
 
 const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
-	hello: "world",
+	nutrientDirectory: "nutrients",
 };
 
 export default class FoodTrackerPlugin extends Plugin {
@@ -17,18 +18,13 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Add settings tab
 		this.addSettingTab(new FoodTrackerSettingTab(this.app, this));
 
-		// Add an example command
+		// Add nutrient command
 		this.addCommand({
-			id: "food-tracker-example-command",
-			name: "Food Tracker something...",
+			id: "add-nutrient",
+			name: "Add nutrient",
 			callback: () => {
-				console.error("Test command");
+				new NutrientModal(this.app, this).open();
 			},
-		});
-
-		// Add ribbon icon
-		this.addRibbonIcon("clipboard-list", "Food Tracker example ribbon action", () => {
-			console.error("Test ribbon");
 		});
 	}
 

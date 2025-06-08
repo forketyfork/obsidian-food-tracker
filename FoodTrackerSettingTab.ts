@@ -13,11 +13,11 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Hello")
-			.setDesc("Hello")
+			.setName("Nutrient directory")
+			.setDesc("Directory where nutrient files will be created")
 			.addText(text =>
-				text.setValue(this.plugin.settings.hello).onChange(async value => {
-					this.plugin.settings.hello = value;
+				text.setValue(this.plugin.settings.nutrientDirectory).onChange(async value => {
+					this.plugin.settings.nutrientDirectory = value;
 					await this.plugin.saveSettings();
 				})
 			);
