@@ -185,6 +185,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		});
 
 		this.documentTallyElement.textContent = tallyText;
+
+		// Append at the end of contentEl so it appears at the bottom
+		contentEl.appendChild(this.documentTallyElement);
 	}
 
 	private removeDocumentTally(): void {
