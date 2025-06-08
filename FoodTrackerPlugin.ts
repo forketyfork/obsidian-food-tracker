@@ -1,6 +1,7 @@
 import { Plugin } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
+import NutrientCache from "./NutrientCache";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 }
@@ -11,9 +12,13 @@ const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
+	nutrientCache: NutrientCache;
 
 	async onload() {
 		await this.loadSettings();
+
+		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
+		this.nutrientCache.initialize();
 
 		// Add settings tab
 		this.addSettingTab(new FoodTrackerSettingTab(this.app, this));
@@ -26,6 +31,39 @@ export default class FoodTrackerPlugin extends Plugin {
 				new NutrientModal(this.app, this).open();
 			},
 		});
+
+		// Register file watcher for nutrient directory
+		this.registerEvent(
+			this.app.vault.on("create", file => {
+				if (this.nutrientCache.isNutrientFile(file)) {
+					this.nutrientCache.updateCache(file, "create");
+				}
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on("delete", file => {
+				if (this.nutrientCache.isNutrientFile(file)) {
+					this.nutrientCache.updateCache(file, "delete");
+				}
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on("modify", file => {
+				if (this.nutrientCache.isNutrientFile(file)) {
+					this.nutrientCache.updateCache(file, "modify");
+				}
+			})
+		);
+
+		this.registerEvent(
+			this.app.vault.on("rename", (file, oldPath) => {
+				if (this.nutrientCache.isNutrientFile(file) || oldPath.startsWith(this.settings.nutrientDirectory + "/")) {
+					this.nutrientCache.refresh();
+				}
+			})
+		);
 	}
 
 	async loadSettings() {
@@ -34,5 +72,12 @@ export default class FoodTrackerPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		if (this.nutrientCache) {
+			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
+		}
+	}
+
+	getNutrientNames(): string[] {
+		return this.nutrientCache.getNutrientNames();
 	}
 }

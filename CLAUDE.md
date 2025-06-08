@@ -41,3 +41,9 @@ This file provides guidance to AI agents when working with code in this reposito
 - Any text in UI elements should use "Sentence case" instead of "Title Case"
 - Avoid committing changes in `yarn.lock` if you didn't change the `package.json` file, reset the `yarn.lock` file instead
 - Avoid committing package-lock.json, since we use yarn; if this file is created as a result of your actions, remove it
+
+## Obsidian API Best Practices
+
+- **Prefer metadata cache over file I/O**: Use `app.metadataCache.getFileCache(file)` instead of reading files with `app.vault.read()`
+- **Use efficient file queries**: Prefer `app.vault.getMarkdownFiles()` with filtering over folder traversal when working with multiple files
+- **Use Map for caching**: When caching file data, use `Map<string, T>` with file paths as keys for efficient updates and deletions

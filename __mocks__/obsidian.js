@@ -1,7 +1,10 @@
 // Mock for Obsidian API
 module.exports = {
 	Plugin: class Plugin {
-		constructor() {}
+		constructor(app, manifest) {
+			this.app = app;
+			this.manifest = manifest;
+		}
 		loadData() {
 			return Promise.resolve({});
 		}
@@ -13,6 +16,7 @@ module.exports = {
 		addRibbonIcon() {
 			return {};
 		}
+		registerEvent() {}
 	},
 	PluginSettingTab: class PluginSettingTab {
 		constructor() {}
@@ -42,7 +46,13 @@ module.exports = {
 				},
 				createFolder: () => Promise.resolve(),
 				create: () => Promise.resolve(),
-				getAbstractFileByPath: () => ({}),
+				read: () => Promise.resolve(""),
+				getAbstractFileByPath: () => null,
+				getMarkdownFiles: () => [],
+				on: () => ({}),
+			};
+			this.metadataCache = {
+				getFileCache: () => null,
 			};
 			this.workspace = {
 				getLeaf: () => ({
@@ -67,6 +77,8 @@ module.exports = {
 		}
 	},
 	TFile: class TFile {},
+	TFolder: class TFolder {},
+	getFrontMatterInfo: () => ({ exists: false }),
 	normalizePath: path => path,
 	requestUrl: () =>
 		Promise.resolve({

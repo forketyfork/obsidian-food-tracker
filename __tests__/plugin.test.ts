@@ -5,7 +5,7 @@ describe("FoodTrackerPlugin", () => {
 	let plugin: FoodTrackerPlugin;
 
 	beforeEach(async () => {
-		plugin = new FoodTrackerPlugin({} as App, {} as PluginManifest);
+		plugin = new FoodTrackerPlugin(new App(), {} as PluginManifest);
 		await plugin.onload();
 	});
 
