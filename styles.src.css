@@ -1,0 +1,10 @@
+.food-tracker-tally {
+	position: sticky;
+	top: 0;
+	background-color: var(--background-primary);
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 8px 16px;
+	font-size: 0.9em;
+	z-index: 100;
+	margin-bottom: 8px;
+}

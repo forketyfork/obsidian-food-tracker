@@ -6,10 +6,12 @@ import FoodSuggest from "./FoodSuggest";
 import NutritionTally from "./NutritionTally";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
+	tallyDisplayMode: "status-bar" | "document";
 }
 
 const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
+	tallyDisplayMode: "status-bar",
 };
 
 export default class FoodTrackerPlugin extends Plugin {
@@ -18,6 +20,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	foodSuggest: FoodSuggest;
 	nutritionTally: NutritionTally;
 	statusBarItem: HTMLElement;
+	documentTallyElement: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -111,6 +114,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		void this.updateNutritionTally();
 	}
 
+	onunload() {
+		this.removeDocumentTally();
+	}
+
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FoodTrackerPluginSettings>);
 	}
@@ -120,6 +127,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		if (this.nutrientCache) {
 			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
 		}
+
+		// Update tally display when settings change
+		void this.updateNutritionTally();
 	}
 
 	getNutrientNames(): string[] {
@@ -134,15 +144,53 @@ export default class FoodTrackerPlugin extends Plugin {
 		try {
 			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (!activeView?.file) {
-				this.statusBarItem?.setText("");
+				this.clearTally();
 				return;
 			}
 
 			const tallyText = await this.nutritionTally.calculateTotalNutrients(activeView.file);
-			this.statusBarItem?.setText(tallyText);
+
+			if (this.settings.tallyDisplayMode === "status-bar") {
+				this.statusBarItem?.setText(tallyText);
+				this.removeDocumentTally();
+			} else {
+				this.statusBarItem?.setText("");
+				this.showDocumentTally(tallyText, activeView);
+			}
 		} catch (error) {
 			console.error("Error updating nutrition tally:", error);
-			this.statusBarItem?.setText("");
+			this.clearTally();
+		}
+	}
+
+	private clearTally(): void {
+		this.statusBarItem?.setText("");
+		this.removeDocumentTally();
+	}
+
+	private showDocumentTally(tallyText: string, view: MarkdownView): void {
+		this.removeDocumentTally();
+
+		if (!tallyText) {
+			return;
+		}
+
+		const contentEl = view.contentEl;
+		if (!contentEl) {
+			return;
+		}
+
+		this.documentTallyElement = contentEl.createDiv({
+			cls: "food-tracker-tally",
+		});
+
+		this.documentTallyElement.textContent = tallyText;
+	}
+
+	private removeDocumentTally(): void {
+		if (this.documentTallyElement) {
+			this.documentTallyElement.remove();
+			this.documentTallyElement = null;
 		}
 	}
 }

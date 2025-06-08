@@ -21,5 +21,19 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		new Setting(containerEl)
+			.setName("Nutrition tally display")
+			.setDesc("Choose where to display the nutrition tally")
+			.addDropdown(dropdown =>
+				dropdown
+					.addOption("status-bar", "Status bar")
+					.addOption("document", "In document")
+					.setValue(this.plugin.settings.tallyDisplayMode)
+					.onChange(async value => {
+						this.plugin.settings.tallyDisplayMode = value as "status-bar" | "document";
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }
