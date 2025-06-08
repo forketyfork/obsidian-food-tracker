@@ -18,6 +18,11 @@ module.exports = {
 		}
 		registerEvent() {}
 		registerEditorSuggest() {}
+		addStatusBarItem() {
+			return {
+				setText: () => {},
+			};
+		}
 	},
 	PluginSettingTab: class PluginSettingTab {
 		constructor() {}
@@ -54,11 +59,14 @@ module.exports = {
 			};
 			this.metadataCache = {
 				getFileCache: () => null,
+				on: () => ({}),
 			};
 			this.workspace = {
 				getLeaf: () => ({
 					openFile: () => Promise.resolve(),
 				}),
+				getActiveViewOfType: () => null,
+				on: () => ({}),
 			};
 		}
 	},
@@ -79,6 +87,10 @@ module.exports = {
 	},
 	TFile: class TFile {},
 	TFolder: class TFolder {},
+	MarkdownView: class MarkdownView {},
+	StatusBarItem: class StatusBarItem {
+		setText() {}
+	},
 	EditorSuggest: class EditorSuggest {
 		constructor(app) {
 			this.app = app;

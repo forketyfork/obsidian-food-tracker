@@ -5,6 +5,7 @@ export default class NutrientCache {
 	private nutrientDirectory: string;
 	private cache: Map<string, string> = new Map();
 	private nameToFileMap: Map<string, string> = new Map();
+	private isInitialized = false;
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
@@ -14,20 +15,40 @@ export default class NutrientCache {
 	initialize() {
 		this.cache.clear();
 		this.nameToFileMap.clear();
+		this.isInitialized = false;
 
 		try {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
 			const nutrientFiles = allMarkdownFiles.filter(file => file.path.startsWith(this.nutrientDirectory + "/"));
 
 			for (const file of nutrientFiles) {
-				const nutrientName = this.extractNutrientName(file);
-				if (nutrientName) {
-					this.cache.set(file.path, nutrientName);
-					this.nameToFileMap.set(nutrientName, file.basename);
-				}
+				this.processNutrientFile(file);
 			}
+
+			this.isInitialized = true;
 		} catch (error) {
 			console.error("Error initializing nutrient cache:", error);
+		}
+	}
+
+	private processNutrientFile(file: TFile): void {
+		const nutrientName = this.extractNutrientName(file);
+		if (nutrientName) {
+			// Remove old mapping if it exists
+			const oldNutrientName = this.cache.get(file.path);
+			if (oldNutrientName && oldNutrientName !== nutrientName) {
+				this.nameToFileMap.delete(oldNutrientName);
+			}
+
+			this.cache.set(file.path, nutrientName);
+			this.nameToFileMap.set(nutrientName, file.basename);
+		} else {
+			// If nutrient name is null/undefined, remove from cache
+			const oldNutrientName = this.cache.get(file.path);
+			if (oldNutrientName) {
+				this.nameToFileMap.delete(oldNutrientName);
+			}
+			this.cache.delete(file.path);
 		}
 	}
 
@@ -50,27 +71,16 @@ export default class NutrientCache {
 				return;
 			}
 
-			const nutrientName = this.extractNutrientName(file);
-			if (nutrientName) {
-				// Remove old mapping if it exists
-				const oldNutrientName = this.cache.get(file.path);
-				if (oldNutrientName && oldNutrientName !== nutrientName) {
-					this.nameToFileMap.delete(oldNutrientName);
-				}
-
-				this.cache.set(file.path, nutrientName);
-				this.nameToFileMap.set(nutrientName, file.basename);
-			} else {
-				// If nutrient name is null/undefined, remove from cache
-				const oldNutrientName = this.cache.get(file.path);
-				if (oldNutrientName) {
-					this.nameToFileMap.delete(oldNutrientName);
-				}
-				this.cache.delete(file.path);
-			}
+			this.processNutrientFile(file);
 		} catch (error) {
 			console.error("Error updating nutrient cache:", error);
 			this.refresh();
+		}
+	}
+
+	handleMetadataChange(file: TFile): void {
+		if (this.isNutrientFile(file)) {
+			this.processNutrientFile(file);
 		}
 	}
 

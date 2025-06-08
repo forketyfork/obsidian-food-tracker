@@ -41,10 +41,10 @@ export default class NutrientModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
-		contentEl.createEl("h2", { text: "Add nutrient" });
+		contentEl.createEl("h2", { text: "🍎 Add nutrient" });
 
 		new Setting(contentEl)
-			.setName("Name")
+			.setName("📝 Name")
 			.setDesc("Enter the nutrient name")
 			.addText(text =>
 				text.setValue(this.nutrientData.name).onChange(value => {
@@ -52,61 +52,61 @@ export default class NutrientModal extends Modal {
 				})
 			);
 
-		new Setting(contentEl).setName("Calories").addText(text =>
+		new Setting(contentEl).setName("🔥 Calories").addText(text =>
 			text.setValue(this.nutrientData.calories.toString()).onChange(value => {
 				this.nutrientData.calories = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Total fats (g)").addText(text =>
+		new Setting(contentEl).setName("🥑 Total fats (g)").addText(text =>
 			text.setValue(this.nutrientData.totalFats.toString()).onChange(value => {
 				this.nutrientData.totalFats = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Saturated fats (g)").addText(text =>
+		new Setting(contentEl).setName("🧈 Saturated fats (g)").addText(text =>
 			text.setValue(this.nutrientData.saturatedFats.toString()).onChange(value => {
 				this.nutrientData.saturatedFats = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Unsaturated fats (g)").addText(text =>
+		new Setting(contentEl).setName("🌿 Unsaturated fats (g)").addText(text =>
 			text.setValue(this.nutrientData.unsaturatedFats.toString()).onChange(value => {
 				this.nutrientData.unsaturatedFats = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Omega-3 fats (g)").addText(text =>
+		new Setting(contentEl).setName("🐟 Omega-3 fats (g)").addText(text =>
 			text.setValue(this.nutrientData.omega3Fats.toString()).onChange(value => {
 				this.nutrientData.omega3Fats = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Carbs (g)").addText(text =>
+		new Setting(contentEl).setName("🍞 Carbs (g)").addText(text =>
 			text.setValue(this.nutrientData.carbs.toString()).onChange(value => {
 				this.nutrientData.carbs = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Sugar (g)").addText(text =>
+		new Setting(contentEl).setName("🍯 Sugar (g)").addText(text =>
 			text.setValue(this.nutrientData.sugar.toString()).onChange(value => {
 				this.nutrientData.sugar = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Fiber (g)").addText(text =>
+		new Setting(contentEl).setName("🌾 Fiber (g)").addText(text =>
 			text.setValue(this.nutrientData.fiber.toString()).onChange(value => {
 				this.nutrientData.fiber = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Protein (g)").addText(text =>
+		new Setting(contentEl).setName("🥩 Protein (g)").addText(text =>
 			text.setValue(this.nutrientData.protein.toString()).onChange(value => {
 				this.nutrientData.protein = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("Sodium (mg)").addText(text =>
+		new Setting(contentEl).setName("🧂 Sodium (mg)").addText(text =>
 			text.setValue(this.nutrientData.sodium.toString()).onChange(value => {
 				this.nutrientData.sodium = parseFloat(value) || 0;
 			})
