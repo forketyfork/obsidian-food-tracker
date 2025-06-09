@@ -16,7 +16,7 @@ interface FoodEntry {
 	unit: string;
 }
 
-export default class NutritionTally {
+export default class NutritionTotal {
 	private nutrientCache: NutrientCache;
 
 	constructor(nutrientCache: NutrientCache) {
@@ -32,9 +32,9 @@ export default class NutritionTally {
 			}
 
 			const totalNutrients = this.calculateTotals(foodEntries);
-			return this.formatTally(totalNutrients);
+			return this.formatTotal(totalNutrients);
 		} catch (error) {
-			console.error("Error calculating nutrition tally:", error);
+			console.error("Error calculating nutrition total:", error);
 			return "";
 		}
 	}
@@ -125,7 +125,7 @@ export default class NutritionTally {
 		}
 	}
 
-	private formatTally(nutrients: NutrientData): string {
+	private formatTotal(nutrients: NutrientData): string {
 		const parts: string[] = [];
 
 		if ((nutrients.calories ?? 0) > 0) {
@@ -160,6 +160,6 @@ export default class NutritionTally {
 			return "";
 		}
 
-		return `📊 Daily tally: ${parts.join(", ")}`;
+		return `📊 Daily total: ${parts.join(", ")}`;
 	}
 }

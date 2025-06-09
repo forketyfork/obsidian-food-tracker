@@ -1,4 +1,4 @@
-.food-tracker-tally {
+.food-tracker-total {
 	position: sticky;
 	bottom: 0;
 	background-color: var(--background-primary);
@@ -14,13 +14,17 @@
 	transition:
 		width 0.3s ease-in-out,
 		max-width 0.3s ease-in-out;
-	width: 600px;
-	max-width: 600px;
+	width: 490px;
+	max-width: 490px;
 }
 
 .nutrient-modal-expanded {
-	width: 1200px;
-	max-width: 1200px;
+	width: 920px;
+	max-width: 920px;
+}
+
+.nutrient-modal .modal-content {
+	padding: 20px;
 }
 
 .nutrient-modal-main {
@@ -30,13 +34,14 @@
 }
 
 .nutrient-form-container {
-	flex: 0 0 550px;
-	min-width: 550px;
+	flex: 0 0 450px;
+	min-width: 450px;
+	padding-right: 20px;
 }
 
 .search-results-container {
-	flex: 1;
-	min-width: 600px;
+	flex: 0 0 400px;
+	min-width: 400px;
 }
 
 .search-results-container:not([style*="display: none"]) {
@@ -79,7 +84,6 @@
 	margin-bottom: 2px;
 	color: var(--text-normal);
 	font-size: 0.9em;
-	padding-right: 30px; /* Space for icon button */
 }
 
 .product-info {
@@ -95,28 +99,6 @@
 	margin-bottom: 0;
 }
 
-.search-result-use-btn {
-	position: absolute;
-	bottom: 8px;
-	right: 8px;
-	width: 20px;
-	height: 20px;
-	border-radius: 50%;
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	border: none;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 12px;
-	transition: background-color 0.2s ease;
-}
-
-.search-result-use-btn:hover {
-	background-color: var(--interactive-accent-hover);
-}
-
 .search-error,
 .search-no-results {
 	padding: 12px;
@@ -130,4 +112,16 @@
 	color: var(--background-primary);
 	border-radius: 4px;
 	padding: 0 4px;
+}
+
+/* Search button loading state */
+.setting-item-control button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* Fixed width for search button to prevent resizing */
+.setting-item-control button[data-search-button] {
+	min-width: 110px;
+	text-align: center;
 }

@@ -2,7 +2,7 @@
 
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
 
-An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition tallies and intelligent food suggestions.
+An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition totals and intelligent food suggestions.
 
 ## Features
 
@@ -23,8 +23,8 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 
 ### 📊 Real-time Nutrition Tracking
 
-- **Automatic daily tally**: Real-time calculation of total nutrition from all food entries in the current document
-- **Flexible display modes**: Show nutrition tally in status bar or directly in the document
+- **Automatic daily total**: Real-time calculation of total nutrition from all food entries in the current document
+- **Flexible display modes**: Show nutrition total in status bar or directly in the document
 - **Comprehensive metrics**: Track calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
 
@@ -72,14 +72,14 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
    #food [[chicken-breast]] 200g
    #food [[oats]] 50g
    ```
-4. The nutrition tally will automatically update as you add food entries
+4. The nutrition total will automatically update as you add food entries
 
 ### Configuration
 
 Go to Settings > Food Tracker to configure:
 
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
-- **Nutrition tally display**: Choose to show the tally in the status bar or directly in the document
+- **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 
 ## Requirements
 

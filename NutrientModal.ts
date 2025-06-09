@@ -43,6 +43,8 @@ export default class NutrientModal extends Modal {
 	mainContainer: HTMLElement | null = null;
 	formContainer: HTMLElement | null = null;
 	nameInput: HTMLInputElement | null = null;
+	searchButton: HTMLButtonElement | null = null;
+	isSearching: boolean = false;
 
 	constructor(app: App, plugin: FoodTrackerPlugin) {
 		super(app);
@@ -78,7 +80,6 @@ export default class NutrientModal extends Modal {
 
 		new Setting(this.formContainer)
 			.setName("📝 Name")
-			.setDesc("Enter the nutrient name (press Enter to search)")
 			.addText(text => {
 				this.nameInput = text.inputEl;
 				text.setValue(this.nutrientData.name).onChange(value => {
@@ -92,14 +93,16 @@ export default class NutrientModal extends Modal {
 					}
 				});
 			})
-			.addButton(button =>
-				button
+			.addButton(button => {
+				this.searchButton = button.buttonEl;
+				this.searchButton.setAttribute("data-search-button", "true");
+				return button
 					.setButtonText("🔍 Search")
 					.setTooltip("Search OpenFoodFacts database")
 					.onClick(async () => {
 						await this.searchOpenFoodFacts();
-					})
-			);
+					});
+			});
 
 		new Setting(this.formContainer).setName("🔥 Calories").addText(text =>
 			text.setValue(this.nutrientData.calories.toString()).onChange(value => {
@@ -201,9 +204,11 @@ sodium: ${this.nutrientData.sodium}
 	}
 
 	async searchOpenFoodFacts() {
-		if (!this.nutrientData.name.trim()) {
+		if (!this.nutrientData.name.trim() || this.isSearching) {
 			return;
 		}
+
+		this.setSearchingState(true);
 
 		try {
 			const searchTerm = encodeURIComponent(this.nutrientData.name.trim());
@@ -232,7 +237,11 @@ sodium: ${this.nutrientData.sodium}
 			console.error("Error searching OpenFoodFacts:", error);
 			if (this.searchResultsEl) {
 				this.searchResultsEl.innerHTML = `<div class="search-error">Search failed. Please check your internet connection and try again.</div>`;
+				this.searchResultsEl.show();
+				this.modalEl.addClass("nutrient-modal-expanded");
 			}
+		} finally {
+			this.setSearchingState(false);
 		}
 	}
 
@@ -282,13 +291,6 @@ sodium: ${this.nutrientData.sodium}
 			const fat = Number(nutriments["fat_100g"] ?? 0);
 
 			nutritionInfo.textContent = `Calories: ${calories.toFixed(1)}, Carbs: ${carbs.toFixed(1)}g, Protein: ${protein.toFixed(1)}g, Fat: ${fat.toFixed(1)}g (per 100g)`;
-
-			const selectButton = productEl.createEl("button", { text: "✓", cls: "search-result-use-btn" });
-			selectButton.title = "Use this product";
-			selectButton.onclick = e => {
-				e.stopPropagation();
-				this.fillFromOpenFoodFacts(product);
-			};
 		});
 	}
 
@@ -337,6 +339,14 @@ sodium: ${this.nutrientData.sodium}
 					(input as HTMLInputElement).value = this.nutrientData[field as keyof NutrientData]?.toString() || "0";
 				}
 			});
+		}
+	}
+
+	private setSearchingState(searching: boolean) {
+		this.isSearching = searching;
+		if (this.searchButton) {
+			this.searchButton.disabled = searching;
+			this.searchButton.textContent = searching ? "⏳ Searching..." : "🔍 Search";
 		}
 	}
 }

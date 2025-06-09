@@ -6,24 +6,24 @@ import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
 import FoodSuggest from "./FoodSuggest";
-import NutritionTally from "./NutritionTally";
+import NutritionTotal from "./NutritionTotal";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
-	tallyDisplayMode: "status-bar" | "document";
+	totalDisplayMode: "status-bar" | "document";
 }
 
 const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
-	tallyDisplayMode: "status-bar",
+	totalDisplayMode: "status-bar",
 };
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
 	nutrientCache: NutrientCache;
 	foodSuggest: FoodSuggest;
-	nutritionTally: NutritionTally;
+	nutritionTotal: NutritionTotal;
 	statusBarItem: HTMLElement;
-	documentTallyElement: HTMLElement | null = null;
+	documentTotalElement: HTMLElement | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -35,8 +35,8 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.foodSuggest = new FoodSuggest(this);
 		this.registerEditorSuggest(this.foodSuggest);
 
-		// Initialize nutrition tally
-		this.nutritionTally = new NutritionTally(this.nutrientCache);
+		// Initialize nutrition total
+		this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		this.statusBarItem = this.addStatusBarItem();
 		this.statusBarItem.setText("");
 
@@ -99,29 +99,29 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
-		// Update nutrition tally when files change
+		// Update nutrition total when files change
 		this.registerEvent(
 			this.app.vault.on("modify", () => {
-				void this.updateNutritionTally();
+				void this.updateNutritionTotal();
 			})
 		);
 
-		// Update nutrition tally when active file changes
+		// Update nutrition total when active file changes
 		this.registerEvent(
 			this.app.workspace.on("active-leaf-change", () => {
-				void this.updateNutritionTally();
+				void this.updateNutritionTotal();
 			})
 		);
 
 		// Register CodeMirror extension for food amount highlighting
 		this.registerEditorExtension(this.createFoodHighlightExtension());
 
-		// Initial tally update
-		void this.updateNutritionTally();
+		// Initial total update
+		void this.updateNutritionTotal();
 	}
 
 	onunload() {
-		this.removeDocumentTally();
+		this.removeDocumentTotal();
 	}
 
 	async loadSettings() {
@@ -134,13 +134,13 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
 		}
 
-		// Recreate nutrition tally with new directory
-		if (this.nutritionTally) {
-			this.nutritionTally = new NutritionTally(this.nutrientCache);
+		// Recreate nutrition total with new directory
+		if (this.nutritionTotal) {
+			this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		}
 
-		// Update tally display when settings change
-		void this.updateNutritionTally();
+		// Update total display when settings change
+		void this.updateNutritionTotal();
 	}
 
 	getNutrientNames(): string[] {
@@ -151,39 +151,39 @@ export default class FoodTrackerPlugin extends Plugin {
 		return this.nutrientCache?.getFileNameFromNutrientName(nutrientName) ?? null;
 	}
 
-	private async updateNutritionTally(): Promise<void> {
+	private async updateNutritionTotal(): Promise<void> {
 		try {
 			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 			if (!activeView?.file) {
-				this.clearTally();
+				this.clearTotal();
 				return;
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const tallyText = this.nutritionTally.calculateTotalNutrients(content);
+			const totalText = this.nutritionTotal.calculateTotalNutrients(content);
 
-			if (this.settings.tallyDisplayMode === "status-bar") {
-				this.statusBarItem?.setText(tallyText);
-				this.removeDocumentTally();
+			if (this.settings.totalDisplayMode === "status-bar") {
+				this.statusBarItem?.setText(totalText);
+				this.removeDocumentTotal();
 			} else {
 				this.statusBarItem?.setText("");
-				this.showDocumentTally(tallyText, activeView);
+				this.showDocumentTotal(totalText, activeView);
 			}
 		} catch (error) {
-			console.error("Error updating nutrition tally:", error);
-			this.clearTally();
+			console.error("Error updating nutrition total:", error);
+			this.clearTotal();
 		}
 	}
 
-	private clearTally(): void {
+	private clearTotal(): void {
 		this.statusBarItem?.setText("");
-		this.removeDocumentTally();
+		this.removeDocumentTotal();
 	}
 
-	private showDocumentTally(tallyText: string, view: MarkdownView): void {
-		this.removeDocumentTally();
+	private showDocumentTotal(totalText: string, view: MarkdownView): void {
+		this.removeDocumentTotal();
 
-		if (!tallyText) {
+		if (!totalText) {
 			return;
 		}
 
@@ -192,20 +192,20 @@ export default class FoodTrackerPlugin extends Plugin {
 			return;
 		}
 
-		this.documentTallyElement = contentEl.createDiv({
-			cls: "food-tracker-tally",
+		this.documentTotalElement = contentEl.createDiv({
+			cls: "food-tracker-total",
 		});
 
-		this.documentTallyElement.textContent = tallyText;
+		this.documentTotalElement.textContent = totalText;
 
 		// Append at the end of contentEl so it appears at the bottom
-		contentEl.appendChild(this.documentTallyElement);
+		contentEl.appendChild(this.documentTotalElement);
 	}
 
-	private removeDocumentTally(): void {
-		if (this.documentTallyElement) {
-			this.documentTallyElement.remove();
-			this.documentTallyElement = null;
+	private removeDocumentTotal(): void {
+		if (this.documentTotalElement) {
+			this.documentTotalElement.remove();
+			this.documentTotalElement = null;
 		}
 	}
 
