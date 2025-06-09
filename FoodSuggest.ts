@@ -14,45 +14,59 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	private foodTag: string;
 	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar"];
 
+	// Precompiled regex patterns for performance
+	private foodTagRegex: RegExp;
+	private nutritionQueryRegex: RegExp;
+	private nutritionValidationRegex: RegExp;
+
 	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
 		super(app);
 		this.foodTag = foodTag;
 		this.nutrientCache = nutrientCache;
+
+		// Precompile regex patterns for performance
+		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
+		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
+		this.nutritionValidationRegex = /^\d+[a-z]*$/;
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
 		const line = editor.getLine(cursor.line);
+
+		// Early exit if cursor is at beginning of line
+		if (cursor.ch === 0) return null;
+
+		// Check if line contains food tag - quick check before regex
+		if (!line.includes(`#${this.foodTag}`)) return null;
+
+		// Use substring only when necessary and match with precompiled regex
 		const beforeCursor = line.substring(0, cursor.ch);
+		const foodMatch = this.foodTagRegex.exec(beforeCursor);
+		if (!foodMatch) return null;
 
-		// Check if we have the food tag followed by any text
-		const foodTag = this.foodTag;
-		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-		const foodMatch = beforeCursor.match(new RegExp(`#${escapedFoodTag}\\s+(.*)$`));
-		if (foodMatch) {
-			const query = foodMatch[1] || "";
+		const query = foodMatch[1] || "";
 
-			// Check if we're in the context of typing nutritional values (after some text with numbers)
-			const nutritionMatch = query.match(/.*\s+(\d+[a-z]*)$/);
-			if (nutritionMatch) {
-				const nutritionQuery = nutritionMatch[1];
-				// Only trigger nutrition suggestions if we have a number followed by letters
-				if (/^\d+[a-z]*$/.test(nutritionQuery)) {
-					return {
-						start: { line: cursor.line, ch: cursor.ch - nutritionQuery.length },
-						end: cursor,
-						query: nutritionQuery,
-					};
-				}
+		// Check if we're in the context of typing nutritional values
+		const nutritionMatch = this.nutritionQueryRegex.exec(query);
+		if (nutritionMatch) {
+			const nutritionQuery = nutritionMatch[1];
+			// Only trigger nutrition suggestions if we have a number followed by letters
+			if (this.nutritionValidationRegex.test(nutritionQuery)) {
+				return {
+					start: { line: cursor.line, ch: cursor.ch - nutritionQuery.length },
+					end: cursor,
+					query: nutritionQuery,
+				};
 			}
-
-			// Regular food name autocomplete
-			return {
-				start: { line: cursor.line, ch: cursor.ch - query.length }, // Start after the food tag
-				end: cursor,
-				query: query,
-			};
 		}
-		return null;
+
+		// Regular food name autocomplete
+		return {
+			start: { line: cursor.line, ch: cursor.ch - query.length },
+			end: cursor,
+			query: query,
+		};
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] {
