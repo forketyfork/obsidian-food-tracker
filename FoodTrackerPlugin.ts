@@ -1,4 +1,7 @@
 import { Plugin, MarkdownView } from "obsidian";
+import { Extension } from "@codemirror/state";
+import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { RangeSetBuilder } from "@codemirror/state";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
@@ -110,6 +113,9 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
+		// Register CodeMirror extension for food amount highlighting
+		this.registerEditorExtension(this.createFoodHighlightExtension());
+
 		// Initial tally update
 		void this.updateNutritionTally();
 	}
@@ -201,5 +207,58 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.documentTallyElement.remove();
 			this.documentTallyElement = null;
 		}
+	}
+
+	createFoodHighlightExtension(): Extension {
+		const foodAmountDecoration = Decoration.mark({
+			class: "food-value",
+		});
+
+		const foodHighlightPlugin = ViewPlugin.fromClass(
+			class {
+				decorations: DecorationSet;
+
+				constructor(view: EditorView) {
+					this.decorations = this.buildDecorations(view);
+				}
+
+				update(update: ViewUpdate) {
+					if (update.docChanged || update.viewportChanged) {
+						this.decorations = this.buildDecorations(update.view);
+					}
+				}
+
+				buildDecorations(view: EditorView): DecorationSet {
+					const builder = new RangeSetBuilder<Decoration>();
+
+					for (let { from, to } of view.visibleRanges) {
+						const text = view.state.doc.sliceString(from, to);
+						const lines = text.split("\n");
+						let lineStart = from;
+
+						for (const line of lines) {
+							// Match food pattern: #food [[food-name]] amount OR #food food-name amount
+							const match = line.match(
+								/#food\s+(?:\[\[[^\]]+\]\]|[^\s]+)\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))/i
+							);
+							if (match) {
+								const amountMatch = match[1];
+								const amountStart = lineStart + line.indexOf(amountMatch);
+								const amountEnd = amountStart + amountMatch.length;
+								builder.add(amountStart, amountEnd, foodAmountDecoration);
+							}
+							lineStart += line.length + 1; // +1 for newline
+						}
+					}
+
+					return builder.finish();
+				}
+			},
+			{
+				decorations: v => v.decorations,
+			}
+		);
+
+		return foodHighlightPlugin;
 	}
 }

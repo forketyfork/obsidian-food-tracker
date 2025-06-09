@@ -56,3 +56,10 @@
 	color: var(--text-muted);
 	font-style: italic;
 }
+
+.food-value {
+	background-color: var(--color-green);
+	color: var(--background-primary);
+	border-radius: 4px;
+	padding: 0 4px;
+}
