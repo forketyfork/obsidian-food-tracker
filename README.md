@@ -21,7 +21,7 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 - **Flexible food formats**: Multiple ways to track your food:
   - **Database entries**: `#food [[food-name]] amount` - uses your nutrient database
   - **Inline nutrition**: `#food Food Name 300kcal 20fat 10prot 30carbs 3sugar` - specify nutrition directly
-- **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cups, tbsp, tsp
+- **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cup, tbsp, tsp
 - **Visual highlighting**: Food amounts and nutrition values are highlighted in the editor for easy identification
 
 ### 📊 Real-time Nutrition Tracking
@@ -95,6 +95,8 @@ For quick tracking without creating database entries, specify nutrition values d
 - `prot` - protein in grams
 - `carbs` - carbohydrates in grams
 - `sugar` - sugar in grams
+- `fiber` - fiber in grams (database entries only)
+- `sodium` - sodium in milligrams (database entries only)
 
 #### Method 3: Mixed Approach
 
@@ -160,14 +162,31 @@ Generate a coverage report:
 yarn coverage
 ```
 
+Format the code:
+
+```shell
+yarn format
+```
+
+Build CSS from source:
+
+```shell
+yarn build:css
+```
+
 Run the production build (includes tests, type checking, and formatting):
 
 ```shell
 yarn build
 ```
 
-Bump the version in `package.json` and `manifest.json`, push the `main` branch,
-and publish a new tag:
+Bump the version in `package.json` and `manifest.json`:
+
+```shell
+yarn version
+```
+
+Full release process (version bump, push, and tag):
 
 ```shell
 yarn release
