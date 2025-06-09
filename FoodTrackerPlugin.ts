@@ -110,6 +110,10 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
+		this.registerMarkdownPostProcessor(el => {
+			this.highlightFoodAmount(el);
+		});
+
 		// Initial tally update
 		void this.updateNutritionTally();
 	}
@@ -201,5 +205,21 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.documentTallyElement.remove();
 			this.documentTallyElement = null;
 		}
+	}
+
+	highlightFoodAmount(el: HTMLElement): void {
+		const text = el.textContent?.trim();
+		if (!text) return;
+
+		const match = text.match(/^#food\s+\[\[[^\]]+\]\]\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))$/i);
+		if (!match) return;
+
+		const amount = match[1];
+		const html = el.innerHTML;
+		const idx = html.lastIndexOf(amount);
+		if (idx === -1) return;
+
+		el.innerHTML =
+			html.substring(0, idx) + `<span class="food-value">${amount}</span>` + html.substring(idx + amount.length);
 	}
 }
