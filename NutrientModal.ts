@@ -1,5 +1,6 @@
 import { App, Modal, Setting } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
+import { INVALID_FILENAME_CHARS_REGEX } from "./constants";
 
 interface NutrientData {
 	name: string;
@@ -175,7 +176,7 @@ export default class NutrientModal extends Modal {
 
 		try {
 			const directory = this.plugin.settings.nutrientDirectory;
-			const fileName = `${this.nutrientData.name.replace(/[^a-zA-Z0-9]/g, "_")}.md`;
+			const fileName = `${this.nutrientData.name.replace(INVALID_FILENAME_CHARS_REGEX, "_")}.md`;
 			const filePath = `${directory}/${fileName}`;
 
 			// Ensure directory exists

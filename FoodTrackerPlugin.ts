@@ -7,6 +7,7 @@ import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
 import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
+import { SPECIAL_CHARS_REGEX, createNutritionValueRegex } from "./constants";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
@@ -26,9 +27,13 @@ export default class FoodTrackerPlugin extends Plugin {
 	nutritionTotal: NutritionTotal;
 	statusBarItem: HTMLElement;
 	documentTotalElement: HTMLElement | null = null;
+	private escapedFoodTag: string;
+	private inlineNutritionRegex: RegExp;
+	private traditionalRegex: RegExp;
 
 	async onload() {
 		await this.loadSettings();
+		this.updateEscapedFoodTag();
 
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
 		this.nutrientCache.initialize();
@@ -128,6 +133,7 @@ export default class FoodTrackerPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FoodTrackerPluginSettings>);
+		this.updateEscapedFoodTag();
 	}
 
 	async saveSettings() {
@@ -140,6 +146,8 @@ export default class FoodTrackerPlugin extends Plugin {
 		if (this.nutritionTotal) {
 			this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		}
+
+		this.updateEscapedFoodTag();
 
 		// Update total display when settings change
 		void this.updateNutritionTotal();
@@ -157,6 +165,23 @@ export default class FoodTrackerPlugin extends Plugin {
 		return this.settings.foodTag;
 	}
 
+	getEscapedFoodTag(): string {
+		return this.escapedFoodTag;
+	}
+
+	updateEscapedFoodTag(): void {
+		this.escapedFoodTag = this.settings.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+		// Update precompiled regex patterns when food tag changes
+		this.inlineNutritionRegex = new RegExp(
+			`#${this.escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+			"i"
+		);
+		this.traditionalRegex = new RegExp(
+			`#${this.escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
+			"i"
+		);
+	}
+
 	private async updateNutritionTotal(): Promise<void> {
 		try {
 			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -166,7 +191,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.settings.foodTag);
+			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.getEscapedFoodTag(), true);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(totalText);
@@ -224,7 +249,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			class: "food-nutrition-value",
 		});
 
-		const getFoodTag = () => this.getFoodTag();
+		const inlineNutritionRegex = this.inlineNutritionRegex;
+		const traditionalRegex = this.traditionalRegex;
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
@@ -242,8 +268,6 @@ export default class FoodTrackerPlugin extends Plugin {
 
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
-					const foodTag = getFoodTag();
-					const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
@@ -252,18 +276,13 @@ export default class FoodTrackerPlugin extends Plugin {
 
 						for (const line of lines) {
 							// Match food pattern with inline nutrition: #foodtag foodname 300kcal 20fat 10prot 30carbs 3sugar
-							const inlineNutritionMatch = line.match(
-								new RegExp(
-									`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
-									"i"
-								)
-							);
+							const inlineNutritionMatch = inlineNutritionRegex.exec(line);
 							if (inlineNutritionMatch) {
 								const nutritionString = inlineNutritionMatch[2];
 								const nutritionStringStart = lineStart + line.indexOf(nutritionString);
 
 								// Find and highlight each nutritional value within the nutrition string
-								const nutritionValueRegex = /\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)/gi;
+								const nutritionValueRegex = createNutritionValueRegex();
 								let match;
 
 								while ((match = nutritionValueRegex.exec(nutritionString)) !== null) {
@@ -271,20 +290,19 @@ export default class FoodTrackerPlugin extends Plugin {
 									const valueEnd = valueStart + match[0].length;
 									builder.add(valueStart, valueEnd, nutritionValueDecoration);
 								}
+								// Reset regex for next use
+								inlineNutritionRegex.lastIndex = 0;
 							} else {
 								// Match traditional food pattern: #foodtag [[food-name]] amount OR #foodtag food-name amount
-								const traditionalMatch = line.match(
-									new RegExp(
-										`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
-										"i"
-									)
-								);
+								const traditionalMatch = traditionalRegex.exec(line);
 								if (traditionalMatch) {
 									const amountMatch = traditionalMatch[1];
 									const amountStart = lineStart + line.indexOf(amountMatch);
 									const amountEnd = amountStart + amountMatch.length;
 									builder.add(amountStart, amountEnd, foodAmountDecoration);
 								}
+								// Reset regex for next use
+								traditionalRegex.lastIndex = 0;
 							}
 							lineStart += line.length + 1; // +1 for newline
 						}
