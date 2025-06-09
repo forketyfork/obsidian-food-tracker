@@ -25,11 +25,19 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		this.foodTag = foodTag;
 		this.nutrientCache = nutrientCache;
 
-		// Precompile regex patterns for performance
-		const escapedFoodTag = foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
-		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
+		this.updateFoodTagRegex();
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
+	}
+
+	updateFoodTag(foodTag: string): void {
+		this.foodTag = foodTag;
+		this.updateFoodTagRegex();
+	}
+
+	private updateFoodTagRegex(): void {
+		const escapedFoodTag = this.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {

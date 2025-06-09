@@ -149,6 +149,11 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		this.updateEscapedFoodTag();
 
+		// Update food suggest with new food tag
+		if (this.foodSuggest) {
+			this.foodSuggest.updateFoodTag(this.settings.foodTag);
+		}
+
 		// Update total display when settings change
 		void this.updateNutritionTotal();
 	}
@@ -249,8 +254,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			class: "food-nutrition-value",
 		});
 
-		const inlineNutritionRegex = this.inlineNutritionRegex;
-		const traditionalRegex = this.traditionalRegex;
+		const getInlineNutritionRegex = () => this.inlineNutritionRegex;
+		const getTraditionalRegex = () => this.traditionalRegex;
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
@@ -268,6 +273,10 @@ export default class FoodTrackerPlugin extends Plugin {
 
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
+
+					// Get current regex patterns from plugin instance through closure
+					const inlineNutritionRegex = getInlineNutritionRegex();
+					const traditionalRegex = getTraditionalRegex();
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
