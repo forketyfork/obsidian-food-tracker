@@ -19,6 +19,7 @@ module.exports = {
 		registerEvent() {}
 		registerEditorSuggest() {}
 		registerMarkdownPostProcessor() {}
+		registerEditorExtension() {}
 		addStatusBarItem() {
 			return {
 				setText: () => {},

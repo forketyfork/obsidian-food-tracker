@@ -17,6 +17,10 @@ This file provides guidance to AI agents when working with code in this reposito
 - `yarn build:css` - Minify CSS with CSSO (from styles.src.css to styles.css)
 - `yarn version` - Bump version in manifest.json and versions.json
 
+## General guidelines
+
+- IMPORTANT: After finishing your task, make sure to run `yarn build` and fix any introduced issues.
+
 ## Typescript & Testing
 
 - Strict null checks required (strictNullChecks: true)

@@ -16,12 +16,8 @@ describe("FoodTrackerPlugin", () => {
 		expect(plugin.settings.nutrientDirectory).toBe("nutrients");
 	});
 
-	test("highlightFoodAmount wraps value", () => {
-		const el = document.createElement("p");
-		el.textContent = "#food [[apple]] 50g";
-
-		plugin.highlightFoodAmount(el);
-
-		expect(el.innerHTML).toBe('#food [[apple]] <span class="food-value">50g</span>');
+	test("createFoodHighlightExtension returns extension", () => {
+		const extension = plugin.createFoodHighlightExtension();
+		expect(extension).toBeDefined();
 	});
 });

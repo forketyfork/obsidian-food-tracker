@@ -1,4 +1,7 @@
 import { Plugin, MarkdownView } from "obsidian";
+import { Extension } from "@codemirror/state";
+import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { RangeSetBuilder } from "@codemirror/state";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
@@ -110,9 +113,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
-		this.registerMarkdownPostProcessor(el => {
-			this.highlightFoodAmount(el);
-		});
+		// Register CodeMirror extension for food amount highlighting
+		this.registerEditorExtension(this.createFoodHighlightExtension());
 
 		// Initial tally update
 		void this.updateNutritionTally();
@@ -207,19 +209,56 @@ export default class FoodTrackerPlugin extends Plugin {
 		}
 	}
 
-	highlightFoodAmount(el: HTMLElement): void {
-		const text = el.textContent?.trim();
-		if (!text) return;
+	createFoodHighlightExtension(): Extension {
+		const foodAmountDecoration = Decoration.mark({
+			class: "food-value",
+		});
 
-		const match = text.match(/^#food\s+\[\[[^\]]+\]\]\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))$/i);
-		if (!match) return;
+		const foodHighlightPlugin = ViewPlugin.fromClass(
+			class {
+				decorations: DecorationSet;
 
-		const amount = match[1];
-		const html = el.innerHTML;
-		const idx = html.lastIndexOf(amount);
-		if (idx === -1) return;
+				constructor(view: EditorView) {
+					this.decorations = this.buildDecorations(view);
+				}
 
-		el.innerHTML =
-			html.substring(0, idx) + `<span class="food-value">${amount}</span>` + html.substring(idx + amount.length);
+				update(update: ViewUpdate) {
+					if (update.docChanged || update.viewportChanged) {
+						this.decorations = this.buildDecorations(update.view);
+					}
+				}
+
+				buildDecorations(view: EditorView): DecorationSet {
+					const builder = new RangeSetBuilder<Decoration>();
+
+					for (let { from, to } of view.visibleRanges) {
+						const text = view.state.doc.sliceString(from, to);
+						const lines = text.split("\n");
+						let lineStart = from;
+
+						for (const line of lines) {
+							// Match food pattern: #food [[food-name]] amount OR #food food-name amount
+							const match = line.match(
+								/#food\s+(?:\[\[[^\]]+\]\]|[^\s]+)\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))/i
+							);
+							if (match) {
+								const amountMatch = match[1];
+								const amountStart = lineStart + line.indexOf(amountMatch);
+								const amountEnd = amountStart + amountMatch.length;
+								builder.add(amountStart, amountEnd, foodAmountDecoration);
+							}
+							lineStart += line.length + 1; // +1 for newline
+						}
+					}
+
+					return builder.finish();
+				}
+			},
+			{
+				decorations: v => v.decorations,
+			}
+		);
+
+		return foodHighlightPlugin;
 	}
 }
