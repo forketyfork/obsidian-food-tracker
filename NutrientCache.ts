@@ -10,12 +10,16 @@ interface NutrientData {
 	sodium?: number;
 }
 
+/**
+ * Manages caching of nutrient files and their frontmatter data
+ * Maintains efficient lookups for food names, filenames, and nutrition data
+ */
 export default class NutrientCache {
 	private app: App;
 	private nutrientDirectory: string;
-	private cache: Map<string, string> = new Map();
-	private nameToFileMap: Map<string, string> = new Map();
-	private nutritionDataCache: Map<string, NutrientData> = new Map();
+	private cache: Map<string, string> = new Map(); // file path -> nutrient name
+	private nameToFileMap: Map<string, string> = new Map(); // nutrient name -> file basename
+	private nutritionDataCache: Map<string, NutrientData> = new Map(); // file basename -> nutrition data
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
@@ -39,6 +43,10 @@ export default class NutrientCache {
 		}
 	}
 
+	/**
+	 * Processes a single nutrient file and updates all relevant caches
+	 * Handles cleanup of old mappings when files are modified or renamed
+	 */
 	private processNutrientFile(file: TFile): void {
 		const nutrientName = this.extractNutrientName(file);
 		const nutritionData = this.extractNutritionData(file);

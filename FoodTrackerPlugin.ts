@@ -174,6 +174,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		return this.escapedFoodTag;
 	}
 
+	/**
+	 * Escapes special regex characters in the food tag and precompiles regex patterns for performance
+	 * Called whenever the food tag setting changes
+	 */
 	updateEscapedFoodTag(): void {
 		this.escapedFoodTag = this.settings.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 		// Update precompiled regex patterns when food tag changes
@@ -187,6 +191,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 	}
 
+	/**
+	 * Calculates and displays nutrition totals for the current document
+	 * Updates either the status bar or an in-document element based on settings
+	 */
 	private async updateNutritionTotal(): Promise<void> {
 		try {
 			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -216,6 +224,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.removeDocumentTotal();
 	}
 
+	/**
+	 * Creates and displays the nutrition total as an in-document element
+	 * Positioned at the bottom of the document content
+	 */
 	private showDocumentTotal(totalText: string, view: MarkdownView): void {
 		this.removeDocumentTotal();
 

@@ -3,6 +3,10 @@ import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@
 import { RangeSetBuilder } from "@codemirror/state";
 import { createNutritionValueRegex } from "./constants";
 
+/**
+ * CodeMirror extension that highlights food amounts and nutrition values in the editor
+ * Provides visual feedback for food entries and nutritional data
+ */
 export default class FoodHighlightExtension {
 	private inlineNutritionRegex: RegExp;
 	private traditionalRegex: RegExp;
@@ -43,6 +47,10 @@ export default class FoodHighlightExtension {
 					}
 				}
 
+				/**
+				 * Scans visible text for food entries and creates decorations for highlighting
+				 * Handles both inline nutrition format and traditional linked format
+				 */
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
 

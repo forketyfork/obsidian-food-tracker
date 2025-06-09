@@ -10,6 +10,10 @@ import {
 import NutrientCache from "./NutrientCache";
 import { FoodSuggestionCore, NutrientProvider } from "./FoodSuggestionCore";
 
+/**
+ * Adapter to bridge NutrientCache to the NutrientProvider interface
+ * Allows FoodSuggestionCore to work with the plugin's nutrient cache
+ */
 class NutrientCacheAdapter implements NutrientProvider {
 	constructor(private nutrientCache: NutrientCache) {}
 
@@ -22,6 +26,10 @@ class NutrientCacheAdapter implements NutrientProvider {
 	}
 }
 
+/**
+ * Obsidian editor suggest implementation for food autocompletion
+ * Provides suggestions for food names, measures, and nutrition keywords
+ */
 export default class FoodSuggest extends EditorSuggest<string> {
 	private nutrientCacheAdapter: NutrientCacheAdapter;
 	private suggestionCore: FoodSuggestionCore;
@@ -61,6 +69,10 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		el.createEl("div", { text: nutrient });
 	}
 
+	/**
+	 * Handles selection of a suggestion by inserting the appropriate replacement text
+	 * Different replacement logic for food names vs nutrition/measure keywords
+	 */
 	selectSuggestion(nutrient: string, _evt: MouseEvent | KeyboardEvent): void {
 		const context = this.context;
 		if (!context) return;

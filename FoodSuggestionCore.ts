@@ -1,5 +1,9 @@
 import { SPECIAL_CHARS_REGEX, LEADING_NUMBER_REGEX } from "./constants";
 
+/**
+ * Represents a trigger for showing food suggestions
+ * Contains the query text and position information for replacement
+ */
 export interface SuggestionTrigger {
 	query: string;
 	startOffset: number;
@@ -7,6 +11,9 @@ export interface SuggestionTrigger {
 	context?: "measure" | "nutrition";
 }
 
+/**
+ * Interface for providing nutrient data to the suggestion system
+ */
 export interface NutrientProvider {
 	getNutrientNames(): string[];
 	getFileNameFromNutrientName(nutrientName: string): string | null;
@@ -19,15 +26,18 @@ export class FoodSuggestionCore {
 
 	// Precompiled regex patterns for performance
 	private foodTagRegex: RegExp;
-	private nutritionQueryRegex: RegExp;
-	private nutritionValidationRegex: RegExp;
-	private foodWithMeasureRegex: RegExp;
+	private nutritionQueryRegex: RegExp; // Matches text ending with number+letters (e.g., "apple 100g")
+	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
+	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
 
 	constructor(foodTag: string) {
 		this.foodTag = foodTag;
 		this.updateFoodTagRegex();
+		// Match any text ending with space and number+letters
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
+		// Validate that text is just number+letters
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
+		// Match wikilink followed by space and number+letters
 		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(\d+[a-z]*)$/;
 	}
 
@@ -36,6 +46,10 @@ export class FoodSuggestionCore {
 		this.updateFoodTagRegex();
 	}
 
+	/**
+	 * Updates the food tag regex when the tag changes
+	 * Escapes special regex characters in the tag
+	 */
 	private updateFoodTagRegex(): void {
 		const escapedFoodTag = this.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
@@ -62,6 +76,7 @@ export class FoodSuggestionCore {
 		const query = foodMatch[1] || "";
 
 		// Check if we're typing after a food wikilink (measure context)
+		// Example: "#food [[apple]] 100g" - suggests "g", "ml", etc.
 		const foodWithMeasureMatch = this.foodWithMeasureRegex.exec(query);
 		if (foodWithMeasureMatch) {
 			const measureQuery = foodWithMeasureMatch[1];
@@ -77,6 +92,7 @@ export class FoodSuggestionCore {
 		}
 
 		// Check if we're in the context of typing nutritional values (not after wikilink)
+		// Example: "#food apple 100k" - suggests "kcal", "kg", etc.
 		const nutritionMatch = this.nutritionQueryRegex.exec(query);
 		if (nutritionMatch && !this.foodWithMeasureRegex.test(query)) {
 			const nutritionQuery = nutritionMatch[1];
@@ -109,15 +125,16 @@ export class FoodSuggestionCore {
 	getSuggestions(query: string, nutrientProvider: NutrientProvider, context?: "measure" | "nutrition"): string[] {
 		const lowerQuery = query.toLowerCase();
 
-		// Check if we're suggesting measures or nutritional keywords (must start with a digit)
+		// Handle measure/nutrition keyword suggestions (e.g., "100g" -> "100g", "100ml")
 		if (this.nutritionValidationRegex.test(lowerQuery)) {
 			const keywords = context === "measure" ? this.measureKeywords : this.nutritionKeywords;
+			// Match keywords that start with the letter part of the query
 			const matchingKeywords = keywords.filter(keyword =>
 				keyword.toLowerCase().startsWith(lowerQuery.replace(LEADING_NUMBER_REGEX, ""))
 			);
 
 			if (matchingKeywords.length > 0) {
-				// Extract the number part
+				// Extract the number part and prepend it to each keyword
 				const numberMatch = LEADING_NUMBER_REGEX.exec(lowerQuery);
 				const numberPart = numberMatch ? numberMatch[0] : "";
 

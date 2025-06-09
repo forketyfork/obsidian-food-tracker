@@ -36,6 +36,10 @@ interface OpenFoodFactsSearchResponse {
 	[key: string]: unknown;
 }
 
+/**
+ * Modal dialog for adding new nutrient files with OpenFoodFacts integration
+ * Allows manual entry or automatic population from online food database
+ */
 export default class NutrientModal extends Modal {
 	plugin: FoodTrackerPlugin;
 	nutrientData: NutrientData;
@@ -204,6 +208,10 @@ sodium: ${this.nutrientData.sodium}
 		}
 	}
 
+	/**
+	 * Searches the OpenFoodFacts database for nutrition information
+	 * Handles API response variations and error cases gracefully
+	 */
 	async searchOpenFoodFacts() {
 		if (!this.nutrientData.name.trim() || this.isSearching) {
 			return;
@@ -295,6 +303,10 @@ sodium: ${this.nutrientData.sodium}
 		});
 	}
 
+	/**
+	 * Populates form fields with data from selected OpenFoodFacts product
+	 * Converts units appropriately (sodium from grams to milligrams)
+	 */
 	fillFromOpenFoodFacts(product: OpenFoodFactsProduct) {
 		const nutriments = product.nutriments;
 

@@ -1,5 +1,9 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
+/**
+ * Settings tab for configuring the Food Tracker plugin
+ * Provides options for nutrient directory, display mode, and food tag
+ */
 export default class FoodTrackerSettingTab extends PluginSettingTab {
 	plugin: FoodTrackerPlugin;
 

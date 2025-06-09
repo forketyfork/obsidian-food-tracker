@@ -25,6 +25,10 @@ interface InlineNutrientEntry {
 	sugar?: number;
 }
 
+/**
+ * Calculates total nutrition values from food entries in document content
+ * Supports both traditional linked format and inline nutrition format
+ */
 export default class NutritionTotal {
 	private nutrientCache: NutrientCache;
 
@@ -102,6 +106,10 @@ export default class NutritionTotal {
 		return entries;
 	}
 
+	/**
+	 * Parses inline nutrition strings like "300kcal 20fat 10prot 30carbs 3sugar"
+	 * Uses precompiled regex patterns for performance
+	 */
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
 
@@ -209,6 +217,10 @@ export default class NutritionTotal {
 		}
 	}
 
+	/**
+	 * Converts various units to a multiplier based on 100g servings
+	 * Handles weight and volume conversions with reasonable approximations
+	 */
 	private getMultiplier(amount: number, unit: string): number {
 		// Assume nutrient data is per 100g by default
 		const baseAmount = 100;
