@@ -89,9 +89,10 @@ For quick tracking without creating database entries, specify nutrition values d
 ```
 
 **Supported nutrition keywords:**
+
 - `kcal` - calories
 - `fat` - fats in grams
-- `prot` - protein in grams  
+- `prot` - protein in grams
 - `carbs` - carbohydrates in grams
 - `sugar` - sugar in grams
 

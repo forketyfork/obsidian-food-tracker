@@ -1,13 +1,23 @@
-import { Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile } from "obsidian";
-import FoodTrackerPlugin from "./FoodTrackerPlugin";
+import {
+	App,
+	Editor,
+	EditorPosition,
+	EditorSuggest,
+	EditorSuggestContext,
+	EditorSuggestTriggerInfo,
+	TFile,
+} from "obsidian";
+import NutrientCache from "./NutrientCache";
 
 export default class FoodSuggest extends EditorSuggest<string> {
-	plugin: FoodTrackerPlugin;
+	private nutrientCache: NutrientCache;
+	private foodTag: string;
 	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar"];
 
-	constructor(plugin: FoodTrackerPlugin) {
-		super(plugin.app);
-		this.plugin = plugin;
+	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
+		super(app);
+		this.foodTag = foodTag;
+		this.nutrientCache = nutrientCache;
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
@@ -15,7 +25,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		const beforeCursor = line.substring(0, cursor.ch);
 
 		// Check if we have the food tag followed by any text
-		const foodTag = this.plugin.getFoodTag();
+		const foodTag = this.foodTag;
 		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 		const foodMatch = beforeCursor.match(new RegExp(`#${escapedFoodTag}\\s+(.*)$`));
 		if (foodMatch) {
@@ -64,7 +74,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		}
 
 		// Regular food name suggestions
-		const nutrientNames = this.plugin.getNutrientNames();
+		const nutrientNames = this.nutrientCache.getNutrientNames();
 		if (!query) {
 			return nutrientNames;
 		}
@@ -94,7 +104,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			context.editor.setCursor(newCursorPos);
 		} else {
 			// Regular food name suggestion
-			const fileName = this.plugin.getFileNameFromNutrientName(nutrient);
+			const fileName = this.nutrientCache.getFileNameFromNutrientName(nutrient);
 			const replacement = `[[${fileName ?? nutrient}]]`;
 
 			// Use the start/end from the context we defined in onTrigger

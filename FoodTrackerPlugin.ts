@@ -34,7 +34,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.nutrientCache.initialize();
 
 		// Register food autocomplete
-		this.foodSuggest = new FoodSuggest(this);
+		this.foodSuggest = new FoodSuggest(this.app, this.settings.foodTag, this.nutrientCache);
 		this.registerEditorSuggest(this.foodSuggest);
 
 		// Initialize nutrition total
