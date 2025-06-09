@@ -10,11 +10,13 @@ import NutritionTotal from "./NutritionTotal";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
+	foodTag: string;
 }
 
 const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
 	totalDisplayMode: "status-bar",
+	foodTag: "food",
 };
 
 export default class FoodTrackerPlugin extends Plugin {
@@ -151,6 +153,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		return this.nutrientCache?.getFileNameFromNutrientName(nutrientName) ?? null;
 	}
 
+	getFoodTag(): string {
+		return this.settings.foodTag;
+	}
+
 	private async updateNutritionTotal(): Promise<void> {
 		try {
 			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -160,7 +166,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const totalText = this.nutritionTotal.calculateTotalNutrients(content);
+			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.settings.foodTag);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(totalText);
@@ -218,6 +224,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			class: "food-nutrition-value",
 		});
 
+		const getFoodTag = () => this.getFoodTag();
+
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
 				decorations: DecorationSet;
@@ -234,6 +242,8 @@ export default class FoodTrackerPlugin extends Plugin {
 
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
+					const foodTag = getFoodTag();
+					const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
@@ -241,9 +251,12 @@ export default class FoodTrackerPlugin extends Plugin {
 						let lineStart = from;
 
 						for (const line of lines) {
-							// Match food pattern with inline nutrition: #food foodname 300kcal 20fat 10prot 30carbs 3sugar
+							// Match food pattern with inline nutrition: #foodtag foodname 300kcal 20fat 10prot 30carbs 3sugar
 							const inlineNutritionMatch = line.match(
-								/#food\s+(?!\[\[)([^\s]+(?:\s+[^\s]+)*?)\s+(\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\s+\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar))*)/i
+								new RegExp(
+									`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+									"i"
+								)
 							);
 							if (inlineNutritionMatch) {
 								const nutritionString = inlineNutritionMatch[2];
@@ -259,9 +272,12 @@ export default class FoodTrackerPlugin extends Plugin {
 									builder.add(valueStart, valueEnd, nutritionValueDecoration);
 								}
 							} else {
-								// Match traditional food pattern: #food [[food-name]] amount OR #food food-name amount
+								// Match traditional food pattern: #foodtag [[food-name]] amount OR #foodtag food-name amount
 								const traditionalMatch = line.match(
-									/#food\s+(?:\[\[[^\]]+\]\]|[^\s]+)\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))/i
+									new RegExp(
+										`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
+										"i"
+									)
 								);
 								if (traditionalMatch) {
 									const amountMatch = traditionalMatch[1];

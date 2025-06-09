@@ -22,6 +22,28 @@ describe("NutritionTotal", () => {
 			expect(result).toBe("");
 		});
 
+		test("works with custom food tag", () => {
+			mockGetNutritionData.mockReturnValue({
+				calories: 100,
+				fats: 10,
+			});
+
+			const content = "#meal [[apple]] 200g";
+			const result = nutritionTotal.calculateTotalNutrients(content, "meal");
+
+			expect(mockGetNutritionData).toHaveBeenCalledWith("apple");
+			expect(result).toBe("📊 Daily total: 🔥 200 kcal, 🥑 Fats: 20.0g");
+		});
+
+		test("works with custom food tag for inline nutrition", () => {
+			const content = "#nutrition Cordon Bleu with salad 300kcal 20fat 10prot 30carbs 3sugar";
+			const result = nutritionTotal.calculateTotalNutrients(content, "nutrition");
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 300 kcal, 🥑 Fats: 20.0g, 🥩 Protein: 10.0g, 🍞 Carbs: 30.0g, 🍯 Sugar: 3.0g"
+			);
+		});
+
 		test("returns empty string for empty content", () => {
 			const result = nutritionTotal.calculateTotalNutrients("");
 			expect(result).toBe("");

@@ -14,8 +14,10 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		const line = editor.getLine(cursor.line);
 		const beforeCursor = line.substring(0, cursor.ch);
 
-		// Check if we have "#food " followed by any text
-		const foodMatch = beforeCursor.match(/#food\s+(.*)$/);
+		// Check if we have the food tag followed by any text
+		const foodTag = this.plugin.getFoodTag();
+		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const foodMatch = beforeCursor.match(new RegExp(`#${escapedFoodTag}\\s+(.*)$`));
 		if (foodMatch) {
 			const query = foodMatch[1] || "";
 
@@ -35,7 +37,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 			// Regular food name autocomplete
 			return {
-				start: { line: cursor.line, ch: cursor.ch - query.length }, // Start after "#food "
+				start: { line: cursor.line, ch: cursor.ch - query.length }, // Start after the food tag
 				end: cursor,
 				query: query,
 			};

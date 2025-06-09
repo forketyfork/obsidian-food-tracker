@@ -31,10 +31,10 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string): string {
+	calculateTotalNutrients(content: string, foodTag: string = "food"): string {
 		try {
-			const foodEntries = this.parseFoodEntries(content);
-			const inlineEntries = this.parseInlineNutrientEntries(content);
+			const foodEntries = this.parseFoodEntries(content, foodTag);
+			const inlineEntries = this.parseInlineNutrientEntries(content, foodTag);
 
 			if (foodEntries.length === 0 && inlineEntries.length === 0) {
 				return "";
@@ -52,13 +52,19 @@ export default class NutritionTotal {
 		}
 	}
 
-	private parseFoodEntries(content: string): FoodEntry[] {
+	private parseFoodEntries(content: string, foodTag: string): FoodEntry[] {
 		const entries: FoodEntry[] = [];
 		const lines = content.split("\n");
 
 		for (const line of lines) {
-			// Match #food [[filename]] amount
-			const match = line.match(/#food\s+\[\[([^\]]+)\]\]\s+(\d+(?:\.\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)/i);
+			// Match food tag [[filename]] amount
+			const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			const match = line.match(
+				new RegExp(
+					`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`,
+					"i"
+				)
+			);
 			if (match) {
 				const filename = match[1];
 				const amount = parseFloat(match[2]);
@@ -75,14 +81,18 @@ export default class NutritionTotal {
 		return entries;
 	}
 
-	private parseInlineNutrientEntries(content: string): InlineNutrientEntry[] {
+	private parseInlineNutrientEntries(content: string, foodTag: string): InlineNutrientEntry[] {
 		const entries: InlineNutrientEntry[] = [];
 		const lines = content.split("\n");
 
 		for (const line of lines) {
-			// Match #food foodname followed by inline nutrients: 300kcal 20fat 10prot 30carbs 3sugar
+			// Match food tag foodname followed by inline nutrients: 300kcal 20fat 10prot 30carbs 3sugar
+			const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			const foodMatch = line.match(
-				/#food\s+(?!\[\[)([^\s]+(?:\s+[^\s]+)*?)\s+(\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\s+\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar))*)/i
+				new RegExp(
+					`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+					"i"
+				)
 			);
 			if (foodMatch) {
 				const nutrientString = foodMatch[2];
