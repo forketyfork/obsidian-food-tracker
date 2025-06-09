@@ -1,7 +1,6 @@
 import { App, Modal, Setting } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
-
-const INVALID_FILENAME_CHARS_REGEX = /[^a-zA-Z0-9]/g;
+import { INVALID_FILENAME_CHARS_REGEX } from "./constants";
 
 interface NutrientData {
 	name: string;

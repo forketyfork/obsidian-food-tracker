@@ -1,11 +1,5 @@
 import NutrientCache from "./NutrientCache";
-
-const SPECIAL_CHARS_REGEX = /[.*+?^${}()|[\]\\]/g;
-const CALORIES_REGEX = /(\d+(?:\.\d+)?)kcal/i;
-const FATS_REGEX = /(\d+(?:\.\d+)?)fat/i;
-const PROTEIN_REGEX = /(\d+(?:\.\d+)?)prot/i;
-const CARBS_REGEX = /(\d+(?:\.\d+)?)carbs/i;
-const SUGAR_REGEX = /(\d+(?:\.\d+)?)sugar/i;
+import { SPECIAL_CHARS_REGEX, CALORIES_REGEX, FATS_REGEX, PROTEIN_REGEX, CARBS_REGEX, SUGAR_REGEX } from "./constants";
 
 interface NutrientData {
 	calories?: number;

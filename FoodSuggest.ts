@@ -8,9 +8,7 @@ import {
 	TFile,
 } from "obsidian";
 import NutrientCache from "./NutrientCache";
-
-const SPECIAL_CHARS_REGEX = /[.*+?^${}()|[\]\\]/g;
-const LEADING_NUMBER_REGEX = /^\d+/;
+import { SPECIAL_CHARS_REGEX, LEADING_NUMBER_REGEX } from "./constants";
 
 export default class FoodSuggest extends EditorSuggest<string> {
 	private nutrientCache: NutrientCache;
@@ -21,7 +19,6 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	private foodTagRegex: RegExp;
 	private nutritionQueryRegex: RegExp;
 	private nutritionValidationRegex: RegExp;
-	private leadingNumberRegex: RegExp;
 
 	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
 		super(app);
@@ -33,7 +30,6 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
-		this.leadingNumberRegex = LEADING_NUMBER_REGEX;
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
@@ -42,8 +38,8 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		// Early exit if cursor is at beginning of line
 		if (cursor.ch === 0) return null;
 
-		// Check if line contains food tag - quick check before regex
-		if (!line.includes(`#${this.foodTag}`)) return null;
+		// Check if line contains food tag using precompiled regex
+		if (!this.foodTagRegex.test(line.substring(0, cursor.ch))) return null;
 
 		// Use substring only when necessary and match with precompiled regex
 		const beforeCursor = line.substring(0, cursor.ch);
@@ -80,12 +76,12 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		// Check if we're suggesting nutritional keywords (must start with a digit)
 		if (this.nutritionValidationRegex.test(query)) {
 			const matchingNutrition = this.nutritionKeywords.filter(keyword =>
-				keyword.toLowerCase().startsWith(query.replace(this.leadingNumberRegex, ""))
+				keyword.toLowerCase().startsWith(query.replace(LEADING_NUMBER_REGEX, ""))
 			);
 
 			if (matchingNutrition.length > 0) {
 				// Extract the number part
-				const numberMatch = this.leadingNumberRegex.exec(query);
+				const numberMatch = LEADING_NUMBER_REGEX.exec(query);
 				const numberPart = numberMatch ? numberMatch[0] : "";
 
 				return matchingNutrition.map(keyword => numberPart + keyword);
