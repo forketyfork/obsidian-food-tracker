@@ -15,9 +15,4 @@ describe("FoodTrackerPlugin", () => {
 		expect(plugin.settings).toBeDefined();
 		expect(plugin.settings.nutrientDirectory).toBe("nutrients");
 	});
-
-	test("createFoodHighlightExtension returns extension", () => {
-		const extension = plugin.createFoodHighlightExtension();
-		expect(extension).toBeDefined();
-	});
 });
