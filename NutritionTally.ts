@@ -2,7 +2,7 @@ import NutrientCache from "./NutrientCache";
 
 interface NutrientData {
 	calories?: number;
-	fat?: number;
+	fats?: number;
 	protein?: number;
 	carbs?: number;
 	fiber?: number;
@@ -65,7 +65,7 @@ export default class NutritionTally {
 	private calculateTotals(entries: FoodEntry[]): NutrientData {
 		const totals: NutrientData = {
 			calories: 0,
-			fat: 0,
+			fats: 0,
 			protein: 0,
 			carbs: 0,
 			fiber: 0,
@@ -79,7 +79,7 @@ export default class NutritionTally {
 				const multiplier = this.getMultiplier(entry.amount, entry.unit);
 
 				totals.calories = (totals.calories ?? 0) + (nutrients.calories ?? 0) * multiplier;
-				totals.fat = (totals.fat ?? 0) + (nutrients.fat ?? 0) * multiplier;
+				totals.fats = (totals.fats ?? 0) + (nutrients.fats ?? 0) * multiplier;
 				totals.protein = (totals.protein ?? 0) + (nutrients.protein ?? 0) * multiplier;
 				totals.carbs = (totals.carbs ?? 0) + (nutrients.carbs ?? 0) * multiplier;
 				totals.fiber = (totals.fiber ?? 0) + (nutrients.fiber ?? 0) * multiplier;
@@ -132,8 +132,8 @@ export default class NutritionTally {
 			parts.push(`🔥 ${Math.round(nutrients.calories!)} kcal`);
 		}
 
-		if ((nutrients.fat ?? 0) > 0) {
-			parts.push(`🥑 Fat: ${nutrients.fat!.toFixed(1)}g`);
+		if ((nutrients.fats ?? 0) > 0) {
+			parts.push(`🥑 Fats: ${nutrients.fats!.toFixed(1)}g`);
 		}
 
 		if ((nutrients.protein ?? 0) > 0) {

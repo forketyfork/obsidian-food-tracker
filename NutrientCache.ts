@@ -2,7 +2,7 @@ import { App, TFile, TAbstractFile } from "obsidian";
 
 interface NutrientData {
 	calories?: number;
-	fat?: number;
+	fats?: number;
 	protein?: number;
 	carbs?: number;
 	fiber?: number;
@@ -120,7 +120,7 @@ export default class NutrientCache {
 
 			return {
 				calories: this.parseNumber(frontmatter.calories),
-				fat: this.parseNumber(frontmatter.fat),
+				fats: this.parseNumber(frontmatter.fats),
 				protein: this.parseNumber(frontmatter.protein),
 				carbs: this.parseNumber(frontmatter.carbs ?? frontmatter.carbohydrates),
 				fiber: this.parseNumber(frontmatter.fiber),

@@ -30,7 +30,7 @@ describe("NutritionTally", () => {
 		test("calculates total nutrients for single food entry", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
-				fat: 10,
+				fats: 10,
 				protein: 20,
 				carbs: 15,
 				fiber: 5,
@@ -43,7 +43,7 @@ describe("NutritionTally", () => {
 
 			expect(mockGetNutritionData).toHaveBeenCalledWith("apple");
 			expect(result).toBe(
-				"📊 Daily tally: 🔥 200 kcal, 🥑 Fat: 20.0g, 🥩 Protein: 40.0g, 🍞 Carbs: 30.0g, 🌾 Fiber: 10.0g, 🍯 Sugar: 6.0g, 🧂 Sodium: 400.0mg"
+				"📊 Daily tally: 🔥 200 kcal, 🥑 Fats: 20.0g, 🥩 Protein: 40.0g, 🍞 Carbs: 30.0g, 🌾 Fiber: 10.0g, 🍯 Sugar: 6.0g, 🧂 Sodium: 400.0mg"
 			);
 		});
 
@@ -51,7 +51,7 @@ describe("NutritionTally", () => {
 			mockGetNutritionData
 				.mockReturnValueOnce({
 					calories: 100,
-					fat: 10,
+					fats: 10,
 					protein: 20,
 				})
 				.mockReturnValueOnce({
@@ -69,7 +69,7 @@ Some other text
 			expect(mockGetNutritionData).toHaveBeenCalledWith("apple");
 			expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
 			expect(result).toBe(
-				"📊 Daily tally: 🔥 400 kcal, 🥑 Fat: 10.0g, 🥩 Protein: 20.0g, 🍞 Carbs: 45.0g, 🌾 Fiber: 7.5g"
+				"📊 Daily tally: 🔥 400 kcal, 🥑 Fats: 10.0g, 🥩 Protein: 20.0g, 🍞 Carbs: 45.0g, 🌾 Fiber: 7.5g"
 			);
 		});
 
@@ -246,19 +246,19 @@ Some other text
 
 		test("formats other nutrients to 1 decimal place", () => {
 			mockGetNutritionData.mockReturnValue({
-				fat: 12.456,
+				fats: 12.456,
 			});
 
 			const content = "#food [[food]] 100g";
 			const result = nutritionTally.calculateTotalNutrients(content);
 
-			expect(result).toBe("📊 Daily tally: 🥑 Fat: 12.5g");
+			expect(result).toBe("📊 Daily tally: 🥑 Fats: 12.5g");
 		});
 
 		test("omits zero or undefined nutrients", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
-				fat: 0,
+				fats: 0,
 				protein: undefined,
 				carbs: 20,
 			});
@@ -272,7 +272,7 @@ Some other text
 		test("returns empty string when no nutrients have values", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 0,
-				fat: 0,
+				fats: 0,
 				protein: 0,
 			});
 
@@ -328,7 +328,7 @@ End of day`;
 		test("handles mixed units correctly", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
-				fat: 10,
+				fats: 10,
 				protein: 5,
 			});
 
@@ -342,15 +342,15 @@ End of day`;
 			// 50g = 0.5x, 0.1kg = 1x, 200ml = 2x
 			// Total: 0.5 + 1 + 2 = 3.5x
 			// Calories: 100 * 3.5 = 350
-			// Fat: 10 * 3.5 = 35
+			// Fats: 10 * 3.5 = 35
 			// Protein: 5 * 3.5 = 17.5
-			expect(result).toBe("📊 Daily tally: 🔥 350 kcal, 🥑 Fat: 35.0g, 🥩 Protein: 17.5g");
+			expect(result).toBe("📊 Daily tally: 🔥 350 kcal, 🥑 Fats: 35.0g, 🥩 Protein: 17.5g");
 		});
 
 		test("includes all nutrient types in output", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 250.7,
-				fat: 15.2,
+				fats: 15.2,
 				protein: 20.8,
 				carbs: 30.1,
 				fiber: 5.6,
@@ -362,7 +362,7 @@ End of day`;
 			const result = nutritionTally.calculateTotalNutrients(content);
 
 			expect(result).toBe(
-				"📊 Daily tally: 🔥 251 kcal, 🥑 Fat: 15.2g, 🥩 Protein: 20.8g, 🍞 Carbs: 30.1g, 🌾 Fiber: 5.6g, 🍯 Sugar: 8.3g, 🧂 Sodium: 123.9mg"
+				"📊 Daily tally: 🔥 251 kcal, 🥑 Fats: 15.2g, 🥩 Protein: 20.8g, 🍞 Carbs: 30.1g, 🌾 Fiber: 5.6g, 🍯 Sugar: 8.3g, 🧂 Sodium: 123.9mg"
 			);
 		});
 	});

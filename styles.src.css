@@ -9,8 +9,50 @@
 	margin-top: 8px;
 }
 
+/* Nutrient modal layout and animations */
+.nutrient-modal {
+	transition:
+		width 0.3s ease-in-out,
+		max-width 0.3s ease-in-out;
+	width: 600px;
+	max-width: 600px;
+}
+
+.nutrient-modal-expanded {
+	width: 1200px;
+	max-width: 1200px;
+}
+
+.nutrient-modal-main {
+	display: flex;
+	gap: 20px;
+	align-items: flex-start;
+}
+
+.nutrient-form-container {
+	flex: 0 0 550px;
+	min-width: 550px;
+}
+
 .search-results-container {
-	margin: 16px 0;
+	flex: 1;
+	min-width: 600px;
+}
+
+.search-results-container:not([style*="display: none"]) {
+	opacity: 0;
+	animation: fadeInRight 0.4s ease-out 0.2s forwards;
+}
+
+@keyframes fadeInRight {
+	from {
+		opacity: 0;
+		transform: translateX(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
 }
 
 .search-results h3 {
@@ -21,9 +63,11 @@
 .search-result-item {
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 6px;
-	padding: 12px;
-	margin-bottom: 8px;
+	padding: 8px 12px;
+	margin-bottom: 6px;
 	background-color: var(--background-secondary);
+	position: relative;
+	cursor: pointer;
 }
 
 .search-result-item:hover {
@@ -32,21 +76,45 @@
 
 .product-name {
 	font-weight: bold;
-	margin-bottom: 4px;
+	margin-bottom: 2px;
 	color: var(--text-normal);
+	font-size: 0.9em;
+	padding-right: 30px; /* Space for icon button */
 }
 
 .product-info {
-	font-size: 0.8em;
+	font-size: 0.75em;
 	color: var(--text-faint);
-	margin-bottom: 6px;
+	margin-bottom: 3px;
 	font-style: italic;
 }
 
 .nutrition-preview {
-	font-size: 0.85em;
+	font-size: 0.8em;
 	color: var(--text-muted);
-	margin-bottom: 8px;
+	margin-bottom: 0;
+}
+
+.search-result-use-btn {
+	position: absolute;
+	bottom: 8px;
+	right: 8px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	transition: background-color 0.2s ease;
+}
+
+.search-result-use-btn:hover {
+	background-color: var(--interactive-accent-hover);
 }
 
 .search-error,

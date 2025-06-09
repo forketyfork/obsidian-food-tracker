@@ -4,10 +4,7 @@ import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 interface NutrientData {
 	name: string;
 	calories: number;
-	totalFats: number;
-	saturatedFats: number;
-	unsaturatedFats: number;
-	omega3Fats: number;
+	fats: number;
 	carbs: number;
 	sugar: number;
 	fiber: number;
@@ -43,6 +40,9 @@ export default class NutrientModal extends Modal {
 	nutrientData: NutrientData;
 	searchResults: OpenFoodFactsProduct[] = [];
 	searchResultsEl: HTMLElement | null = null;
+	mainContainer: HTMLElement | null = null;
+	formContainer: HTMLElement | null = null;
+	nameInput: HTMLInputElement | null = null;
 
 	constructor(app: App, plugin: FoodTrackerPlugin) {
 		super(app);
@@ -50,10 +50,7 @@ export default class NutrientModal extends Modal {
 		this.nutrientData = {
 			name: "",
 			calories: 0,
-			totalFats: 0,
-			saturatedFats: 0,
-			unsaturatedFats: 0,
-			omega3Fats: 0,
+			fats: 0,
 			carbs: 0,
 			sugar: 0,
 			fiber: 0,
@@ -66,16 +63,35 @@ export default class NutrientModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 
+		// Apply initial modal styling
+		this.modalEl.addClass("nutrient-modal");
+
 		contentEl.createEl("h2", { text: "🍎 Add nutrient" });
 
-		new Setting(contentEl)
+		// Create main container for side-by-side layout
+		this.mainContainer = contentEl.createDiv({ cls: "nutrient-modal-main" });
+		this.formContainer = this.mainContainer.createDiv({ cls: "nutrient-form-container" });
+
+		// Always create the search results container to maintain layout
+		this.searchResultsEl = this.mainContainer.createDiv({ cls: "search-results-container" });
+		this.searchResultsEl.hide();
+
+		new Setting(this.formContainer)
 			.setName("📝 Name")
-			.setDesc("Enter the nutrient name")
-			.addText(text =>
+			.setDesc("Enter the nutrient name (press Enter to search)")
+			.addText(text => {
+				this.nameInput = text.inputEl;
 				text.setValue(this.nutrientData.name).onChange(value => {
 					this.nutrientData.name = value;
-				})
-			)
+				});
+				// Add Enter key listener
+				text.inputEl.addEventListener("keydown", e => {
+					if (e.key === "Enter") {
+						e.preventDefault();
+						void this.searchOpenFoodFacts();
+					}
+				});
+			})
 			.addButton(button =>
 				button
 					.setButtonText("🔍 Search")
@@ -85,70 +101,49 @@ export default class NutrientModal extends Modal {
 					})
 			);
 
-		// Container for search results
-		this.searchResultsEl = contentEl.createDiv({ cls: "search-results-container" });
-
-		new Setting(contentEl).setName("🔥 Calories").addText(text =>
+		new Setting(this.formContainer).setName("🔥 Calories").addText(text =>
 			text.setValue(this.nutrientData.calories.toString()).onChange(value => {
 				this.nutrientData.calories = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🥑 Total fats (g)").addText(text =>
-			text.setValue(this.nutrientData.totalFats.toString()).onChange(value => {
-				this.nutrientData.totalFats = parseFloat(value) || 0;
+		new Setting(this.formContainer).setName("🥑 Fats (g)").addText(text =>
+			text.setValue(this.nutrientData.fats.toString()).onChange(value => {
+				this.nutrientData.fats = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🧈 Saturated fats (g)").addText(text =>
-			text.setValue(this.nutrientData.saturatedFats.toString()).onChange(value => {
-				this.nutrientData.saturatedFats = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(contentEl).setName("🌿 Unsaturated fats (g)").addText(text =>
-			text.setValue(this.nutrientData.unsaturatedFats.toString()).onChange(value => {
-				this.nutrientData.unsaturatedFats = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(contentEl).setName("🐟 Omega-3 fats (g)").addText(text =>
-			text.setValue(this.nutrientData.omega3Fats.toString()).onChange(value => {
-				this.nutrientData.omega3Fats = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(contentEl).setName("🍞 Carbs (g)").addText(text =>
+		new Setting(this.formContainer).setName("🍞 Carbs (g)").addText(text =>
 			text.setValue(this.nutrientData.carbs.toString()).onChange(value => {
 				this.nutrientData.carbs = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🍯 Sugar (g)").addText(text =>
+		new Setting(this.formContainer).setName("🍯 Sugar (g)").addText(text =>
 			text.setValue(this.nutrientData.sugar.toString()).onChange(value => {
 				this.nutrientData.sugar = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🌾 Fiber (g)").addText(text =>
+		new Setting(this.formContainer).setName("🌾 Fiber (g)").addText(text =>
 			text.setValue(this.nutrientData.fiber.toString()).onChange(value => {
 				this.nutrientData.fiber = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🥩 Protein (g)").addText(text =>
+		new Setting(this.formContainer).setName("🥩 Protein (g)").addText(text =>
 			text.setValue(this.nutrientData.protein.toString()).onChange(value => {
 				this.nutrientData.protein = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl).setName("🧂 Sodium (mg)").addText(text =>
+		new Setting(this.formContainer).setName("🧂 Sodium (mg)").addText(text =>
 			text.setValue(this.nutrientData.sodium.toString()).onChange(value => {
 				this.nutrientData.sodium = parseFloat(value) || 0;
 			})
 		);
 
-		new Setting(contentEl)
+		new Setting(this.formContainer)
 			.addButton(button =>
 				button
 					.setButtonText("Create")
@@ -189,10 +184,7 @@ export default class NutrientModal extends Modal {
 			const content = `---
 name: ${this.nutrientData.name}
 calories: ${this.nutrientData.calories}
-totalFats: ${this.nutrientData.totalFats}
-saturatedFats: ${this.nutrientData.saturatedFats}
-unsaturatedFats: ${this.nutrientData.unsaturatedFats}
-omega3Fats: ${this.nutrientData.omega3Fats}
+fats: ${this.nutrientData.fats}
 carbs: ${this.nutrientData.carbs}
 sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
@@ -247,6 +239,10 @@ sodium: ${this.nutrientData.sodium}
 	displaySearchResults() {
 		if (!this.searchResultsEl) return;
 
+		// Show the search results container and expand modal
+		this.searchResultsEl.show();
+		this.modalEl.addClass("nutrient-modal-expanded");
+
 		this.searchResultsEl.empty();
 
 		if (this.searchResults.length === 0) {
@@ -259,6 +255,9 @@ sodium: ${this.nutrientData.sodium}
 
 		this.searchResults.forEach(product => {
 			const productEl = resultsContainer.createDiv({ cls: "search-result-item" });
+
+			// Make entire item clickable
+			productEl.onclick = () => this.fillFromOpenFoodFacts(product);
 
 			const productName = productEl.createDiv({ cls: "product-name" });
 			productName.textContent = product.product_name ?? "Unknown product";
@@ -284,8 +283,12 @@ sodium: ${this.nutrientData.sodium}
 
 			nutritionInfo.textContent = `Calories: ${calories.toFixed(1)}, Carbs: ${carbs.toFixed(1)}g, Protein: ${protein.toFixed(1)}g, Fat: ${fat.toFixed(1)}g (per 100g)`;
 
-			const selectButton = productEl.createEl("button", { text: "Use this product", cls: "mod-cta" });
-			selectButton.onclick = () => this.fillFromOpenFoodFacts(product);
+			const selectButton = productEl.createEl("button", { text: "✓", cls: "search-result-use-btn" });
+			selectButton.title = "Use this product";
+			selectButton.onclick = e => {
+				e.stopPropagation();
+				this.fillFromOpenFoodFacts(product);
+			};
 		});
 	}
 
@@ -294,20 +297,46 @@ sodium: ${this.nutrientData.sodium}
 
 		this.nutrientData.name = product.product_name ?? this.nutrientData.name;
 		this.nutrientData.calories = Number(nutriments["energy-kcal_100g"] ?? 0);
-		this.nutrientData.totalFats = Number(nutriments["fat_100g"] ?? 0);
-		this.nutrientData.saturatedFats = Number(nutriments["saturated-fat_100g"] ?? 0);
+		this.nutrientData.fats = Number(nutriments["fat_100g"] ?? 0);
 		this.nutrientData.carbs = Number(nutriments["carbohydrates_100g"] ?? 0);
 		this.nutrientData.sugar = Number(nutriments["sugars_100g"] ?? 0);
 		this.nutrientData.fiber = Number(nutriments["fiber_100g"] ?? 0);
 		this.nutrientData.protein = Number(nutriments["proteins_100g"] ?? 0);
 		this.nutrientData.sodium = Number(nutriments["sodium_100g"] ?? 0) * 1000; // Convert from g to mg
 
-		// Clear search results
+		// Collapse modal back to initial state
+		this.collapseModal();
+
+		// Update form field values without recreating the entire form
+		this.updateFormValues();
+	}
+
+	private collapseModal() {
+		// Hide search results and collapse modal
 		if (this.searchResultsEl) {
-			this.searchResultsEl.empty();
+			this.searchResultsEl.hide();
+		}
+		this.modalEl.removeClass("nutrient-modal-expanded");
+	}
+
+	private updateFormValues() {
+		// Update name input
+		if (this.nameInput) {
+			this.nameInput.value = this.nutrientData.name;
 		}
 
-		// Recreate the form to update all field values
-		this.onOpen();
+		// Update all other form inputs by finding them and setting their values
+		if (this.formContainer) {
+			const inputs = this.formContainer.querySelectorAll('input[type="text"]');
+			const fields = ["calories", "fats", "carbs", "sugar", "fiber", "protein", "sodium"];
+
+			inputs.forEach((input, index) => {
+				if (index > 0 && index <= fields.length) {
+					// Skip the name input (index 0)
+					const field = fields[index - 1];
+					(input as HTMLInputElement).value = this.nutrientData[field as keyof NutrientData]?.toString() || "0";
+				}
+			});
+		}
 	}
 }

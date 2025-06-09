@@ -2,14 +2,31 @@
 
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
 
-An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information.
+An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition tallies and intelligent food suggestions.
 
 ## Features
 
+### 🍎 Food Database Management
+
 - **Add nutrients**: Create nutrient entries with detailed nutritional information through a convenient modal interface
-- **Configurable storage**: Set a custom directory for storing nutrient files
-- **Complete nutrition tracking**: Track calories, fats (total, saturated, unsaturated, omega-3), carbohydrates, sugar, fiber, protein, and sodium
+- **OpenFoodFacts integration**: Search and import nutritional data from the OpenFoodFacts database
+- **Complete nutrition tracking**: Track calories, fats, carbohydrates, sugar, fiber, protein, and sodium
 - **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis
+- **Configurable storage**: Set a custom directory for storing nutrient files
+
+### 📝 Smart Food Entry
+
+- **Intelligent autocomplete**: Type `#food` followed by a food name for intelligent suggestions from your nutrient database
+- **Flexible food format**: Support for both `#food [[food-name]] amount` and `#food food-name amount` formats
+- **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cups, tbsp, tsp
+- **Visual highlighting**: Food amounts are highlighted in the editor for easy identification
+
+### 📊 Real-time Nutrition Tracking
+
+- **Automatic daily tally**: Real-time calculation of total nutrition from all food entries in the current document
+- **Flexible display modes**: Show nutrition tally in status bar or directly in the document
+- **Comprehensive metrics**: Track calories, fats, protein, carbohydrates, fiber, sugar, and sodium
+- **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
 
 ## Installation
 
@@ -30,24 +47,39 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 
 ## Usage
 
-### Adding nutrients
+### Adding Food Items to Your Database
 
 1. Open the command palette (Ctrl/Cmd + P)
 2. Search for "Add nutrient" and select the command
 3. Fill in the nutrient information in the modal:
-   - Name (required)
-   - Calories
-   - Total fats, saturated fats, unsaturated fats, omega-3 fats (in grams)
-   - Carbohydrates, sugar, fiber (in grams)
-   - Protein (in grams)
-   - Sodium (in milligrams)
+   - **Name** (required)
+   - **🔍 Search**: Use the search button to find foods in OpenFoodFacts database
+   - **Nutritional values per 100g**:
+     - Calories
+     - Fats (in grams)
+     - Carbohydrates, sugar, fiber (in grams)
+     - Protein (in grams)
+     - Sodium (in milligrams)
 4. Click "Create" to save the nutrient file
+
+### Tracking Food Intake
+
+1. In any note, type `#food` followed by a space
+2. Start typing a food name - autocomplete suggestions will appear from your database
+3. Select a food item and add the amount with unit:
+   ```
+   #food [[apple]] 150g
+   #food [[chicken-breast]] 200g
+   #food [[oats]] 50g
+   ```
+4. The nutrition tally will automatically update as you add food entries
 
 ### Configuration
 
 Go to Settings > Food Tracker to configure:
 
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
+- **Nutrition tally display**: Choose to show the tally in the status bar or directly in the document
 
 ## Requirements
 
