@@ -9,6 +9,9 @@ import {
 } from "obsidian";
 import NutrientCache from "./NutrientCache";
 
+const SPECIAL_CHARS_REGEX = /[.*+?^${}()|[\]\\]/g;
+const LEADING_NUMBER_REGEX = /^\d+/;
+
 export default class FoodSuggest extends EditorSuggest<string> {
 	private nutrientCache: NutrientCache;
 	private foodTag: string;
@@ -18,6 +21,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	private foodTagRegex: RegExp;
 	private nutritionQueryRegex: RegExp;
 	private nutritionValidationRegex: RegExp;
+	private leadingNumberRegex: RegExp;
 
 	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
 		super(app);
@@ -25,10 +29,11 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		this.nutrientCache = nutrientCache;
 
 		// Precompile regex patterns for performance
-		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const escapedFoodTag = foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
+		this.leadingNumberRegex = LEADING_NUMBER_REGEX;
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
@@ -73,15 +78,15 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		const query = context.query.toLowerCase();
 
 		// Check if we're suggesting nutritional keywords (must start with a digit)
-		if (/^\d+[a-z]*$/.test(query)) {
+		if (this.nutritionValidationRegex.test(query)) {
 			const matchingNutrition = this.nutritionKeywords.filter(keyword =>
-				keyword.toLowerCase().startsWith(query.replace(/^\d+/, ""))
+				keyword.toLowerCase().startsWith(query.replace(this.leadingNumberRegex, ""))
 			);
 
 			if (matchingNutrition.length > 0) {
 				// Extract the number part
-				const numberMatch = query.match(/^(\d+)/);
-				const numberPart = numberMatch ? numberMatch[1] : "";
+				const numberMatch = this.leadingNumberRegex.exec(query);
+				const numberPart = numberMatch ? numberMatch[0] : "";
 
 				return matchingNutrition.map(keyword => numberPart + keyword);
 			}

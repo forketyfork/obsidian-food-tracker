@@ -1,5 +1,12 @@
 import NutrientCache from "./NutrientCache";
 
+const SPECIAL_CHARS_REGEX = /[.*+?^${}()|[\]\\]/g;
+const CALORIES_REGEX = /(\d+(?:\.\d+)?)kcal/i;
+const FATS_REGEX = /(\d+(?:\.\d+)?)fat/i;
+const PROTEIN_REGEX = /(\d+(?:\.\d+)?)prot/i;
+const CARBS_REGEX = /(\d+(?:\.\d+)?)carbs/i;
+const SUGAR_REGEX = /(\d+(?:\.\d+)?)sugar/i;
+
 interface NutrientData {
 	calories?: number;
 	fats?: number;
@@ -31,10 +38,11 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string, foodTag: string = "food"): string {
+	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false): string {
 		try {
-			const foodEntries = this.parseFoodEntries(content, foodTag);
-			const inlineEntries = this.parseInlineNutrientEntries(content, foodTag);
+			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+			const foodEntries = this.parseFoodEntries(content, tag);
+			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
 
 			if (foodEntries.length === 0 && inlineEntries.length === 0) {
 				return "";
@@ -52,19 +60,16 @@ export default class NutritionTotal {
 		}
 	}
 
-	private parseFoodEntries(content: string, foodTag: string): FoodEntry[] {
+	private parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] {
 		const entries: FoodEntry[] = [];
 		const lines = content.split("\n");
+		const entryRegex = new RegExp(
+			`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`,
+			"i"
+		);
 
 		for (const line of lines) {
-			// Match food tag [[filename]] amount
-			const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-			const match = line.match(
-				new RegExp(
-					`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`,
-					"i"
-				)
-			);
+			const match = entryRegex.exec(line);
 			if (match) {
 				const filename = match[1];
 				const amount = parseFloat(match[2]);
@@ -81,19 +86,16 @@ export default class NutritionTotal {
 		return entries;
 	}
 
-	private parseInlineNutrientEntries(content: string, foodTag: string): InlineNutrientEntry[] {
+	private parseInlineNutrientEntries(content: string, escapedFoodTag: string): InlineNutrientEntry[] {
 		const entries: InlineNutrientEntry[] = [];
 		const lines = content.split("\n");
+		const inlineRegex = new RegExp(
+			`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+			"i"
+		);
 
 		for (const line of lines) {
-			// Match food tag foodname followed by inline nutrients: 300kcal 20fat 10prot 30carbs 3sugar
-			const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-			const foodMatch = line.match(
-				new RegExp(
-					`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
-					"i"
-				)
-			);
+			const foodMatch = inlineRegex.exec(line);
 			if (foodMatch) {
 				const nutrientString = foodMatch[2];
 				const nutrientData = this.parseNutrientString(nutrientString);
@@ -110,27 +112,27 @@ export default class NutritionTotal {
 		const nutrientData: InlineNutrientEntry = {};
 
 		// Match patterns like: 300kcal, 20fat, 10prot, 30carbs, 3sugar
-		const caloriesMatch = nutrientString.match(/(\d+(?:\.\d+)?)kcal/i);
+		const caloriesMatch = CALORIES_REGEX.exec(nutrientString);
 		if (caloriesMatch) {
 			nutrientData.calories = parseFloat(caloriesMatch[1]);
 		}
 
-		const fatsMatch = nutrientString.match(/(\d+(?:\.\d+)?)fat/i);
+		const fatsMatch = FATS_REGEX.exec(nutrientString);
 		if (fatsMatch) {
 			nutrientData.fats = parseFloat(fatsMatch[1]);
 		}
 
-		const proteinMatch = nutrientString.match(/(\d+(?:\.\d+)?)prot/i);
+		const proteinMatch = PROTEIN_REGEX.exec(nutrientString);
 		if (proteinMatch) {
 			nutrientData.protein = parseFloat(proteinMatch[1]);
 		}
 
-		const carbsMatch = nutrientString.match(/(\d+(?:\.\d+)?)carbs/i);
+		const carbsMatch = CARBS_REGEX.exec(nutrientString);
 		if (carbsMatch) {
 			nutrientData.carbs = parseFloat(carbsMatch[1]);
 		}
 
-		const sugarMatch = nutrientString.match(/(\d+(?:\.\d+)?)sugar/i);
+		const sugarMatch = SUGAR_REGEX.exec(nutrientString);
 		if (sugarMatch) {
 			nutrientData.sugar = parseFloat(sugarMatch[1]);
 		}
