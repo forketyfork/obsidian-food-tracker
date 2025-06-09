@@ -4,6 +4,7 @@ export interface SuggestionTrigger {
 	query: string;
 	startOffset: number;
 	endOffset: number;
+	context?: "measure" | "nutrition";
 }
 
 export interface NutrientProvider {
@@ -14,17 +15,20 @@ export interface NutrientProvider {
 export class FoodSuggestionCore {
 	private foodTag: string;
 	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar"];
+	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp"];
 
 	// Precompiled regex patterns for performance
 	private foodTagRegex: RegExp;
 	private nutritionQueryRegex: RegExp;
 	private nutritionValidationRegex: RegExp;
+	private foodWithMeasureRegex: RegExp;
 
 	constructor(foodTag: string) {
 		this.foodTag = foodTag;
 		this.updateFoodTagRegex();
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
+		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(\d+[a-z]*)$/;
 	}
 
 	updateFoodTag(foodTag: string): void {
@@ -57,9 +61,24 @@ export class FoodSuggestionCore {
 
 		const query = foodMatch[1] || "";
 
-		// Check if we're in the context of typing nutritional values
+		// Check if we're typing after a food wikilink (measure context)
+		const foodWithMeasureMatch = this.foodWithMeasureRegex.exec(query);
+		if (foodWithMeasureMatch) {
+			const measureQuery = foodWithMeasureMatch[1];
+			// Only trigger measure suggestions if we have a number followed by letters
+			if (this.nutritionValidationRegex.test(measureQuery)) {
+				return {
+					query: measureQuery,
+					startOffset: cursorPosition - measureQuery.length,
+					endOffset: cursorPosition,
+					context: "measure",
+				};
+			}
+		}
+
+		// Check if we're in the context of typing nutritional values (not after wikilink)
 		const nutritionMatch = this.nutritionQueryRegex.exec(query);
-		if (nutritionMatch) {
+		if (nutritionMatch && !this.foodWithMeasureRegex.test(query)) {
 			const nutritionQuery = nutritionMatch[1];
 			// Only trigger nutrition suggestions if we have a number followed by letters
 			if (this.nutritionValidationRegex.test(nutritionQuery)) {
@@ -67,6 +86,7 @@ export class FoodSuggestionCore {
 					query: nutritionQuery,
 					startOffset: cursorPosition - nutritionQuery.length,
 					endOffset: cursorPosition,
+					context: "nutrition",
 				};
 			}
 		}
@@ -80,26 +100,28 @@ export class FoodSuggestionCore {
 	}
 
 	/**
-	 * Generates suggestions based on a query
+	 * Generates suggestions based on a query and context
 	 * @param query The search query
 	 * @param nutrientProvider Provider for nutrient data
+	 * @param context The context type (measure, nutrition, or undefined for food names)
 	 * @returns Array of suggestion strings
 	 */
-	getSuggestions(query: string, nutrientProvider: NutrientProvider): string[] {
+	getSuggestions(query: string, nutrientProvider: NutrientProvider, context?: "measure" | "nutrition"): string[] {
 		const lowerQuery = query.toLowerCase();
 
-		// Check if we're suggesting nutritional keywords (must start with a digit)
+		// Check if we're suggesting measures or nutritional keywords (must start with a digit)
 		if (this.nutritionValidationRegex.test(lowerQuery)) {
-			const matchingNutrition = this.nutritionKeywords.filter(keyword =>
+			const keywords = context === "measure" ? this.measureKeywords : this.nutritionKeywords;
+			const matchingKeywords = keywords.filter(keyword =>
 				keyword.toLowerCase().startsWith(lowerQuery.replace(LEADING_NUMBER_REGEX, ""))
 			);
 
-			if (matchingNutrition.length > 0) {
+			if (matchingKeywords.length > 0) {
 				// Extract the number part
 				const numberMatch = LEADING_NUMBER_REGEX.exec(lowerQuery);
 				const numberPart = numberMatch ? numberMatch[0] : "";
 
-				return matchingNutrition.map(keyword => numberPart + keyword);
+				return matchingKeywords.map(keyword => numberPart + keyword);
 			}
 		}
 
@@ -113,12 +135,16 @@ export class FoodSuggestionCore {
 	}
 
 	/**
-	 * Determines if a suggestion is a nutrition keyword
+	 * Determines if a suggestion is a nutrition keyword or measure keyword
 	 * @param suggestion The suggestion string
-	 * @returns true if it's a nutrition keyword, false otherwise
+	 * @returns true if it's a nutrition keyword or measure keyword, false otherwise
 	 */
 	isNutritionKeyword(suggestion: string): boolean {
-		return this.nutritionKeywords.some(keyword => suggestion.includes(keyword));
+		// Check if the suggestion ends with a nutrition or measure keyword
+		return (
+			this.nutritionKeywords.some(keyword => suggestion.endsWith(keyword)) ||
+			this.measureKeywords.some(keyword => suggestion.endsWith(keyword))
+		);
 	}
 
 	/**

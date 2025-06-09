@@ -25,6 +25,7 @@ class NutrientCacheAdapter implements NutrientProvider {
 export default class FoodSuggest extends EditorSuggest<string> {
 	private nutrientCacheAdapter: NutrientCacheAdapter;
 	private suggestionCore: FoodSuggestionCore;
+	private currentContext?: "measure" | "nutrition";
 
 	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
 		super(app);
@@ -42,6 +43,9 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 		if (!trigger) return null;
 
+		// Store the context for use in getSuggestions
+		this.currentContext = trigger.context;
+
 		return {
 			start: { line: cursor.line, ch: trigger.startOffset },
 			end: cursor,
@@ -50,7 +54,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] {
-		return this.suggestionCore.getSuggestions(context.query, this.nutrientCacheAdapter);
+		return this.suggestionCore.getSuggestions(context.query, this.nutrientCacheAdapter, this.currentContext);
 	}
 
 	renderSuggestion(nutrient: string, el: HTMLElement): void {

@@ -87,6 +87,7 @@ describe("FoodSuggestionCore", () => {
 				query: "100k",
 				startOffset: 12,
 				endOffset: 16,
+				context: "nutrition",
 			});
 		});
 
@@ -96,6 +97,7 @@ describe("FoodSuggestionCore", () => {
 				query: "100",
 				startOffset: 12,
 				endOffset: 15,
+				context: "nutrition",
 			});
 		});
 
@@ -124,6 +126,26 @@ describe("FoodSuggestionCore", () => {
 				query: "multiple word query",
 				startOffset: 6,
 				endOffset: 25,
+			});
+		});
+
+		test("should trigger measure suggestions for food wikilink with number", () => {
+			const result = core.analyzeTrigger("#food [[Dried_cranberries]] 123", 32);
+			expect(result).toEqual({
+				query: "123",
+				startOffset: 29,
+				endOffset: 32,
+				context: "measure",
+			});
+		});
+
+		test("should trigger measure suggestions for food wikilink with number and letter", () => {
+			const result = core.analyzeTrigger("#food [[Dried_cranberries]] 123g", 33);
+			expect(result).toEqual({
+				query: "123g",
+				startOffset: 29,
+				endOffset: 33,
+				context: "measure",
 			});
 		});
 	});
@@ -168,6 +190,21 @@ describe("FoodSuggestionCore", () => {
 			const suggestions = core.getSuggestions("ch", provider);
 			expect(suggestions).toEqual(["chicken breast"]);
 		});
+
+		test("should return measure suggestions for number queries in measure context", () => {
+			const suggestions = core.getSuggestions("100", provider, "measure");
+			expect(suggestions).toEqual(["100g", "100ml", "100kg", "100l", "100oz", "100lb", "100cup", "100tbsp", "100tsp"]);
+		});
+
+		test("should return measure suggestions for partial measure queries", () => {
+			const suggestions = core.getSuggestions("100g", provider, "measure");
+			expect(suggestions).toEqual(["100g"]);
+		});
+
+		test("should return nutrition suggestions for number queries in nutrition context", () => {
+			const suggestions = core.getSuggestions("100", provider, "nutrition");
+			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar"]);
+		});
 	});
 
 	describe("isNutritionKeyword", () => {
@@ -177,6 +214,14 @@ describe("FoodSuggestionCore", () => {
 			expect(core.isNutritionKeyword("25prot")).toBe(true);
 			expect(core.isNutritionKeyword("30carbs")).toBe(true);
 			expect(core.isNutritionKeyword("15sugar")).toBe(true);
+		});
+
+		test("should identify measure keywords", () => {
+			expect(core.isNutritionKeyword("100g")).toBe(true);
+			expect(core.isNutritionKeyword("50ml")).toBe(true);
+			expect(core.isNutritionKeyword("25kg")).toBe(true);
+			expect(core.isNutritionKeyword("30l")).toBe(true);
+			expect(core.isNutritionKeyword("15oz")).toBe(true);
 		});
 
 		test("should not identify regular food names as nutrition keywords", () => {
@@ -225,7 +270,7 @@ describe("FoodSuggestionCore", () => {
 			expect(trigger?.query).toBe("100");
 
 			// Get nutrition suggestions
-			suggestions = core.getSuggestions("100", provider);
+			suggestions = core.getSuggestions("100", provider, trigger?.context);
 			expect(suggestions).toContain("100kcal");
 
 			// Generate replacement for nutrition
@@ -237,8 +282,24 @@ describe("FoodSuggestionCore", () => {
 			const trigger = core.analyzeTrigger("#food apple 100k", 16);
 			expect(trigger?.query).toBe("100k");
 
-			const suggestions = core.getSuggestions("100k", provider);
+			const suggestions = core.getSuggestions("100k", provider, trigger?.context);
 			expect(suggestions).toEqual(["100kcal"]);
+		});
+
+		test("should handle measure suggestions for food wikilink workflow", () => {
+			// User types "#food [[Dried_cranberries]] 123"
+			const trigger = core.analyzeTrigger("#food [[Dried_cranberries]] 123", 32);
+			expect(trigger?.query).toBe("123");
+			expect(trigger?.context).toBe("measure");
+
+			// Get measure suggestions for "123"
+			const suggestions = core.getSuggestions("123", provider, trigger?.context);
+			expect(suggestions).toContain("123g");
+			expect(suggestions).toContain("123ml");
+
+			// Generate replacement for measure
+			const replacement = core.getNutritionKeywordReplacement("123g");
+			expect(replacement).toBe("123g ");
 		});
 	});
 });
