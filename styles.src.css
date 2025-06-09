@@ -114,6 +114,13 @@
 	padding: 0 4px;
 }
 
+.food-nutrition-value {
+	background-color: var(--color-orange);
+	color: var(--background-primary);
+	border-radius: 4px;
+	padding: 0 4px;
+}
+
 /* Search button loading state */
 .setting-item-control button:disabled {
 	opacity: 0.6;

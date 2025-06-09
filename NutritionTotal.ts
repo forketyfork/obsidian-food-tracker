@@ -16,6 +16,14 @@ interface FoodEntry {
 	unit: string;
 }
 
+interface InlineNutrientEntry {
+	calories?: number;
+	fats?: number;
+	protein?: number;
+	carbs?: number;
+	sugar?: number;
+}
+
 export default class NutritionTotal {
 	private nutrientCache: NutrientCache;
 
@@ -26,13 +34,18 @@ export default class NutritionTotal {
 	calculateTotalNutrients(content: string): string {
 		try {
 			const foodEntries = this.parseFoodEntries(content);
+			const inlineEntries = this.parseInlineNutrientEntries(content);
 
-			if (foodEntries.length === 0) {
+			if (foodEntries.length === 0 && inlineEntries.length === 0) {
 				return "";
 			}
 
 			const totalNutrients = this.calculateTotals(foodEntries);
-			return this.formatTotal(totalNutrients);
+			const inlineTotals = this.calculateInlineTotals(inlineEntries);
+
+			// Combine both totals
+			const combined = this.combineNutrients(totalNutrients, inlineTotals);
+			return this.formatTotal(combined);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return "";
@@ -60,6 +73,93 @@ export default class NutritionTotal {
 		}
 
 		return entries;
+	}
+
+	private parseInlineNutrientEntries(content: string): InlineNutrientEntry[] {
+		const entries: InlineNutrientEntry[] = [];
+		const lines = content.split("\n");
+
+		for (const line of lines) {
+			// Match #food foodname followed by inline nutrients: 300kcal 20fat 10prot 30carbs 3sugar
+			const foodMatch = line.match(
+				/#food\s+(?!\[\[)([^\s]+(?:\s+[^\s]+)*?)\s+(\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\s+\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar))*)/i
+			);
+			if (foodMatch) {
+				const nutrientString = foodMatch[2];
+				const nutrientData = this.parseNutrientString(nutrientString);
+				if (Object.keys(nutrientData).length > 0) {
+					entries.push(nutrientData);
+				}
+			}
+		}
+
+		return entries;
+	}
+
+	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
+		const nutrientData: InlineNutrientEntry = {};
+
+		// Match patterns like: 300kcal, 20fat, 10prot, 30carbs, 3sugar
+		const caloriesMatch = nutrientString.match(/(\d+(?:\.\d+)?)kcal/i);
+		if (caloriesMatch) {
+			nutrientData.calories = parseFloat(caloriesMatch[1]);
+		}
+
+		const fatsMatch = nutrientString.match(/(\d+(?:\.\d+)?)fat/i);
+		if (fatsMatch) {
+			nutrientData.fats = parseFloat(fatsMatch[1]);
+		}
+
+		const proteinMatch = nutrientString.match(/(\d+(?:\.\d+)?)prot/i);
+		if (proteinMatch) {
+			nutrientData.protein = parseFloat(proteinMatch[1]);
+		}
+
+		const carbsMatch = nutrientString.match(/(\d+(?:\.\d+)?)carbs/i);
+		if (carbsMatch) {
+			nutrientData.carbs = parseFloat(carbsMatch[1]);
+		}
+
+		const sugarMatch = nutrientString.match(/(\d+(?:\.\d+)?)sugar/i);
+		if (sugarMatch) {
+			nutrientData.sugar = parseFloat(sugarMatch[1]);
+		}
+
+		return nutrientData;
+	}
+
+	private calculateInlineTotals(entries: InlineNutrientEntry[]): NutrientData {
+		const totals: NutrientData = {
+			calories: 0,
+			fats: 0,
+			protein: 0,
+			carbs: 0,
+			fiber: 0,
+			sugar: 0,
+			sodium: 0,
+		};
+
+		for (const entry of entries) {
+			totals.calories = (totals.calories ?? 0) + (entry.calories ?? 0);
+			totals.fats = (totals.fats ?? 0) + (entry.fats ?? 0);
+			totals.protein = (totals.protein ?? 0) + (entry.protein ?? 0);
+			totals.carbs = (totals.carbs ?? 0) + (entry.carbs ?? 0);
+			totals.sugar = (totals.sugar ?? 0) + (entry.sugar ?? 0);
+		}
+
+		return totals;
+	}
+
+	private combineNutrients(nutrients1: NutrientData, nutrients2: NutrientData): NutrientData {
+		return {
+			calories: (nutrients1.calories ?? 0) + (nutrients2.calories ?? 0),
+			fats: (nutrients1.fats ?? 0) + (nutrients2.fats ?? 0),
+			protein: (nutrients1.protein ?? 0) + (nutrients2.protein ?? 0),
+			carbs: (nutrients1.carbs ?? 0) + (nutrients2.carbs ?? 0),
+			fiber: (nutrients1.fiber ?? 0) + (nutrients2.fiber ?? 0),
+			sugar: (nutrients1.sugar ?? 0) + (nutrients2.sugar ?? 0),
+			sodium: (nutrients1.sodium ?? 0) + (nutrients2.sodium ?? 0),
+		};
 	}
 
 	private calculateTotals(entries: FoodEntry[]): NutrientData {

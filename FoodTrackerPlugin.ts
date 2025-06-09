@@ -214,6 +214,10 @@ export default class FoodTrackerPlugin extends Plugin {
 			class: "food-value",
 		});
 
+		const nutritionValueDecoration = Decoration.mark({
+			class: "food-nutrition-value",
+		});
+
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
 				decorations: DecorationSet;
@@ -237,15 +241,34 @@ export default class FoodTrackerPlugin extends Plugin {
 						let lineStart = from;
 
 						for (const line of lines) {
-							// Match food pattern: #food [[food-name]] amount OR #food food-name amount
-							const match = line.match(
-								/#food\s+(?:\[\[[^\]]+\]\]|[^\s]+)\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))/i
+							// Match food pattern with inline nutrition: #food foodname 300kcal 20fat 10prot 30carbs 3sugar
+							const inlineNutritionMatch = line.match(
+								/#food\s+(?!\[\[)([^\s]+(?:\s+[^\s]+)*?)\s+(\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\s+\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar))*)/i
 							);
-							if (match) {
-								const amountMatch = match[1];
-								const amountStart = lineStart + line.indexOf(amountMatch);
-								const amountEnd = amountStart + amountMatch.length;
-								builder.add(amountStart, amountEnd, foodAmountDecoration);
+							if (inlineNutritionMatch) {
+								const nutritionString = inlineNutritionMatch[2];
+								const nutritionStringStart = lineStart + line.indexOf(nutritionString);
+
+								// Find and highlight each nutritional value within the nutrition string
+								const nutritionValueRegex = /\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)/gi;
+								let match;
+
+								while ((match = nutritionValueRegex.exec(nutritionString)) !== null) {
+									const valueStart = nutritionStringStart + match.index;
+									const valueEnd = valueStart + match[0].length;
+									builder.add(valueStart, valueEnd, nutritionValueDecoration);
+								}
+							} else {
+								// Match traditional food pattern: #food [[food-name]] amount OR #food food-name amount
+								const traditionalMatch = line.match(
+									/#food\s+(?:\[\[[^\]]+\]\]|[^\s]+)\s+(\d+(?:\.\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))/i
+								);
+								if (traditionalMatch) {
+									const amountMatch = traditionalMatch[1];
+									const amountStart = lineStart + line.indexOf(amountMatch);
+									const amountEnd = amountStart + amountMatch.length;
+									builder.add(amountStart, amountEnd, foodAmountDecoration);
+								}
 							}
 							lineStart += line.length + 1; // +1 for newline
 						}

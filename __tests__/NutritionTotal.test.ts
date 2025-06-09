@@ -365,5 +365,91 @@ End of day`;
 				"📊 Daily total: 🔥 251 kcal, 🥑 Fats: 15.2g, 🥩 Protein: 20.8g, 🍞 Carbs: 30.1g, 🌾 Fiber: 5.6g, 🍯 Sugar: 8.3g, 🧂 Sodium: 123.9mg"
 			);
 		});
+
+		test("calculates total nutrients for inline nutrition entries", () => {
+			const content = "#food Cordon Bleu with salad 300kcal 20fat 10prot 30carbs 3sugar";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 300 kcal, 🥑 Fats: 20.0g, 🥩 Protein: 10.0g, 🍞 Carbs: 30.0g, 🍯 Sugar: 3.0g"
+			);
+		});
+
+		test("calculates total nutrients for multiple inline nutrition entries", () => {
+			const content = `#food Breakfast sandwich 250kcal 15fat 12prot 20carbs
+#food Lunch salad 180kcal 8fat 5prot 25carbs 2sugar`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 430 kcal, 🥑 Fats: 23.0g, 🥩 Protein: 17.0g, 🍞 Carbs: 45.0g, 🍯 Sugar: 2.0g"
+			);
+		});
+
+		test("calculates total nutrients for mixed traditional and inline entries", () => {
+			mockGetNutritionData.mockReturnValue({
+				calories: 100,
+				fats: 5,
+				protein: 8,
+				carbs: 12,
+			});
+
+			const content = `#food [[apple]] 150g
+#food Protein bar 200kcal 8fat 15prot 20carbs`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			// Traditional: 100*1.5 = 150 calories, 5*1.5 = 7.5 fats, 8*1.5 = 12 protein, 12*1.5 = 18 carbs
+			// Inline: 200 calories, 8 fats, 15 protein, 20 carbs
+			// Total: 350 calories, 15.5 fats, 27 protein, 38 carbs
+			expect(result).toBe("📊 Daily total: 🔥 350 kcal, 🥑 Fats: 15.5g, 🥩 Protein: 27.0g, 🍞 Carbs: 38.0g");
+		});
+
+		test("handles partial inline nutrition data", () => {
+			const content = "#food Snack 120kcal 5fat";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe("📊 Daily total: 🔥 120 kcal, 🥑 Fats: 5.0g");
+		});
+
+		test("handles decimal values in inline nutrition", () => {
+			const content = "#food Light meal 150.5kcal 7.2fat 8.8prot 15.3carbs";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe("📊 Daily total: 🔥 151 kcal, 🥑 Fats: 7.2g, 🥩 Protein: 8.8g, 🍞 Carbs: 15.3g");
+		});
+
+		test("ignores inline nutrition if food name starts with [[", () => {
+			const content = "#food [[apple]] 300kcal 20fat 10prot";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			// Should not match inline pattern since it starts with [[
+			expect(result).toBe("");
+		});
+
+		test("handles complex food names in inline nutrition", () => {
+			const content = "#food Chicken Caesar Salad with Dressing 450kcal 35fat 25prot 15carbs 2sugar";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 450 kcal, 🥑 Fats: 35.0g, 🥩 Protein: 25.0g, 🍞 Carbs: 15.0g, 🍯 Sugar: 2.0g"
+			);
+		});
+
+		test("is case insensitive for inline nutrition keywords", () => {
+			const content = "#food Test meal 200KCAL 10FAT 15PROT 20CARBS 5SUGAR";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 200 kcal, 🥑 Fats: 10.0g, 🥩 Protein: 15.0g, 🍞 Carbs: 20.0g, 🍯 Sugar: 5.0g"
+			);
+		});
+
+		test("handles mixed order of inline nutrition values", () => {
+			const content = "#food Mixed order 15prot 200kcal 5sugar 10fat 25carbs";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBe(
+				"📊 Daily total: 🔥 200 kcal, 🥑 Fats: 10.0g, 🥩 Protein: 15.0g, 🍞 Carbs: 25.0g, 🍯 Sugar: 5.0g"
+			);
+		});
 	});
 });
