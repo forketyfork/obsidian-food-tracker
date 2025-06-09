@@ -1,13 +1,11 @@
 import { Plugin, MarkdownView } from "obsidian";
-import { Extension } from "@codemirror/state";
-import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
-import { RangeSetBuilder } from "@codemirror/state";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
 import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
-import { SPECIAL_CHARS_REGEX, createNutritionValueRegex } from "./constants";
+import FoodHighlightExtension from "./FoodHighlightExtension";
+import { SPECIAL_CHARS_REGEX } from "./constants";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
@@ -30,6 +28,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	private escapedFoodTag: string;
 	private inlineNutritionRegex: RegExp;
 	private traditionalRegex: RegExp;
+	private foodHighlightExtension: FoodHighlightExtension;
 
 	async onload() {
 		await this.loadSettings();
@@ -121,7 +120,8 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 
 		// Register CodeMirror extension for food amount highlighting
-		this.registerEditorExtension(this.createFoodHighlightExtension());
+		this.foodHighlightExtension = new FoodHighlightExtension(this.inlineNutritionRegex, this.traditionalRegex);
+		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 
 		// Initial total update
 		void this.updateNutritionTotal();
@@ -243,88 +243,5 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.documentTotalElement.remove();
 			this.documentTotalElement = null;
 		}
-	}
-
-	createFoodHighlightExtension(): Extension {
-		const foodAmountDecoration = Decoration.mark({
-			class: "food-value",
-		});
-
-		const nutritionValueDecoration = Decoration.mark({
-			class: "food-nutrition-value",
-		});
-
-		const getInlineNutritionRegex = () => this.inlineNutritionRegex;
-		const getTraditionalRegex = () => this.traditionalRegex;
-
-		const foodHighlightPlugin = ViewPlugin.fromClass(
-			class {
-				decorations: DecorationSet;
-
-				constructor(view: EditorView) {
-					this.decorations = this.buildDecorations(view);
-				}
-
-				update(update: ViewUpdate) {
-					if (update.docChanged || update.viewportChanged) {
-						this.decorations = this.buildDecorations(update.view);
-					}
-				}
-
-				buildDecorations(view: EditorView): DecorationSet {
-					const builder = new RangeSetBuilder<Decoration>();
-
-					// Get current regex patterns from plugin instance through closure
-					const inlineNutritionRegex = getInlineNutritionRegex();
-					const traditionalRegex = getTraditionalRegex();
-
-					for (let { from, to } of view.visibleRanges) {
-						const text = view.state.doc.sliceString(from, to);
-						const lines = text.split("\n");
-						let lineStart = from;
-
-						for (const line of lines) {
-							// Match food pattern with inline nutrition: #foodtag foodname 300kcal 20fat 10prot 30carbs 3sugar
-							const inlineNutritionMatch = inlineNutritionRegex.exec(line);
-							if (inlineNutritionMatch) {
-								const nutritionString = inlineNutritionMatch[2];
-								const nutritionStringStart = lineStart + line.indexOf(nutritionString);
-
-								// Find and highlight each nutritional value within the nutrition string
-								const nutritionValueRegex = createNutritionValueRegex();
-								let match;
-
-								while ((match = nutritionValueRegex.exec(nutritionString)) !== null) {
-									const valueStart = nutritionStringStart + match.index;
-									const valueEnd = valueStart + match[0].length;
-									builder.add(valueStart, valueEnd, nutritionValueDecoration);
-								}
-								// Reset regex for next use
-								inlineNutritionRegex.lastIndex = 0;
-							} else {
-								// Match traditional food pattern: #foodtag [[food-name]] amount OR #foodtag food-name amount
-								const traditionalMatch = traditionalRegex.exec(line);
-								if (traditionalMatch) {
-									const amountMatch = traditionalMatch[1];
-									const amountStart = lineStart + line.indexOf(amountMatch);
-									const amountEnd = amountStart + amountMatch.length;
-									builder.add(amountStart, amountEnd, foodAmountDecoration);
-								}
-								// Reset regex for next use
-								traditionalRegex.lastIndex = 0;
-							}
-							lineStart += line.length + 1; // +1 for newline
-						}
-					}
-
-					return builder.finish();
-				}
-			},
-			{
-				decorations: v => v.decorations,
-			}
-		);
-
-		return foodHighlightPlugin;
 	}
 }
