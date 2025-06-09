@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
+import NutritionTally from "./NutritionTally";
 export default class FoodTrackerSettingTab extends PluginSettingTab {
 	plugin: FoodTrackerPlugin;
 
@@ -35,5 +36,23 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+               new Setting(containerEl)
+                       .setName("Food tag")
+                       .setDesc("Tag used to mark food entries")
+                       .addText(text =>
+                               text
+                                       .setValue(this.plugin.settings.foodTag)
+                                       .onChange(async value => {
+                                               const tag = value.startsWith("#") ? value : `#${value}`;
+                                               this.plugin.settings.foodTag = tag;
+                                               this.plugin.foodSuggest.updateTagRegex(tag);
+                                               this.plugin.nutritionTally = new NutritionTally(
+                                                       this.plugin.nutrientCache,
+                                                       tag,
+                                               );
+                                               await this.plugin.saveSettings();
+                                       })
+                       );
 	}
 }

@@ -7,11 +7,13 @@ import NutritionTally from "./NutritionTally";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	tallyDisplayMode: "status-bar" | "document";
+	foodTag: string;
 }
 
 const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
 	tallyDisplayMode: "status-bar",
+	foodTag: "#food",
 };
 
 export default class FoodTrackerPlugin extends Plugin {
@@ -33,7 +35,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEditorSuggest(this.foodSuggest);
 
 		// Initialize nutrition tally
-		this.nutritionTally = new NutritionTally(this.nutrientCache);
+		this.nutritionTally = new NutritionTally(this.nutrientCache, this.settings.foodTag);
 		this.statusBarItem = this.addStatusBarItem();
 		this.statusBarItem.setText("");
 
@@ -122,20 +124,17 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FoodTrackerPluginSettings>);
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
-		if (this.nutrientCache) {
-			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
-		}
+       async saveSettings() {
+               await this.saveData(this.settings);
+               if (this.nutrientCache) {
+                       this.nutrientCache.updateNutrientDirectory(
+                               this.settings.nutrientDirectory,
+                       );
+               }
 
-		// Recreate nutrition tally with new directory
-		if (this.nutritionTally) {
-			this.nutritionTally = new NutritionTally(this.nutrientCache);
-		}
-
-		// Update tally display when settings change
-		void this.updateNutritionTally();
-	}
+               // Update tally display when settings change
+               void this.updateNutritionTally();
+       }
 
 	getNutrientNames(): string[] {
 		return this.nutrientCache.getNutrientNames();

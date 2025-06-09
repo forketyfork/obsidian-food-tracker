@@ -17,11 +17,23 @@ interface FoodEntry {
 }
 
 export default class NutritionTally {
-	private nutrientCache: NutrientCache;
+       private nutrientCache: NutrientCache;
+       private foodTag: string;
+       private foodEntryRegex: RegExp;
 
-	constructor(nutrientCache: NutrientCache) {
-		this.nutrientCache = nutrientCache;
-	}
+       constructor(nutrientCache: NutrientCache, foodTag: string) {
+               this.nutrientCache = nutrientCache;
+               this.foodTag = foodTag;
+               this.foodEntryRegex = this.buildRegex(foodTag);
+       }
+
+       private buildRegex(tag: string): RegExp {
+               const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+               return new RegExp(
+                       `${escapedTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`,
+                       "i",
+               );
+       }
 
 	calculateTotalNutrients(content: string): string {
 		try {
@@ -44,8 +56,7 @@ export default class NutritionTally {
 		const lines = content.split("\n");
 
 		for (const line of lines) {
-			// Match #food [[filename]] amount
-			const match = line.match(/#food\s+\[\[([^\]]+)\]\]\s+(\d+(?:\.\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)/i);
+			const match = line.match(this.foodEntryRegex);
 			if (match) {
 				const filename = match[1];
 				const amount = parseFloat(match[2]);

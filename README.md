@@ -8,7 +8,9 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 
 - **Add nutrients**: Create nutrient entries with detailed nutritional information through a convenient modal interface
 - **Configurable storage**: Set a custom directory for storing nutrient files
-- **Complete nutrition tracking**: Track calories, fats (total, saturated, unsaturated, omega-3), carbohydrates, sugar, fiber, protein, and sodium
+- **Autocomplete**: Suggest nutrient names automatically when typing the food tag
+- **Flexible tag**: Choose the tag used for food entries (default `#food`)
+- **Nutrition tally**: View calories, macros and more in the status bar or directly in the document
 - **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis
 
 ## Installation
@@ -48,6 +50,8 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 Go to Settings > Food Tracker to configure:
 
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
+- **Food tag**: Tag that identifies food entries (default: `#food`)
+- **Nutrition tally display**: Show the daily total in the status bar or in the document
 
 ## Requirements
 

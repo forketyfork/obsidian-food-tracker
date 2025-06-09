@@ -2,23 +2,30 @@ import { Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSugg
 import FoodTrackerPlugin from "./FoodTrackerPlugin";
 
 export default class FoodSuggest extends EditorSuggest<string> {
-	plugin: FoodTrackerPlugin;
+       plugin: FoodTrackerPlugin;
+       private tagRegex: RegExp;
 
-	constructor(plugin: FoodTrackerPlugin) {
-		super(plugin.app);
-		this.plugin = plugin;
-	}
+       constructor(plugin: FoodTrackerPlugin) {
+               super(plugin.app);
+               this.plugin = plugin;
+               this.updateTagRegex(this.plugin.settings.foodTag);
+       }
+
+       updateTagRegex(tag: string): void {
+               const escapedTag = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+               this.tagRegex = new RegExp(`${escapedTag}\\s+(.*)$`);
+       }
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
 		const line = editor.getLine(cursor.line);
 		const beforeCursor = line.substring(0, cursor.ch);
 
-		// Check if we have "#food " followed by any text
-		const match = beforeCursor.match(/#food\s+(.*)$/);
+               // Check if we have the configured tag followed by any text
+               const match = beforeCursor.match(this.tagRegex);
 		if (match) {
 			const query = match[1] || "";
 			return {
-				start: { line: cursor.line, ch: cursor.ch - query.length }, // Start after "#food "
+				start: { line: cursor.line, ch: cursor.ch - query.length }, // Start after the tag
 				end: cursor,
 				query: query,
 			};

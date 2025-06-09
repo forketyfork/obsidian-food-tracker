@@ -11,7 +11,7 @@ describe("NutritionTally", () => {
 			getNutritionData: mockGetNutritionData,
 		} as unknown as NutrientCache;
 
-		nutritionTally = new NutritionTally(mockNutrientCache);
+		nutritionTally = new NutritionTally(mockNutrientCache, "#food");
 		jest.clearAllMocks();
 	});
 
@@ -25,6 +25,17 @@ describe("NutritionTally", () => {
 		test("returns empty string for empty content", () => {
 			const result = nutritionTally.calculateTotalNutrients("");
 			expect(result).toBe("");
+		});
+
+		test("supports custom tag", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 50 });
+			const customTally = new NutritionTally(
+				{ getNutritionData: mockGetNutritionData } as unknown as NutrientCache,
+				"#eat"
+			);
+			const content = "#eat [[apple]] 100g";
+			const result = customTally.calculateTotalNutrients(content);
+			expect(result).toBe("📊 Daily tally: 🔥 50 kcal");
 		});
 
 		test("calculates total nutrients for single food entry", () => {
