@@ -1,4 +1,4 @@
-import { App, TFile, TAbstractFile } from "obsidian";
+import { App, TFile, TAbstractFile, Notice } from "obsidian";
 import { NutrientProvider } from "./FoodSuggestionCore";
 
 interface NutrientData {
@@ -18,19 +18,18 @@ interface NutrientData {
 export default class NutrientCache implements NutrientProvider {
 	private app: App;
 	private nutrientDirectory: string;
-	private cache: Map<string, string> = new Map(); // file path -> nutrient name
-	private nameToFileMap: Map<string, string> = new Map(); // nutrient name -> file basename
-	private nutritionDataCache: Map<string, NutrientData> = new Map(); // file basename -> nutrition data
+	private nutrientDataCache: Map<string, { name: string; data: NutrientData }> = new Map(); // file path -> { name, data }
+	private nameToPathMap: Map<string, string> = new Map(); // nutrient name -> file path
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
 		this.nutrientDirectory = nutrientDirectory;
 	}
 
-	initialize() {
-		this.cache.clear();
-		this.nameToFileMap.clear();
-		this.nutritionDataCache.clear();
+	// eslint-disable-next-line @typescript-eslint/require-await
+	async initialize(): Promise<void> {
+		this.nutrientDataCache.clear();
+		this.nameToPathMap.clear();
 
 		try {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
@@ -45,6 +44,18 @@ export default class NutrientCache implements NutrientProvider {
 	}
 
 	/**
+	 * Removes a file's data from both cache maps
+	 * Used by delete operations and when files lose valid nutrient names
+	 */
+	private removeFileFromCache(filePath: string): void {
+		const cachedEntry = this.nutrientDataCache.get(filePath);
+		if (cachedEntry) {
+			this.nameToPathMap.delete(cachedEntry.name);
+			this.nutrientDataCache.delete(filePath);
+		}
+	}
+
+	/**
 	 * Processes a single nutrient file and updates all relevant caches
 	 * Handles cleanup of old mappings when files are modified or renamed
 	 */
@@ -53,54 +64,72 @@ export default class NutrientCache implements NutrientProvider {
 		const nutritionData = this.extractNutritionData(file);
 
 		if (nutrientName) {
-			// Remove old mapping if it exists
-			const oldNutrientName = this.cache.get(file.path);
-			if (oldNutrientName && oldNutrientName !== nutrientName) {
-				this.nameToFileMap.delete(oldNutrientName);
+			// Check for duplicate nutrient names
+			if (this.nameToPathMap.has(nutrientName) && this.nameToPathMap.get(nutrientName) !== file.path) {
+				const conflictingPath = this.nameToPathMap.get(nutrientName);
+				console.error(
+					`Duplicate nutrient name "${nutrientName}" found in ${file.path}. It conflicts with ${conflictingPath}. The latest file will be used.`
+				);
+				new Notice(
+					`Duplicate nutrient name "${nutrientName}" found in ${file.basename}. Check console for details.`,
+					5000
+				);
 			}
 
-			this.cache.set(file.path, nutrientName);
-			this.nameToFileMap.set(nutrientName, file.basename);
-			this.nutritionDataCache.set(file.basename, nutritionData);
+			// Remove old name mapping if it exists and name changed
+			const oldEntry = this.nutrientDataCache.get(file.path);
+			if (oldEntry && oldEntry.name !== nutrientName) {
+				this.nameToPathMap.delete(oldEntry.name);
+			}
+
+			// Update cache with new data
+			this.nutrientDataCache.set(file.path, { name: nutrientName, data: nutritionData });
+			this.nameToPathMap.set(nutrientName, file.path);
 		} else {
 			// If nutrient name is null/undefined, remove from cache
-			const oldNutrientName = this.cache.get(file.path);
-			if (oldNutrientName) {
-				this.nameToFileMap.delete(oldNutrientName);
-			}
-			this.cache.delete(file.path);
-			this.nutritionDataCache.delete(file.basename);
+			this.removeFileFromCache(file.path);
 		}
 	}
 
-	refresh() {
-		this.initialize();
+	async refresh(): Promise<void> {
+		await this.initialize();
 	}
 
 	isNutrientFile(file: TAbstractFile): file is TFile {
-		return file instanceof TFile && file.path.startsWith(this.nutrientDirectory + "/") && file.extension === "md";
+		return file instanceof TFile && file.extension === "md" && file.path.startsWith(this.nutrientDirectory + "/");
 	}
 
 	updateCache(file: TFile, action: "create" | "delete" | "modify") {
 		try {
 			if (action === "delete") {
-				const oldNutrientName = this.cache.get(file.path);
-				if (oldNutrientName) {
-					this.nameToFileMap.delete(oldNutrientName);
-				}
-				this.cache.delete(file.path);
-				this.nutritionDataCache.delete(file.basename);
+				this.removeFileFromCache(file.path);
 				return;
 			}
 
 			this.processNutrientFile(file);
 		} catch (error) {
 			console.error("Error updating nutrient cache:", error);
-			this.refresh();
+			void this.refresh();
 		}
 	}
 
 	handleMetadataChange(file: TFile): void {
+		if (this.isNutrientFile(file)) {
+			this.processNutrientFile(file);
+		}
+	}
+
+	/**
+	 * Handles file rename events by cleaning up the old path and processing the new one
+	 * More efficient than a full refresh for single file renames
+	 */
+	handleRename(file: TFile, oldPath: string): void {
+		// Clean up old entry if it was a nutrient file
+		if (oldPath.startsWith(this.nutrientDirectory + "/") && oldPath.endsWith(".md")) {
+			this.removeFileFromCache(oldPath);
+		}
+
+		// Process new file if it's a nutrient file
 		if (this.isNutrientFile(file)) {
 			this.processNutrientFile(file);
 		}
@@ -120,22 +149,28 @@ export default class NutrientCache implements NutrientProvider {
 
 	private extractNutritionData(file: TFile): NutrientData {
 		try {
-			const cache = this.app.metadataCache.getFileCache(file);
-			const frontmatter = cache?.frontmatter;
+			const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+			if (!frontmatter) return {};
 
-			if (!frontmatter) {
-				return {};
+			const nutrientFields: { key: keyof NutrientData; aliases: string[] }[] = [
+				{ key: "calories", aliases: ["calories"] },
+				{ key: "fats", aliases: ["fats"] },
+				{ key: "protein", aliases: ["protein"] },
+				{ key: "carbs", aliases: ["carbs", "carbohydrates"] },
+				{ key: "fiber", aliases: ["fiber"] },
+				{ key: "sugar", aliases: ["sugar"] },
+				{ key: "sodium", aliases: ["sodium"] },
+			];
+
+			const data: NutrientData = {};
+			for (const field of nutrientFields) {
+				// Find the first alias that exists in the frontmatter
+				const value = field.aliases.map(alias => frontmatter[alias] as unknown).find(v => v !== undefined);
+				if (value !== undefined) {
+					data[field.key] = this.parseNumber(value);
+				}
 			}
-
-			return {
-				calories: this.parseNumber(frontmatter.calories),
-				fats: this.parseNumber(frontmatter.fats),
-				protein: this.parseNumber(frontmatter.protein),
-				carbs: this.parseNumber(frontmatter.carbs ?? frontmatter.carbohydrates),
-				fiber: this.parseNumber(frontmatter.fiber),
-				sugar: this.parseNumber(frontmatter.sugar),
-				sodium: this.parseNumber(frontmatter.sodium),
-			};
+			return data;
 		} catch (error) {
 			console.error(`Error extracting nutrition data from ${file.path}:`, error);
 			return {};
@@ -152,18 +187,34 @@ export default class NutrientCache implements NutrientProvider {
 	}
 
 	getNutrientNames(): string[] {
-		return Array.from(this.cache.values()).sort();
+		return Array.from(this.nameToPathMap.keys()).sort();
 	}
 
 	getFileNameFromNutrientName(nutrientName: string): string | null {
-		return this.nameToFileMap.get(nutrientName) ?? null;
+		const filePath = this.nameToPathMap.get(nutrientName);
+		if (!filePath) return null;
+
+		// Extract basename from path for backward compatibility
+		const parts = filePath.split("/");
+		return parts[parts.length - 1].replace(".md", "");
 	}
 
 	getNutritionData(filename: string): NutrientData | null {
-		return this.nutritionDataCache.get(filename) ?? null;
+		// Try direct lookup by filename (basename without .md)
+		for (const [path, entry] of this.nutrientDataCache) {
+			const basename = path.split("/").pop()?.replace(".md", "");
+			if (basename === filename) {
+				return entry.data;
+			}
+		}
+		return null;
 	}
 
-	updateNutrientDirectory(newDirectory: string) {
-		this.nutrientDirectory = newDirectory;
+	async updateNutrientDirectory(newDirectory: string): Promise<void> {
+		if (this.nutrientDirectory !== newDirectory) {
+			this.nutrientDirectory = newDirectory;
+			// Re-initialize cache to reflect the new directory
+			await this.initialize();
+		}
 	}
 }

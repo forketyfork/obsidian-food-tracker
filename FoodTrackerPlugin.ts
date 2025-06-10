@@ -1,4 +1,4 @@
-import { Plugin, MarkdownView } from "obsidian";
+import { Plugin, MarkdownView, TFile } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
@@ -22,7 +22,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
-		this.nutrientCache.initialize();
+		await this.nutrientCache.initialize();
 
 		// Initialize settings service first
 		this.settingsService = new SettingsService();
@@ -79,8 +79,14 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.vault.on("rename", (file, oldPath) => {
-				if (this.nutrientCache.isNutrientFile(file) || oldPath.startsWith(this.settings.nutrientDirectory + "/")) {
-					this.nutrientCache.refresh();
+				if (
+					file instanceof TFile &&
+					(this.nutrientCache.isNutrientFile(file) || oldPath.startsWith(this.settings.nutrientDirectory + "/"))
+				) {
+					this.nutrientCache.handleRename(file, oldPath);
+				} else if (oldPath.startsWith(this.settings.nutrientDirectory + "/")) {
+					// If it's not a file but was in nutrient directory, do a full refresh
+					void this.nutrientCache.refresh();
 				}
 			})
 		);
@@ -95,7 +101,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", () => {
 				// Refresh cache when metadata cache is fully resolved (on startup)
-				this.nutrientCache.refresh();
+				void this.nutrientCache.refresh();
 			})
 		);
 
@@ -136,7 +142,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		if (this.nutrientCache) {
-			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
+			await this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
 		}
 
 		// Recreate nutrition total with new directory
@@ -151,22 +157,6 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		// Update total display when settings change
 		void this.updateNutritionTotal();
-	}
-
-	getNutrientNames(): string[] {
-		return this.nutrientCache.getNutrientNames();
-	}
-
-	getFileNameFromNutrientName(nutrientName: string): string | null {
-		return this.nutrientCache?.getFileNameFromNutrientName(nutrientName) ?? null;
-	}
-
-	getFoodTag(): string {
-		return this.settings.foodTag;
-	}
-
-	getEscapedFoodTag(): string {
-		return this.settingsService.currentEscapedFoodTag;
 	}
 
 	/**

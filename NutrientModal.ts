@@ -1,4 +1,4 @@
-import { App, Modal, Setting } from "obsidian";
+import { App, Modal, Setting, Notice } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import { INVALID_FILENAME_CHARS_REGEX } from "./constants";
 
@@ -12,6 +12,12 @@ interface NutrientData {
 	protein: number;
 	sodium: number;
 }
+
+type NutrientField = {
+	key: keyof Omit<NutrientData, "name">;
+	name: string;
+	unit: string;
+};
 
 interface OpenFoodFactsProduct {
 	id: string;
@@ -109,49 +115,30 @@ export default class NutrientModal extends Modal {
 					});
 			});
 
-		new Setting(this.formContainer).setName("🔥 Calories").addText(text =>
-			text.setValue(this.nutrientData.calories.toString()).onChange(value => {
-				this.nutrientData.calories = parseFloat(value) || 0;
-			})
-		);
+		const nutrientFields: NutrientField[] = [
+			{ key: "calories", name: "🔥 Calories", unit: "" },
+			{ key: "fats", name: "🥑 Fats", unit: "g" },
+			{ key: "carbs", name: "🍞 Carbs", unit: "g" },
+			{ key: "sugar", name: "🍯 Sugar", unit: "g" },
+			{ key: "fiber", name: "🌾 Fiber", unit: "g" },
+			{ key: "protein", name: "🥩 Protein", unit: "g" },
+			{ key: "sodium", name: "🧂 Sodium", unit: "mg" },
+		];
 
-		new Setting(this.formContainer).setName("🥑 Fats (g)").addText(text =>
-			text.setValue(this.nutrientData.fats.toString()).onChange(value => {
-				this.nutrientData.fats = parseFloat(value) || 0;
-			})
-		);
+		if (!this.formContainer) return;
 
-		new Setting(this.formContainer).setName("🍞 Carbs (g)").addText(text =>
-			text.setValue(this.nutrientData.carbs.toString()).onChange(value => {
-				this.nutrientData.carbs = parseFloat(value) || 0;
-			})
-		);
+		nutrientFields.forEach(field => {
+			const displayName = field.unit ? `${field.name} (${field.unit})` : field.name;
+			new Setting(this.formContainer!).setName(displayName).addText(text => {
+				text.inputEl.setAttribute("data-nutrient-key", field.key);
+				text.setValue(this.nutrientData[field.key].toString()).onChange(value => {
+					this.nutrientData[field.key] = parseFloat(value) || 0;
+				});
+			});
+		});
 
-		new Setting(this.formContainer).setName("🍯 Sugar (g)").addText(text =>
-			text.setValue(this.nutrientData.sugar.toString()).onChange(value => {
-				this.nutrientData.sugar = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(this.formContainer).setName("🌾 Fiber (g)").addText(text =>
-			text.setValue(this.nutrientData.fiber.toString()).onChange(value => {
-				this.nutrientData.fiber = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(this.formContainer).setName("🥩 Protein (g)").addText(text =>
-			text.setValue(this.nutrientData.protein.toString()).onChange(value => {
-				this.nutrientData.protein = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(this.formContainer).setName("🧂 Sodium (mg)").addText(text =>
-			text.setValue(this.nutrientData.sodium.toString()).onChange(value => {
-				this.nutrientData.sodium = parseFloat(value) || 0;
-			})
-		);
-
-		new Setting(this.formContainer)
+		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+		new Setting(this.formContainer!)
 			.addButton(button =>
 				button
 					.setButtonText("Create")
@@ -183,6 +170,13 @@ export default class NutrientModal extends Modal {
 			const fileName = `${this.nutrientData.name.replace(INVALID_FILENAME_CHARS_REGEX, "_")}.md`;
 			const filePath = `${directory}/${fileName}`;
 
+			// Check if file already exists
+			const fileExists = await this.app.vault.adapter.exists(filePath);
+			if (fileExists) {
+				new Notice(`File "${fileName}" already exists in ${directory}`, 5000);
+				return;
+			}
+
 			// Ensure directory exists
 			const folderExists = await this.app.vault.adapter.exists(directory);
 			if (!folderExists) {
@@ -203,8 +197,11 @@ sodium: ${this.nutrientData.sodium}
 `;
 
 			await this.app.vault.create(filePath, content);
+			new Notice(`Created nutrient file: ${fileName}`, 3000);
 		} catch (error) {
 			console.error("Error creating nutrient file:", error);
+			const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+			new Notice(`Failed to create nutrient file: ${errorMessage}`, 5000);
 		}
 	}
 
@@ -221,7 +218,7 @@ sodium: ${this.nutrientData.sodium}
 
 		try {
 			const searchTerm = encodeURIComponent(this.nutrientData.name.trim());
-			const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1?page_size=5`;
+			const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5`;
 
 			const response = await fetch(url);
 
@@ -246,8 +243,7 @@ sodium: ${this.nutrientData.sodium}
 			console.error("Error searching OpenFoodFacts:", error);
 			if (this.searchResultsEl) {
 				this.searchResultsEl.innerHTML = `<div class="search-error">Search failed. Please check your internet connection and try again.</div>`;
-				this.searchResultsEl.show();
-				this.modalEl.addClass("nutrient-modal-expanded");
+				this.showSearchResults(true);
 			}
 		} finally {
 			this.setSearchingState(false);
@@ -258,8 +254,7 @@ sodium: ${this.nutrientData.sodium}
 		if (!this.searchResultsEl) return;
 
 		// Show the search results container and expand modal
-		this.searchResultsEl.show();
-		this.modalEl.addClass("nutrient-modal-expanded");
+		this.showSearchResults(true);
 
 		this.searchResultsEl.empty();
 
@@ -320,36 +315,38 @@ sodium: ${this.nutrientData.sodium}
 		this.nutrientData.sodium = Number(nutriments["sodium_100g"] ?? 0) * 1000; // Convert from g to mg
 
 		// Collapse modal back to initial state
-		this.collapseModal();
+		this.showSearchResults(false);
 
 		// Update form field values without recreating the entire form
 		this.updateFormValues();
 	}
 
-	private collapseModal() {
-		// Hide search results and collapse modal
+	private showSearchResults(show: boolean) {
 		if (this.searchResultsEl) {
-			this.searchResultsEl.hide();
+			if (show) {
+				this.searchResultsEl.show();
+				this.modalEl.addClass("nutrient-modal-expanded");
+			} else {
+				this.searchResultsEl.hide();
+				this.modalEl.removeClass("nutrient-modal-expanded");
+			}
 		}
-		this.modalEl.removeClass("nutrient-modal-expanded");
 	}
 
 	private updateFormValues() {
-		// Update name input
 		if (this.nameInput) {
 			this.nameInput.value = this.nutrientData.name;
 		}
 
-		// Update all other form inputs by finding them and setting their values
 		if (this.formContainer) {
-			const inputs = this.formContainer.querySelectorAll('input[type="text"]');
-			const fields = ["calories", "fats", "carbs", "sugar", "fiber", "protein", "sodium"];
+			// Find inputs that have our custom data attribute
+			const nutrientInputs = this.formContainer.querySelectorAll<HTMLInputElement>("[data-nutrient-key]");
 
-			inputs.forEach((input, index) => {
-				if (index > 0 && index <= fields.length) {
-					// Skip the name input (index 0)
-					const field = fields[index - 1];
-					(input as HTMLInputElement).value = this.nutrientData[field as keyof NutrientData]?.toString() || "0";
+			nutrientInputs.forEach(input => {
+				const key = input.dataset.nutrientKey as keyof NutrientData;
+				if (key && key in this.nutrientData) {
+					const value = this.nutrientData[key];
+					input.value = typeof value === "number" ? value.toString() : String(value);
 				}
 			});
 		}

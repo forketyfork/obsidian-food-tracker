@@ -1,5 +1,5 @@
 import NutrientCache from "./NutrientCache";
-import { SPECIAL_CHARS_REGEX, CALORIES_REGEX, FATS_REGEX, PROTEIN_REGEX, CARBS_REGEX, SUGAR_REGEX } from "./constants";
+import { SPECIAL_CHARS_REGEX } from "./constants";
 
 interface NutrientData {
 	calories?: number;
@@ -31,6 +31,15 @@ interface InlineNutrientEntry {
  */
 export default class NutritionTotal {
 	private nutrientCache: NutrientCache;
+
+	// Define mapping from nutrient units to property names
+	private readonly nutrientKeyMap: Record<string, keyof InlineNutrientEntry> = {
+		kcal: "calories",
+		fat: "fats",
+		prot: "protein",
+		carbs: "carbs",
+		sugar: "sugar",
+	};
 
 	constructor(nutrientCache: NutrientCache) {
 		this.nutrientCache = nutrientCache;
@@ -88,14 +97,14 @@ export default class NutritionTotal {
 		const entries: InlineNutrientEntry[] = [];
 		const lines = content.split("\n");
 		const inlineRegex = new RegExp(
-			`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+			`#${escapedFoodTag}\\s+(?!\\[\\[)(?:[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
 			"i"
 		);
 
 		for (const line of lines) {
 			const foodMatch = inlineRegex.exec(line);
 			if (foodMatch) {
-				const nutrientString = foodMatch[2];
+				const nutrientString = foodMatch[1];
 				const nutrientData = this.parseNutrientString(nutrientString);
 				if (Object.keys(nutrientData).length > 0) {
 					entries.push(nutrientData);
@@ -108,100 +117,64 @@ export default class NutritionTotal {
 
 	/**
 	 * Parses inline nutrition strings like "300kcal 20fat 10prot 30carbs 3sugar"
-	 * Uses precompiled regex patterns for performance
+	 * Uses a single regex with matchAll for better performance
 	 */
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
+		// This single regex finds all number-unit pairs
+		const nutrientRegex = /(\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar)/gi;
 
-		// Match patterns like: 300kcal, 20fat, 10prot, 30carbs, 3sugar
-		const caloriesMatch = CALORIES_REGEX.exec(nutrientString);
-		if (caloriesMatch) {
-			nutrientData.calories = parseFloat(caloriesMatch[1]);
+		const matches = nutrientString.matchAll(nutrientRegex);
+
+		for (const match of matches) {
+			const value = parseFloat(match[1]);
+			const unit = match[2].toLowerCase();
+			const key = this.nutrientKeyMap[unit];
+			if (key) {
+				nutrientData[key] = (nutrientData[key] ?? 0) + value; // Sum if unit appears twice
+			}
 		}
-
-		const fatsMatch = FATS_REGEX.exec(nutrientString);
-		if (fatsMatch) {
-			nutrientData.fats = parseFloat(fatsMatch[1]);
-		}
-
-		const proteinMatch = PROTEIN_REGEX.exec(nutrientString);
-		if (proteinMatch) {
-			nutrientData.protein = parseFloat(proteinMatch[1]);
-		}
-
-		const carbsMatch = CARBS_REGEX.exec(nutrientString);
-		if (carbsMatch) {
-			nutrientData.carbs = parseFloat(carbsMatch[1]);
-		}
-
-		const sugarMatch = SUGAR_REGEX.exec(nutrientString);
-		if (sugarMatch) {
-			nutrientData.sugar = parseFloat(sugarMatch[1]);
-		}
-
 		return nutrientData;
 	}
 
-	private calculateInlineTotals(entries: InlineNutrientEntry[]): NutrientData {
-		const totals: NutrientData = {
-			calories: 0,
-			fats: 0,
-			protein: 0,
-			carbs: 0,
-			fiber: 0,
-			sugar: 0,
-			sodium: 0,
-		};
-
-		for (const entry of entries) {
-			totals.calories = (totals.calories ?? 0) + (entry.calories ?? 0);
-			totals.fats = (totals.fats ?? 0) + (entry.fats ?? 0);
-			totals.protein = (totals.protein ?? 0) + (entry.protein ?? 0);
-			totals.carbs = (totals.carbs ?? 0) + (entry.carbs ?? 0);
-			totals.sugar = (totals.sugar ?? 0) + (entry.sugar ?? 0);
+	/**
+	 * Helper method to add nutrients from source to target with optional multiplier
+	 * Eliminates duplication in nutrient calculation methods
+	 */
+	private addNutrients(target: NutrientData, source: NutrientData, multiplier: number = 1): void {
+		// Get all keys from the source object
+		const keys = Object.keys(source) as Array<keyof NutrientData>;
+		for (const key of keys) {
+			// Ensure both target and source have the property before adding
+			if (source[key] !== undefined) {
+				target[key] = (target[key] ?? 0) + source[key] * multiplier;
+			}
 		}
+	}
 
+	private calculateInlineTotals(entries: InlineNutrientEntry[]): NutrientData {
+		const totals: NutrientData = {}; // Start with an empty object
+		for (const entry of entries) {
+			this.addNutrients(totals, entry);
+		}
 		return totals;
 	}
 
 	private combineNutrients(nutrients1: NutrientData, nutrients2: NutrientData): NutrientData {
-		return {
-			calories: (nutrients1.calories ?? 0) + (nutrients2.calories ?? 0),
-			fats: (nutrients1.fats ?? 0) + (nutrients2.fats ?? 0),
-			protein: (nutrients1.protein ?? 0) + (nutrients2.protein ?? 0),
-			carbs: (nutrients1.carbs ?? 0) + (nutrients2.carbs ?? 0),
-			fiber: (nutrients1.fiber ?? 0) + (nutrients2.fiber ?? 0),
-			sugar: (nutrients1.sugar ?? 0) + (nutrients2.sugar ?? 0),
-			sodium: (nutrients1.sodium ?? 0) + (nutrients2.sodium ?? 0),
-		};
+		const combined: NutrientData = { ...nutrients1 }; // Start with a copy of the first
+		this.addNutrients(combined, nutrients2);
+		return combined;
 	}
 
 	private calculateTotals(entries: FoodEntry[]): NutrientData {
-		const totals: NutrientData = {
-			calories: 0,
-			fats: 0,
-			protein: 0,
-			carbs: 0,
-			fiber: 0,
-			sugar: 0,
-			sodium: 0,
-		};
-
+		const totals: NutrientData = {}; // Start with an empty object
 		for (const entry of entries) {
 			const nutrients = this.getNutrientDataForFile(entry.filename);
 			if (nutrients) {
 				const multiplier = this.getMultiplier(entry.amount, entry.unit);
-
-				totals.calories = (totals.calories ?? 0) + (nutrients.calories ?? 0) * multiplier;
-				totals.fats = (totals.fats ?? 0) + (nutrients.fats ?? 0) * multiplier;
-				totals.protein = (totals.protein ?? 0) + (nutrients.protein ?? 0) * multiplier;
-				totals.carbs = (totals.carbs ?? 0) + (nutrients.carbs ?? 0) * multiplier;
-				totals.fiber = (totals.fiber ?? 0) + (nutrients.fiber ?? 0) * multiplier;
-				totals.sugar = (totals.sugar ?? 0) + (nutrients.sugar ?? 0) * multiplier;
-				totals.sodium = (totals.sodium ?? 0) + (nutrients.sodium ?? 0) * multiplier;
+				this.addNutrients(totals, nutrients, multiplier);
 			}
 		}
-
 		return totals;
 	}
 
@@ -220,6 +193,7 @@ export default class NutritionTotal {
 	/**
 	 * Converts various units to a multiplier based on 100g servings
 	 * Handles weight and volume conversions with reasonable approximations
+	 * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
 	 */
 	private getMultiplier(amount: number, unit: string): number {
 		// Assume nutrient data is per 100g by default
@@ -238,46 +212,41 @@ export default class NutritionTotal {
 				return (amount * 28.35) / baseAmount;
 			case "lb":
 				return (amount * 453.6) / baseAmount;
+			case "cup":
+			case "cups":
+				return (amount * 240) / baseAmount; // 1 cup = 240ml ≈ 240g
+			case "tbsp":
+				return (amount * 15) / baseAmount; // 1 tablespoon = 15ml ≈ 15g
+			case "tsp":
+				return (amount * 5) / baseAmount; // 1 teaspoon = 5ml ≈ 5g
 			default:
 				return amount / baseAmount; // Default to grams
 		}
 	}
 
 	private formatTotal(nutrients: NutrientData): string {
+		const formatConfig: { key: keyof NutrientData; label: string; unit: string; decimals: number }[] = [
+			{ key: "calories", label: "🔥", unit: "kcal", decimals: 0 },
+			{ key: "fats", label: "🥑 Fats", unit: "g", decimals: 1 },
+			{ key: "protein", label: "🥩 Protein", unit: "g", decimals: 1 },
+			{ key: "carbs", label: "🍞 Carbs", unit: "g", decimals: 1 },
+			{ key: "fiber", label: "🌾 Fiber", unit: "g", decimals: 1 },
+			{ key: "sugar", label: "🍯 Sugar", unit: "g", decimals: 1 },
+			{ key: "sodium", label: "🧂 Sodium", unit: "mg", decimals: 1 },
+		];
+
 		const parts: string[] = [];
-
-		if ((nutrients.calories ?? 0) > 0) {
-			parts.push(`🔥 ${Math.round(nutrients.calories!)} kcal`);
+		for (const config of formatConfig) {
+			const value = nutrients[config.key];
+			if (value && value > 0) {
+				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
+				const separator = config.key === "calories" ? " " : ": ";
+				const unitSpace = config.key === "calories" ? " " : "";
+				parts.push(`${config.label}${separator}${formattedValue}${unitSpace}${config.unit}`);
+			}
 		}
 
-		if ((nutrients.fats ?? 0) > 0) {
-			parts.push(`🥑 Fats: ${nutrients.fats!.toFixed(1)}g`);
-		}
-
-		if ((nutrients.protein ?? 0) > 0) {
-			parts.push(`🥩 Protein: ${nutrients.protein!.toFixed(1)}g`);
-		}
-
-		if ((nutrients.carbs ?? 0) > 0) {
-			parts.push(`🍞 Carbs: ${nutrients.carbs!.toFixed(1)}g`);
-		}
-
-		if ((nutrients.fiber ?? 0) > 0) {
-			parts.push(`🌾 Fiber: ${nutrients.fiber!.toFixed(1)}g`);
-		}
-
-		if ((nutrients.sugar ?? 0) > 0) {
-			parts.push(`🍯 Sugar: ${nutrients.sugar!.toFixed(1)}g`);
-		}
-
-		if ((nutrients.sodium ?? 0) > 0) {
-			parts.push(`🧂 Sodium: ${nutrients.sodium!.toFixed(1)}mg`);
-		}
-
-		if (parts.length === 0) {
-			return "";
-		}
-
+		if (parts.length === 0) return "";
 		return `📊 Daily total: ${parts.join(", ")}`;
 	}
 }

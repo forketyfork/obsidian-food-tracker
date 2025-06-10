@@ -186,32 +186,32 @@ Some other text
 			expect(result).toBe("📊 Daily total: 🔥 454 kcal");
 		});
 
-		test("supports different units - cups (defaults to gram conversion)", () => {
+		test("supports different units - cups (proper volume conversion)", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
 			});
 
 			const content1 = "#food [[food]] 1cup";
 			const result1 = nutritionTotal.calculateTotalNutrients(content1);
-			expect(result1).toBe("📊 Daily total: 🔥 1 kcal"); // 1/100 of base amount
+			expect(result1).toBe("📊 Daily total: 🔥 240 kcal"); // 1 cup = 240ml ≈ 240g, so 240/100 * 100 = 240
 
 			const content2 = "#food [[food]] 2cups";
 			const result2 = nutritionTotal.calculateTotalNutrients(content2);
-			expect(result2).toBe("📊 Daily total: 🔥 2 kcal"); // 2/100 of base amount
+			expect(result2).toBe("📊 Daily total: 🔥 480 kcal"); // 2 cups = 480g, so 480/100 * 100 = 480
 		});
 
-		test("supports different units - tablespoons and teaspoons (defaults to gram conversion)", () => {
+		test("supports different units - tablespoons and teaspoons (proper volume conversion)", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
 			});
 
 			const content1 = "#food [[food]] 1tbsp";
 			const result1 = nutritionTotal.calculateTotalNutrients(content1);
-			expect(result1).toBe("📊 Daily total: 🔥 1 kcal"); // 1/100 of base amount
+			expect(result1).toBe("📊 Daily total: 🔥 15 kcal"); // 1 tbsp = 15ml ≈ 15g, so 15/100 * 100 = 15
 
 			const content2 = "#food [[food]] 1tsp";
 			const result2 = nutritionTotal.calculateTotalNutrients(content2);
-			expect(result2).toBe("📊 Daily total: 🔥 1 kcal"); // 1/100 of base amount
+			expect(result2).toBe("📊 Daily total: 🔥 5 kcal"); // 1 tsp = 5ml ≈ 5g, so 5/100 * 100 = 5
 		});
 
 		test("handles decimal amounts", () => {
