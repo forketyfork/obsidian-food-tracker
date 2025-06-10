@@ -158,22 +158,6 @@ export default class FoodTrackerPlugin extends Plugin {
 		void this.updateNutritionTotal();
 	}
 
-	getNutrientNames(): string[] {
-		return this.nutrientCache.getNutrientNames();
-	}
-
-	getFileNameFromNutrientName(nutrientName: string): string | null {
-		return this.nutrientCache?.getFileNameFromNutrientName(nutrientName) ?? null;
-	}
-
-	getFoodTag(): string {
-		return this.settings.foodTag;
-	}
-
-	getEscapedFoodTag(): string {
-		return this.escapedFoodTag;
-	}
-
 	/**
 	 * Escapes special regex characters in the food tag and precompiles regex patterns for performance
 	 * Called whenever the food tag setting changes
@@ -204,7 +188,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.getEscapedFoodTag(), true);
+			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.escapedFoodTag, true);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(totalText);
