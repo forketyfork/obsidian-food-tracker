@@ -5,6 +5,7 @@ import NutrientCache from "./NutrientCache";
 import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
 import FoodHighlightExtension from "./FoodHighlightExtension";
+import DocumentTotalManager from "./DocumentTotalManager";
 import { SPECIAL_CHARS_REGEX } from "./constants";
 interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
@@ -24,7 +25,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	foodSuggest: FoodSuggest;
 	nutritionTotal: NutritionTotal;
 	statusBarItem: HTMLElement;
-	documentTotalElement: HTMLElement | null = null;
+	documentTotalManager: DocumentTotalManager;
 	private escapedFoodTag: string;
 	private inlineNutritionRegex: RegExp;
 	private linkedRegex: RegExp;
@@ -45,6 +46,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		this.statusBarItem = this.addStatusBarItem();
 		this.statusBarItem.setText("");
+
+		// Initialize document total manager
+		this.documentTotalManager = new DocumentTotalManager();
 
 		// Add settings tab
 		this.addSettingTab(new FoodTrackerSettingTab(this.app, this));
@@ -128,7 +132,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	onunload() {
-		this.removeDocumentTotal();
+		this.documentTotalManager.remove();
 	}
 
 	async loadSettings() {
@@ -175,6 +179,22 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 	}
 
+	getNutrientNames(): string[] {
+		return this.nutrientCache.getNutrientNames();
+	}
+
+	getFileNameFromNutrientName(nutrientName: string): string | null {
+		return this.nutrientCache?.getFileNameFromNutrientName(nutrientName) ?? null;
+	}
+
+	getFoodTag(): string {
+		return this.settings.foodTag;
+	}
+
+	getEscapedFoodTag(): string {
+		return this.escapedFoodTag;
+	}
+
 	/**
 	 * Calculates and displays nutrition totals for the current document
 	 * Updates either the status bar or an in-document element based on settings
@@ -192,10 +212,10 @@ export default class FoodTrackerPlugin extends Plugin {
 
 			if (this.settings.totalDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(totalText);
-				this.removeDocumentTotal();
+				this.documentTotalManager.remove();
 			} else {
 				this.statusBarItem?.setText("");
-				this.showDocumentTotal(totalText, activeView);
+				this.documentTotalManager.show(totalText, activeView);
 			}
 		} catch (error) {
 			console.error("Error updating nutrition total:", error);
@@ -205,39 +225,6 @@ export default class FoodTrackerPlugin extends Plugin {
 
 	private clearTotal(): void {
 		this.statusBarItem?.setText("");
-		this.removeDocumentTotal();
-	}
-
-	/**
-	 * Creates and displays the nutrition total as an in-document element
-	 * Positioned at the bottom of the document content
-	 */
-	private showDocumentTotal(totalText: string, view: MarkdownView): void {
-		this.removeDocumentTotal();
-
-		if (!totalText) {
-			return;
-		}
-
-		const contentEl = view.contentEl;
-		if (!contentEl) {
-			return;
-		}
-
-		this.documentTotalElement = contentEl.createDiv({
-			cls: "food-tracker-total",
-		});
-
-		this.documentTotalElement.textContent = totalText;
-
-		// Append at the end of contentEl so it appears at the bottom
-		contentEl.appendChild(this.documentTotalElement);
-	}
-
-	private removeDocumentTotal(): void {
-		if (this.documentTotalElement) {
-			this.documentTotalElement.remove();
-			this.documentTotalElement = null;
-		}
+		this.documentTotalManager.remove();
 	}
 }
