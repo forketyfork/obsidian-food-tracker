@@ -1,4 +1,5 @@
 import { App, TFile, TAbstractFile } from "obsidian";
+import { NutrientProvider } from "./FoodSuggestionCore";
 
 interface NutrientData {
 	calories?: number;
@@ -14,7 +15,7 @@ interface NutrientData {
  * Manages caching of nutrient files and their frontmatter data
  * Maintains efficient lookups for food names, filenames, and nutrition data
  */
-export default class NutrientCache {
+export default class NutrientCache implements NutrientProvider {
 	private app: App;
 	private nutrientDirectory: string;
 	private cache: Map<string, string> = new Map(); // file path -> nutrient name

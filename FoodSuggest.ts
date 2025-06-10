@@ -8,36 +8,20 @@ import {
 	TFile,
 } from "obsidian";
 import NutrientCache from "./NutrientCache";
-import { FoodSuggestionCore, NutrientProvider } from "./FoodSuggestionCore";
-
-/**
- * Adapter to bridge NutrientCache to the NutrientProvider interface
- * Allows FoodSuggestionCore to work with the plugin's nutrient cache
- */
-class NutrientCacheAdapter implements NutrientProvider {
-	constructor(private nutrientCache: NutrientCache) {}
-
-	getNutrientNames(): string[] {
-		return this.nutrientCache.getNutrientNames();
-	}
-
-	getFileNameFromNutrientName(nutrientName: string): string | null {
-		return this.nutrientCache.getFileNameFromNutrientName(nutrientName);
-	}
-}
+import { FoodSuggestionCore } from "./FoodSuggestionCore";
 
 /**
  * Obsidian editor suggest implementation for food autocompletion
  * Provides suggestions for food names, measures, and nutrition keywords
  */
 export default class FoodSuggest extends EditorSuggest<string> {
-	private nutrientCacheAdapter: NutrientCacheAdapter;
+	private nutrientCache: NutrientCache;
 	private suggestionCore: FoodSuggestionCore;
 	private currentContext?: "measure" | "nutrition";
 
 	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
 		super(app);
-		this.nutrientCacheAdapter = new NutrientCacheAdapter(nutrientCache);
+		this.nutrientCache = nutrientCache;
 		this.suggestionCore = new FoodSuggestionCore(foodTag);
 	}
 
@@ -62,7 +46,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] {
-		return this.suggestionCore.getSuggestions(context.query, this.nutrientCacheAdapter, this.currentContext);
+		return this.suggestionCore.getSuggestions(context.query, this.nutrientCache, this.currentContext);
 	}
 
 	renderSuggestion(nutrient: string, el: HTMLElement): void {
@@ -82,7 +66,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		if (this.suggestionCore.isNutritionKeyword(nutrient)) {
 			replacement = this.suggestionCore.getNutritionKeywordReplacement(nutrient);
 		} else {
-			replacement = this.suggestionCore.getFoodNameReplacement(nutrient, this.nutrientCacheAdapter);
+			replacement = this.suggestionCore.getFoodNameReplacement(nutrient, this.nutrientCache);
 		}
 
 		context.editor.replaceRange(replacement, context.start, context.end);

@@ -13,6 +13,7 @@ export interface SuggestionTrigger {
 
 /**
  * Interface for providing nutrient data to the suggestion system
+ * Used to simplify unit testing of the suggestion logic
  */
 export interface NutrientProvider {
 	getNutrientNames(): string[];
