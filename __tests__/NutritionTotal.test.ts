@@ -407,7 +407,7 @@ End of day`;
 			);
 		});
 
-		test("calculates total nutrients for mixed traditional and inline entries", () => {
+		test("calculates total nutrients for mixed linked and inline entries", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
 				fats: 5,
@@ -419,7 +419,7 @@ End of day`;
 #food Protein bar 200kcal 8fat 15prot 20carbs`;
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			// Traditional: 100*1.5 = 150 calories, 5*1.5 = 7.5 fats, 8*1.5 = 12 protein, 12*1.5 = 18 carbs
+			// Linked: 100*1.5 = 150 calories, 5*1.5 = 7.5 fats, 8*1.5 = 12 protein, 12*1.5 = 18 carbs
 			// Inline: 200 calories, 8 fats, 15 protein, 20 carbs
 			// Total: 350 calories, 15.5 fats, 27 protein, 38 carbs
 			expect(result).toBe("📊 Daily total: 🔥 350 kcal, 🥑 Fats: 15.5g, 🥩 Protein: 27.0g, 🍞 Carbs: 38.0g");

@@ -27,7 +27,7 @@ interface InlineNutrientEntry {
 
 /**
  * Calculates total nutrition values from food entries in document content
- * Supports both traditional linked format and inline nutrition format
+ * Supports both linked format and inline nutrition format
  */
 export default class NutritionTotal {
 	private nutrientCache: NutrientCache;

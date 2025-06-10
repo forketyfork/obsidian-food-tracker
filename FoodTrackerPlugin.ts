@@ -27,7 +27,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	documentTotalElement: HTMLElement | null = null;
 	private escapedFoodTag: string;
 	private inlineNutritionRegex: RegExp;
-	private traditionalRegex: RegExp;
+	private linkedRegex: RegExp;
 	private foodHighlightExtension: FoodHighlightExtension;
 
 	async onload() {
@@ -120,7 +120,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 
 		// Register CodeMirror extension for food amount highlighting
-		this.foodHighlightExtension = new FoodHighlightExtension(this.inlineNutritionRegex, this.traditionalRegex);
+		this.foodHighlightExtension = new FoodHighlightExtension(this.inlineNutritionRegex, this.linkedRegex);
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 
 		// Initial total update
@@ -185,7 +185,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			`#${this.escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
 			"i"
 		);
-		this.traditionalRegex = new RegExp(
+		this.linkedRegex = new RegExp(
 			`#${this.escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
 			"i"
 		);
