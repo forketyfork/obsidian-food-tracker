@@ -1,4 +1,5 @@
 import { FoodSuggestionCore, NutrientProvider } from "../FoodSuggestionCore";
+import { SettingsService, DEFAULT_SETTINGS } from "../SettingsService";
 
 // Mock implementation of NutrientProvider for testing
 class MockNutrientProvider implements NutrientProvider {
@@ -23,20 +24,28 @@ class MockNutrientProvider implements NutrientProvider {
 describe("FoodSuggestionCore", () => {
 	let core: FoodSuggestionCore;
 	let provider: MockNutrientProvider;
+	let settingsService: SettingsService;
 
 	beforeEach(() => {
-		core = new FoodSuggestionCore("food");
+		settingsService = new SettingsService();
+		settingsService.initialize(DEFAULT_SETTINGS);
+		core = new FoodSuggestionCore(settingsService);
 		provider = new MockNutrientProvider();
 	});
 
-	describe("constructor and updateFoodTag", () => {
+	afterEach(() => {
+		core.destroy();
+	});
+
+	describe("constructor and food tag updates", () => {
 		test("should initialize with food tag", () => {
 			expect(core).toBeInstanceOf(FoodSuggestionCore);
 		});
 
-		test("should update food tag", () => {
-			core.updateFoodTag("nutrition");
-			// Test that the new tag is used by trying to trigger on a line with the new tag
+		test("should react to food tag updates", async () => {
+			settingsService.updateFoodTag("nutrition");
+			// Give some time for the observable to update
+			await new Promise(resolve => setTimeout(resolve, 0));
 			const result = core.analyzeTrigger("#nutrition apple", 16);
 			expect(result).not.toBeNull();
 			expect(result?.query).toBe("apple");
@@ -110,8 +119,10 @@ describe("FoodSuggestionCore", () => {
 			});
 		});
 
-		test("should handle special characters in food tag", () => {
-			core.updateFoodTag("food+tag");
+		test("should handle special characters in food tag", async () => {
+			settingsService.updateFoodTag("food+tag");
+			// Give some time for the observable to update
+			await new Promise(resolve => setTimeout(resolve, 0));
 			const result = core.analyzeTrigger("#food+tag apple", 15);
 			expect(result).toEqual({
 				query: "apple",

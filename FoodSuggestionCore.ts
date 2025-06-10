@@ -1,4 +1,6 @@
-import { SPECIAL_CHARS_REGEX, LEADING_NUMBER_REGEX } from "./constants";
+import { LEADING_NUMBER_REGEX } from "./constants";
+import { SettingsService } from "./SettingsService";
+import { Subscription } from "rxjs";
 
 /**
  * Represents a trigger for showing food suggestions
@@ -21,7 +23,8 @@ export interface NutrientProvider {
 }
 
 export class FoodSuggestionCore {
-	private foodTag: string;
+	private settingsService: SettingsService;
+	private subscription: Subscription;
 	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar"];
 	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp"];
 
@@ -31,28 +34,39 @@ export class FoodSuggestionCore {
 	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
 	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
 
-	constructor(foodTag: string) {
-		this.foodTag = foodTag;
-		this.updateFoodTagRegex();
+	constructor(settingsService: SettingsService) {
+		this.settingsService = settingsService;
+
+		// Initialize other regex patterns first
 		// Match any text ending with space and number+letters
 		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
 		// Validate that text is just number+letters
 		this.nutritionValidationRegex = /^\d+[a-z]*$/;
 		// Match wikilink followed by space and number+letters
 		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(\d+[a-z]*)$/;
-	}
 
-	updateFoodTag(foodTag: string): void {
-		this.foodTag = foodTag;
-		this.updateFoodTagRegex();
+		// Initialize with current escaped food tag
+		this.updateFoodTagRegex(this.settingsService.currentEscapedFoodTag);
+
+		// Subscribe to escaped food tag changes and update regex
+		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
+			this.updateFoodTagRegex(escapedFoodTag);
+		});
 	}
 
 	/**
-	 * Updates the food tag regex when the tag changes
-	 * Escapes special regex characters in the tag
+	 * Clean up subscriptions when the instance is destroyed
 	 */
-	private updateFoodTagRegex(): void {
-		const escapedFoodTag = this.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+	destroy(): void {
+		if (this.subscription) {
+			this.subscription.unsubscribe();
+		}
+	}
+
+	/**
+	 * Updates the food tag regex when the escaped tag changes
+	 */
+	private updateFoodTagRegex(escapedFoodTag: string): void {
 		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
 	}
 

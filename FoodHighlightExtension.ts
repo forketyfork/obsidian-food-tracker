@@ -2,23 +2,50 @@ import { Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { createNutritionValueRegex } from "./constants";
+import { SettingsService } from "./SettingsService";
+import { Subscription } from "rxjs";
 
 /**
  * CodeMirror extension that highlights food amounts and nutrition values in the editor
  * Provides visual feedback for food entries and nutritional data
+ * Uses reactive food tag updates via SettingsService
  */
 export default class FoodHighlightExtension {
+	private settingsService: SettingsService;
 	private inlineNutritionRegex: RegExp;
 	private linkedRegex: RegExp;
+	private subscription: Subscription;
 
-	constructor(inlineNutritionRegex: RegExp, linkedRegex: RegExp) {
-		this.inlineNutritionRegex = inlineNutritionRegex;
-		this.linkedRegex = linkedRegex;
+	constructor(settingsService: SettingsService) {
+		this.settingsService = settingsService;
+
+		// Subscribe to food tag changes and update regexes
+		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
+			this.updateRegexes(escapedFoodTag);
+		});
 	}
 
-	updateRegexes(inlineNutritionRegex: RegExp, linkedRegex: RegExp): void {
-		this.inlineNutritionRegex = inlineNutritionRegex;
-		this.linkedRegex = linkedRegex;
+	/**
+	 * Updates regex patterns when the food tag changes
+	 */
+	private updateRegexes(escapedFoodTag: string): void {
+		this.inlineNutritionRegex = new RegExp(
+			`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+			"i"
+		);
+		this.linkedRegex = new RegExp(
+			`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
+			"i"
+		);
+	}
+
+	/**
+	 * Clean up subscriptions when the extension is destroyed
+	 */
+	destroy(): void {
+		if (this.subscription) {
+			this.subscription.unsubscribe();
+		}
 	}
 
 	createExtension(): Extension {
@@ -57,6 +84,11 @@ export default class FoodHighlightExtension {
 					// Get current regex patterns from plugin instance through closure
 					const inlineNutritionRegex = getInlineNutritionRegex();
 					const linkedRegex = getLinkedRegex();
+
+					// Skip if regexes are not yet initialized
+					if (!inlineNutritionRegex || !linkedRegex) {
+						return builder.finish();
+					}
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);

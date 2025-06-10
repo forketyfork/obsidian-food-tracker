@@ -46,7 +46,6 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			.addText(text =>
 				text.setValue(this.plugin.settings.foodTag).onChange(async value => {
 					this.plugin.settings.foodTag = value || "food";
-					this.plugin.updateEscapedFoodTag();
 					await this.plugin.saveSettings();
 				})
 			);

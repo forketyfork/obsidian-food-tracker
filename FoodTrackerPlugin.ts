@@ -6,18 +6,7 @@ import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
 import FoodHighlightExtension from "./FoodHighlightExtension";
 import DocumentTotalManager from "./DocumentTotalManager";
-import { SPECIAL_CHARS_REGEX } from "./constants";
-interface FoodTrackerPluginSettings {
-	nutrientDirectory: string;
-	totalDisplayMode: "status-bar" | "document";
-	foodTag: string;
-}
-
-const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
-	nutrientDirectory: "nutrients",
-	totalDisplayMode: "status-bar",
-	foodTag: "food",
-};
+import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -26,20 +15,21 @@ export default class FoodTrackerPlugin extends Plugin {
 	nutritionTotal: NutritionTotal;
 	statusBarItem: HTMLElement;
 	documentTotalManager: DocumentTotalManager;
-	private escapedFoodTag: string;
-	private inlineNutritionRegex: RegExp;
-	private linkedRegex: RegExp;
+	settingsService: SettingsService;
 	private foodHighlightExtension: FoodHighlightExtension;
 
 	async onload() {
 		await this.loadSettings();
-		this.updateEscapedFoodTag();
 
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
 		this.nutrientCache.initialize();
 
+		// Initialize settings service first
+		this.settingsService = new SettingsService();
+		this.settingsService.initialize(this.settings);
+
 		// Register food autocomplete
-		this.foodSuggest = new FoodSuggest(this.app, this.settings.foodTag, this.nutrientCache);
+		this.foodSuggest = new FoodSuggest(this.app, this.settingsService, this.nutrientCache);
 		this.registerEditorSuggest(this.foodSuggest);
 
 		// Initialize nutrition total
@@ -124,7 +114,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 
 		// Register CodeMirror extension for food amount highlighting
-		this.foodHighlightExtension = new FoodHighlightExtension(this.inlineNutritionRegex, this.linkedRegex);
+		this.foodHighlightExtension = new FoodHighlightExtension(this.settingsService);
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 
 		// Initial total update
@@ -133,11 +123,14 @@ export default class FoodTrackerPlugin extends Plugin {
 
 	onunload() {
 		this.documentTotalManager.remove();
+		if (this.foodHighlightExtension) {
+			this.foodHighlightExtension.destroy();
+		}
+		this.foodSuggest?.suggestionCore?.destroy();
 	}
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FoodTrackerPluginSettings>);
-		this.updateEscapedFoodTag();
 	}
 
 	async saveSettings() {
@@ -151,32 +144,13 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		}
 
-		this.updateEscapedFoodTag();
-
-		// Update food suggest with new food tag
-		if (this.foodSuggest) {
-			this.foodSuggest.updateFoodTag(this.settings.foodTag);
+		// Update settings service
+		if (this.settingsService) {
+			this.settingsService.updateSettings(this.settings);
 		}
 
 		// Update total display when settings change
 		void this.updateNutritionTotal();
-	}
-
-	/**
-	 * Escapes special regex characters in the food tag and precompiles regex patterns for performance
-	 * Called whenever the food tag setting changes
-	 */
-	updateEscapedFoodTag(): void {
-		this.escapedFoodTag = this.settings.foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
-		// Update precompiled regex patterns when food tag changes
-		this.inlineNutritionRegex = new RegExp(
-			`#${this.escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
-			"i"
-		);
-		this.linkedRegex = new RegExp(
-			`#${this.escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
-			"i"
-		);
 	}
 
 	getNutrientNames(): string[] {
@@ -192,7 +166,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	getEscapedFoodTag(): string {
-		return this.escapedFoodTag;
+		return this.settingsService.currentEscapedFoodTag;
 	}
 
 	/**
@@ -208,7 +182,11 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const totalText = this.nutritionTotal.calculateTotalNutrients(content, this.escapedFoodTag, true);
+			const totalText = this.nutritionTotal.calculateTotalNutrients(
+				content,
+				this.settingsService.currentEscapedFoodTag,
+				true
+			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
 				this.statusBarItem?.setText(totalText);

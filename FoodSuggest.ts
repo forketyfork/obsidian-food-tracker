@@ -9,6 +9,7 @@ import {
 } from "obsidian";
 import NutrientCache from "./NutrientCache";
 import { FoodSuggestionCore } from "./FoodSuggestionCore";
+import { SettingsService } from "./SettingsService";
 
 /**
  * Obsidian editor suggest implementation for food autocompletion
@@ -16,17 +17,15 @@ import { FoodSuggestionCore } from "./FoodSuggestionCore";
  */
 export default class FoodSuggest extends EditorSuggest<string> {
 	private nutrientCache: NutrientCache;
-	private suggestionCore: FoodSuggestionCore;
+	suggestionCore: FoodSuggestionCore;
+	private settingsService: SettingsService;
 	private currentContext?: "measure" | "nutrition";
 
-	constructor(app: App, foodTag: string, nutrientCache: NutrientCache) {
+	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super(app);
 		this.nutrientCache = nutrientCache;
-		this.suggestionCore = new FoodSuggestionCore(foodTag);
-	}
-
-	updateFoodTag(foodTag: string): void {
-		this.suggestionCore.updateFoodTag(foodTag);
+		this.settingsService = settingsService;
+		this.suggestionCore = new FoodSuggestionCore(settingsService);
 	}
 
 	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
