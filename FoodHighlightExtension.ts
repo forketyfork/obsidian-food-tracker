@@ -1,7 +1,7 @@
 import { Extension } from "@codemirror/state";
 import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { createNutritionValueRegex } from "./constants";
+import { extractMultilineHighlightRanges } from "./FoodHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
 
@@ -12,31 +12,16 @@ import { Subscription } from "rxjs";
  */
 export default class FoodHighlightExtension {
 	private settingsService: SettingsService;
-	private inlineNutritionRegex: RegExp;
-	private linkedRegex: RegExp;
+	private escapedFoodTag: string = "";
 	private subscription: Subscription;
 
 	constructor(settingsService: SettingsService) {
 		this.settingsService = settingsService;
 
-		// Subscribe to food tag changes and update regexes
+		// Subscribe to food tag changes
 		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
-			this.updateRegexes(escapedFoodTag);
+			this.escapedFoodTag = escapedFoodTag;
 		});
-	}
-
-	/**
-	 * Updates regex patterns when the food tag changes
-	 */
-	private updateRegexes(escapedFoodTag: string): void {
-		this.inlineNutritionRegex = new RegExp(
-			`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
-			"i"
-		);
-		this.linkedRegex = new RegExp(
-			`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
-			"i"
-		);
 	}
 
 	/**
@@ -57,8 +42,7 @@ export default class FoodHighlightExtension {
 			class: "food-nutrition-value",
 		});
 
-		const getInlineNutritionRegex = () => this.inlineNutritionRegex;
-		const getLinkedRegex = () => this.linkedRegex;
+		const getEscapedFoodTag = () => this.escapedFoodTag;
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
@@ -76,56 +60,29 @@ export default class FoodHighlightExtension {
 
 				/**
 				 * Scans visible text for food entries and creates decorations for highlighting
-				 * Handles both inline nutrition format and linked format
+				 * Uses the extracted FoodHighlightCore for testable highlighting logic
 				 */
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
 
-					// Get current regex patterns from plugin instance through closure
-					const inlineNutritionRegex = getInlineNutritionRegex();
-					const linkedRegex = getLinkedRegex();
+					// Get current escaped food tag from plugin instance through closure
+					const escapedFoodTag = getEscapedFoodTag();
 
-					// Skip if regexes are not yet initialized
-					if (!inlineNutritionRegex || !linkedRegex) {
+					// Skip if food tag is not yet initialized
+					if (!escapedFoodTag) {
 						return builder.finish();
 					}
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
-						const lines = text.split("\n");
-						let lineStart = from;
 
-						for (const line of lines) {
-							// Match food pattern with inline nutrition: #foodtag foodname 300kcal 20fat 10prot 30carbs 3sugar
-							const inlineNutritionMatch = inlineNutritionRegex.exec(line);
-							if (inlineNutritionMatch) {
-								const nutritionString = inlineNutritionMatch[2];
-								const nutritionStringStart = lineStart + line.indexOf(nutritionString);
+						// Extract highlight ranges using the pure function
+						const ranges = extractMultilineHighlightRanges(text, from, { escapedFoodTag });
 
-								// Find and highlight each nutritional value within the nutrition string
-								const nutritionValueRegex = createNutritionValueRegex();
-								let match;
-
-								while ((match = nutritionValueRegex.exec(nutritionString)) !== null) {
-									const valueStart = nutritionStringStart + match.index;
-									const valueEnd = valueStart + match[0].length;
-									builder.add(valueStart, valueEnd, nutritionValueDecoration);
-								}
-								// Reset regex for next use
-								inlineNutritionRegex.lastIndex = 0;
-							} else {
-								// Match linked food pattern: #foodtag [[food-name]] amount OR #foodtag food-name amount
-								const linkedMatch = linkedRegex.exec(line);
-								if (linkedMatch) {
-									const amountMatch = linkedMatch[1];
-									const amountStart = lineStart + line.indexOf(amountMatch);
-									const amountEnd = amountStart + amountMatch.length;
-									builder.add(amountStart, amountEnd, foodAmountDecoration);
-								}
-								// Reset regex for next use
-								linkedRegex.lastIndex = 0;
-							}
-							lineStart += line.length + 1; // +1 for newline
+						// Convert ranges to CodeMirror decorations
+						for (const range of ranges) {
+							const decoration = range.type === "nutrition" ? nutritionValueDecoration : foodAmountDecoration;
+							builder.add(range.start, range.end, decoration);
 						}
 					}
 

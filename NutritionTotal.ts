@@ -1,5 +1,5 @@
 import NutrientCache from "./NutrientCache";
-import { SPECIAL_CHARS_REGEX } from "./constants";
+import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
 
 interface NutrientData {
 	calories?: number;
@@ -70,10 +70,7 @@ export default class NutritionTotal {
 	private parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] {
 		const entries: FoodEntry[] = [];
 		const lines = content.split("\n");
-		const entryRegex = new RegExp(
-			`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`,
-			"i"
-		);
+		const entryRegex = createLinkedFoodRegex(escapedFoodTag);
 
 		for (const line of lines) {
 			const match = entryRegex.exec(line);
@@ -96,15 +93,12 @@ export default class NutritionTotal {
 	private parseInlineNutrientEntries(content: string, escapedFoodTag: string): InlineNutrientEntry[] {
 		const entries: InlineNutrientEntry[] = [];
 		const lines = content.split("\n");
-		const inlineRegex = new RegExp(
-			`#${escapedFoodTag}\\s+(?!\\[\\[)(?:[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
-			"i"
-		);
+		const inlineRegex = createInlineNutritionRegex(escapedFoodTag);
 
 		for (const line of lines) {
 			const foodMatch = inlineRegex.exec(line);
 			if (foodMatch) {
-				const nutrientString = foodMatch[1];
+				const nutrientString = foodMatch[2];
 				const nutrientData = this.parseNutrientString(nutrientString);
 				if (Object.keys(nutrientData).length > 0) {
 					entries.push(nutrientData);
