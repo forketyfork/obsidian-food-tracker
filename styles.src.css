@@ -108,15 +108,15 @@
 }
 
 .food-value {
-	background-color: var(--color-green);
-	color: var(--background-primary);
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
 	border-radius: 4px;
 	padding: 0 4px;
 }
 
 .food-nutrition-value {
-	background-color: var(--color-orange);
-	color: var(--background-primary);
+	background-color: var(--interactive-accent-hover);
+	color: var(--text-on-accent);
 	border-radius: 4px;
 	padding: 0 4px;
 }
