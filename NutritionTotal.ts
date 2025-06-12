@@ -1,4 +1,5 @@
 import NutrientCache from "./NutrientCache";
+import type { NutrientGoals } from "./GoalsService";
 import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
 
 interface NutrientData {
@@ -45,7 +46,7 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false): string {
+	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false, goals?: NutrientGoals): string {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 			const foodEntries = this.parseFoodEntries(content, tag);
@@ -60,7 +61,7 @@ export default class NutritionTotal {
 
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
-			return this.formatTotal(combined);
+			return this.formatTotal(combined, goals);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return "";
@@ -218,7 +219,7 @@ export default class NutritionTotal {
 		}
 	}
 
-	private formatTotal(nutrients: NutrientData): string {
+	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): string {
 		const formatConfig: { key: keyof NutrientData; label: string; unit: string; decimals: number }[] = [
 			{ key: "calories", label: "🔥", unit: "kcal", decimals: 0 },
 			{ key: "fats", label: "🥑 Fats", unit: "g", decimals: 1 },
@@ -236,7 +237,18 @@ export default class NutritionTotal {
 				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
 				const separator = config.key === "calories" ? " " : ": ";
 				const unitSpace = config.key === "calories" ? " " : "";
-				parts.push(`${config.label}${separator}${formattedValue}${unitSpace}${config.unit}`);
+
+				if (goals?.[config.key] !== undefined) {
+					const goal = goals[config.key] as number;
+					const ratio = goal > 0 ? value / goal : 0;
+					const percent = Math.min(100, Math.round(ratio * 100));
+					const colorClass = ratio > 1 ? "ft-progress-red" : ratio >= 0.9 ? "ft-progress-green" : "ft-progress-yellow";
+					parts.push(
+						`<span class="ft-progress ${colorClass}" style="--ft-progress-percent:${percent}%">${config.label}${separator}${formattedValue}${unitSpace}${config.unit}</span>`
+					);
+				} else {
+					parts.push(`${config.label}${separator}${formattedValue}${unitSpace}${config.unit}`);
+				}
 			}
 		}
 

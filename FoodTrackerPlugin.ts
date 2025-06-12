@@ -7,6 +7,7 @@ import NutritionTotal from "./NutritionTotal";
 import FoodHighlightExtension from "./FoodHighlightExtension";
 import DocumentTotalManager from "./DocumentTotalManager";
 import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
+import GoalsService from "./GoalsService";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -16,6 +17,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	statusBarItem: HTMLElement;
 	documentTotalManager: DocumentTotalManager;
 	settingsService: SettingsService;
+	goalsService: GoalsService;
 	private foodHighlightExtension: FoodHighlightExtension;
 
 	async onload() {
@@ -28,6 +30,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.settingsService = new SettingsService();
 		this.settingsService.initialize(this.settings);
 
+		this.goalsService = new GoalsService(this.app, this.settings.goalsFile);
+		await this.goalsService.loadGoals();
+
 		// Register food autocomplete
 		this.foodSuggest = new FoodSuggest(this.app, this.settingsService, this.nutrientCache);
 		this.registerEditorSuggest(this.foodSuggest);
@@ -35,7 +40,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize nutrition total
 		this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		this.statusBarItem = this.addStatusBarItem();
-		this.statusBarItem.setText("");
+		this.statusBarItem.innerHTML = "";
 
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
@@ -112,6 +117,15 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
+		this.registerEvent(
+			this.app.vault.on("modify", file => {
+				if (file.path === this.settings.goalsFile) {
+					void this.goalsService.loadGoals();
+					void this.updateNutritionTotal();
+				}
+			})
+		);
+
 		// Update nutrition total when active file changes
 		this.registerEvent(
 			this.app.workspace.on("active-leaf-change", () => {
@@ -150,6 +164,11 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		}
 
+		if (this.goalsService) {
+			this.goalsService.setGoalsFile(this.settings.goalsFile);
+			await this.goalsService.loadGoals();
+		}
+
 		// Update settings service
 		if (this.settingsService) {
 			this.settingsService.updateSettings(this.settings);
@@ -175,14 +194,15 @@ export default class FoodTrackerPlugin extends Plugin {
 			const totalText = this.nutritionTotal.calculateTotalNutrients(
 				content,
 				this.settingsService.currentEscapedFoodTag,
-				true
+				true,
+				this.goalsService.currentGoals
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
-				this.statusBarItem?.setText(totalText);
+				if (this.statusBarItem) this.statusBarItem.innerHTML = totalText;
 				this.documentTotalManager.remove();
 			} else {
-				this.statusBarItem?.setText("");
+				if (this.statusBarItem) this.statusBarItem.innerHTML = "";
 				this.documentTotalManager.show(totalText, activeView);
 			}
 		} catch (error) {
@@ -192,7 +212,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	private clearTotal(): void {
-		this.statusBarItem?.setText("");
+		if (this.statusBarItem) this.statusBarItem.innerHTML = "";
 		this.documentTotalManager.remove();
 	}
 }

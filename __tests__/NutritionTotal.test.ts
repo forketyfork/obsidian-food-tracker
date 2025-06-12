@@ -473,5 +473,32 @@ End of day`;
 				"📊 Daily total: 🔥 200 kcal, 🥑 Fats: 10.0g, 🥩 Protein: 15.0g, 🍞 Carbs: 25.0g, 🍯 Sugar: 5.0g"
 			);
 		});
+
+		test("adds progress bar with green color when within 10% of goal", () => {
+			const goals = { fats: 50 };
+			mockGetNutritionData.mockReturnValue({ fats: 45 });
+			const content = "#food [[food]] 100g";
+			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
+			expect(result).toContain("ft-progress-green");
+			expect(result).toContain("--ft-progress-percent:90%");
+		});
+
+		test("adds progress bar with yellow color when below 90% of goal", () => {
+			const goals = { protein: 100 };
+			mockGetNutritionData.mockReturnValue({ protein: 50 });
+			const content = "#food [[food]] 100g";
+			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
+			expect(result).toContain("ft-progress-yellow");
+			expect(result).toContain("--ft-progress-percent:50%");
+		});
+
+		test("adds progress bar with red color when exceeding goal", () => {
+			const goals = { carbs: 30 };
+			mockGetNutritionData.mockReturnValue({ carbs: 45 });
+			const content = "#food [[food]] 100g";
+			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
+			expect(result).toContain("ft-progress-red");
+			expect(result).toContain("--ft-progress-percent:100%");
+		});
 	});
 });

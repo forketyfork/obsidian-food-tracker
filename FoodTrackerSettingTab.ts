@@ -49,5 +49,18 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				})
 			);
+
+		new Setting(containerEl)
+			.setName("Goals file")
+			.setDesc("File containing daily nutrition goals")
+			.addText(text =>
+				text
+					.setPlaceholder("nutrition-goals.md")
+					.setValue(this.plugin.settings.goalsFile)
+					.onChange(async value => {
+						this.plugin.settings.goalsFile = value;
+						await this.plugin.saveSettings();
+					})
+			);
 	}
 }
