@@ -27,9 +27,20 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 ### 📊 Real-time Nutrition Tracking
 
 - **Automatic daily total**: Real-time calculation of total nutrition from all food entries in the current document
+- **Compact visual display**: Clean nutrition bar with emoji indicators and progress bars
+- **Interactive tooltips**: Hover over nutrition indicators to see detailed values and goal progress
 - **Flexible display modes**: Show nutrition total in status bar or directly in the document
 - **Comprehensive metrics**: Track calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
+
+### 🎯 Nutrition Goals & Progress Tracking
+
+- **Goals file support**: Define daily nutrition goals in a simple text file
+- **Visual progress bars**: Real-time progress indicators showing how close you are to your goals
+- **Color-coded feedback**: Green (within 10% of goal), yellow (below 90%), red (exceeding goal)
+- **Compact nutrition bar**: Bordered container with emoji progress indicators separated by vertical lines
+- **Enhanced tooltips**: Detailed hover information shows values and goal completion percentages
+- **Flexible goal setting**: Set goals for calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 
 ## Installation
 
@@ -110,6 +121,35 @@ You can combine both methods in the same document:
 
 The nutrition total will automatically update as you add food entries using any method.
 
+### Setting Up Nutrition Goals
+
+1. Create a goals file in your vault (e.g., `nutrition-goals.md`)
+2. Define your daily nutrition goals using the following format:
+   ```
+   calories: 2000
+   fats: 70
+   protein: 120
+   carbs: 250
+   fiber: 25
+   sugar: 50
+   sodium: 2300
+   ```
+3. Configure the goals file path in plugin settings
+4. Your nutrition totals will now display as a compact nutrition bar with emoji progress indicators
+
+The nutrition bar displays as a bordered container with:
+
+- **Emoji indicators**: Each nutrient represented by an emoji (🔥 calories, 🥑 fats, 🥩 protein, etc.)
+- **Progress bars**: Visual progress indication within each emoji indicator
+- **Vertical separators**: Clean lines between each nutrient for clarity
+- **Interactive tooltips**: Hover over any emoji to see detailed values and goal completion percentages
+
+The progress bars use color coding:
+
+- **Green**: You're within 10% of your goal (90-110%)
+- **Yellow**: You're below 90% of your goal
+- **Red**: You've exceeded your goal (over 110%)
+
 ### Configuration
 
 Go to Settings > Food Tracker to configure:
@@ -117,6 +157,7 @@ Go to Settings > Food Tracker to configure:
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
+- **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md")
 
 > **Note**: When you change the food tag setting, the plugin will only recognize the new tag. Existing `#food` entries will need to be manually updated to use the new tag if you want them to be included in nutrition calculations.
 

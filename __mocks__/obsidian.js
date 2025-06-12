@@ -69,6 +69,12 @@ module.exports = {
 				}),
 				getActiveViewOfType: () => null,
 				on: () => ({}),
+				onLayoutReady: callback => {
+					// Call callback immediately in test environment
+					if (typeof callback === "function") {
+						setTimeout(callback, 0);
+					}
+				},
 			};
 		}
 	},

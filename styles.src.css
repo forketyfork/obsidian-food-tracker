@@ -132,3 +132,128 @@
 	min-width: 110px;
 	text-align: center;
 }
+
+.ft-progress {
+	--ft-progress-percent: 0%;
+	--ft-progress-color: var(--interactive-accent);
+	background-image: linear-gradient(
+		to right,
+		var(--ft-progress-color) var(--ft-progress-percent),
+		transparent var(--ft-progress-percent)
+	);
+	border-radius: 4px;
+	padding: 0 4px;
+	color: var(--text-normal);
+}
+
+.ft-nutrition-bar {
+	display: flex;
+	align-items: center;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	background-color: var(--background-secondary);
+	padding: 2px;
+	gap: 0;
+	max-width: fit-content;
+}
+
+.ft-icon {
+	color: var(--interactive-accent);
+	flex-shrink: 0;
+	margin-left: 4px;
+	margin-right: 6px;
+	cursor: help;
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+}
+
+.ft-icon::after {
+	content: attr(title);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s;
+	z-index: 1000;
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	margin-bottom: 4px;
+}
+
+.ft-icon:hover::after {
+	opacity: 1;
+}
+
+.ft-nutrient-item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 24px;
+	font-size: 16px;
+	padding: 0;
+	border: none;
+	background-color: transparent;
+	cursor: help;
+	position: relative;
+}
+
+.ft-nutrient-item::after {
+	content: attr(title);
+	position: absolute;
+	bottom: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: nowrap;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.2s;
+	z-index: 1000;
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+	margin-bottom: 4px;
+}
+
+.ft-nutrient-item:hover::after {
+	opacity: 1;
+}
+
+.ft-separator {
+	width: 1px;
+	height: 20px;
+	background-color: var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.ft-progress-green {
+	--ft-progress-color: var(--color-green, #3a9f4c);
+}
+
+.ft-progress-yellow {
+	--ft-progress-color: var(--color-yellow, #d8a000);
+}
+
+.ft-progress-red {
+	--ft-progress-color: var(--color-red, #d84c4c);
+}
+
+.goals-value {
+	background-color: var(--color-blue);
+	color: var(--text-on-accent);
+	border-radius: 4px;
+	padding: 0 4px;
+}

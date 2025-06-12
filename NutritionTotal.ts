@@ -1,5 +1,7 @@
 import NutrientCache from "./NutrientCache";
+import type { NutrientGoals } from "./GoalsService";
 import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
+import { FOOD_TRACKER_ICON } from "./icon";
 
 interface NutrientData {
 	calories?: number;
@@ -45,7 +47,7 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false): string {
+	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false, goals?: NutrientGoals): string {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 			const foodEntries = this.parseFoodEntries(content, tag);
@@ -60,7 +62,7 @@ export default class NutritionTotal {
 
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
-			return this.formatTotal(combined);
+			return this.formatTotal(combined, goals);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return "";
@@ -218,15 +220,15 @@ export default class NutritionTotal {
 		}
 	}
 
-	private formatTotal(nutrients: NutrientData): string {
-		const formatConfig: { key: keyof NutrientData; label: string; unit: string; decimals: number }[] = [
-			{ key: "calories", label: "🔥", unit: "kcal", decimals: 0 },
-			{ key: "fats", label: "🥑 Fats", unit: "g", decimals: 1 },
-			{ key: "protein", label: "🥩 Protein", unit: "g", decimals: 1 },
-			{ key: "carbs", label: "🍞 Carbs", unit: "g", decimals: 1 },
-			{ key: "fiber", label: "🌾 Fiber", unit: "g", decimals: 1 },
-			{ key: "sugar", label: "🍯 Sugar", unit: "g", decimals: 1 },
-			{ key: "sodium", label: "🧂 Sodium", unit: "mg", decimals: 1 },
+	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): string {
+		const formatConfig: { key: keyof NutrientData; emoji: string; name: string; unit: string; decimals: number }[] = [
+			{ key: "calories", emoji: "🔥", name: "Calories", unit: "kcal", decimals: 0 },
+			{ key: "fats", emoji: "🥑", name: "Fats", unit: "g", decimals: 1 },
+			{ key: "protein", emoji: "🥩", name: "Protein", unit: "g", decimals: 1 },
+			{ key: "carbs", emoji: "🍞", name: "Carbs", unit: "g", decimals: 1 },
+			{ key: "fiber", emoji: "🌾", name: "Fiber", unit: "g", decimals: 1 },
+			{ key: "sugar", emoji: "🍯", name: "Sugar", unit: "g", decimals: 1 },
+			{ key: "sodium", emoji: "🧂", name: "Sodium", unit: "mg", decimals: 1 },
 		];
 
 		const parts: string[] = [];
@@ -234,13 +236,30 @@ export default class NutritionTotal {
 			const value = nutrients[config.key];
 			if (value && value > 0) {
 				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
-				const separator = config.key === "calories" ? " " : ": ";
-				const unitSpace = config.key === "calories" ? " " : "";
-				parts.push(`${config.label}${separator}${formattedValue}${unitSpace}${config.unit}`);
+				const tooltipText = `${config.name}: ${formattedValue} ${config.unit}`;
+
+				if (goals?.[config.key] !== undefined) {
+					const goal = goals[config.key] as number;
+					const ratio = goal > 0 ? value / goal : 0;
+					const percent = Math.min(100, Math.round(ratio * 100));
+
+					// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
+					const colorClass =
+						ratio >= 0.9 && ratio <= 1.1 ? "ft-progress-green" : ratio > 1.1 ? "ft-progress-red" : "ft-progress-yellow";
+
+					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${percent}% of ${goal} ${config.unit} goal)`;
+					parts.push(
+						`<span class="ft-progress ft-nutrient-item ${colorClass}" style="--ft-progress-percent:${percent}%" title="${goalTooltipText}">${config.emoji}</span>`
+					);
+				} else {
+					parts.push(`<span class="ft-nutrient-item" title="${tooltipText}">${config.emoji}</span>`);
+				}
 			}
 		}
 
 		if (parts.length === 0) return "";
-		return `📊 Daily total: ${parts.join(", ")}`;
+
+		// Add the Food Tracker icon to the left of the nutrition bar
+		return `<div class="ft-nutrition-bar">${FOOD_TRACKER_ICON}<div class="ft-separator"></div>${parts.join('<div class="ft-separator"></div>')}</div>`;
 	}
 }

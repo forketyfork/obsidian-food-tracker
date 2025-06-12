@@ -6,12 +6,14 @@ export interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
 	foodTag: string;
+	goalsFile: string;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
 	totalDisplayMode: "status-bar",
 	foodTag: "food",
+	goalsFile: "nutrition-goals.md",
 };
 
 /**
@@ -50,6 +52,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the goals file path
+	 */
+	get goalsFile$(): Observable<string> {
+		return this.settings$.pipe(map(settings => settings.goalsFile));
+	}
+
+	/**
 	 * Observable stream of the total display mode
 	 */
 	get totalDisplayMode$(): Observable<"status-bar" | "document"> {
@@ -82,6 +91,13 @@ export class SettingsService {
 	 */
 	get currentNutrientDirectory(): string {
 		return this.currentSettings.nutrientDirectory;
+	}
+
+	/**
+	 * Get the current goals file path synchronously
+	 */
+	get currentGoalsFile(): string {
+		return this.currentSettings.goalsFile;
 	}
 
 	/**
@@ -128,6 +144,13 @@ export class SettingsService {
 	 */
 	updateTotalDisplayMode(newMode: "status-bar" | "document"): void {
 		this.updateSetting("totalDisplayMode", newMode);
+	}
+
+	/**
+	 * Updates the goals file path and notifies all subscribers
+	 */
+	updateGoalsFile(newFile: string): void {
+		this.updateSetting("goalsFile", newFile);
 	}
 
 	/**
