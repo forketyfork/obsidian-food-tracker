@@ -4,7 +4,7 @@
 	"version": "0.2.1",
 	"author": "Forketyfork",
 	"minAppVersion": "0.15.0",
-	"description": "A plugin to track your food intake (calories, macronutrients) and nutritional information in Obsidian.",
+	"description": "Track your food intake (calories, macronutrients) and nutritional information",
 	"authorUrl": "https://github.com/forketyfork",
 	"isDesktopOnly": false
 }
