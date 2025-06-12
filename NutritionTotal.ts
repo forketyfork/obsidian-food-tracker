@@ -1,6 +1,7 @@
 import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
 import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
+import { FOOD_TRACKER_ICON } from "./icon";
 
 interface NutrientData {
 	calories?: number;
@@ -257,6 +258,8 @@ export default class NutritionTotal {
 		}
 
 		if (parts.length === 0) return "";
-		return `<div class="ft-nutrition-bar">${parts.join('<div class="ft-separator"></div>')}</div>`;
+
+		// Add the Food Tracker icon to the left of the nutrition bar
+		return `<div class="ft-nutrition-bar">${FOOD_TRACKER_ICON}<div class="ft-separator"></div>${parts.join('<div class="ft-separator"></div>')}</div>`;
 	}
 }
