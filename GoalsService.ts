@@ -34,7 +34,7 @@ export default class GoalsService {
 			return;
 		}
 		try {
-			const file = this.app.vault.getAbstractFileByPath(this.goalsFile);
+			let file = this.app.vault.getAbstractFileByPath(this.goalsFile);
 			if (file instanceof TFile) {
 				const content = await this.app.vault.read(file);
 				this.goals = this.parseGoals(content);

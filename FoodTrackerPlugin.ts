@@ -33,7 +33,8 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.settingsService.initialize(this.settings);
 
 		this.goalsService = new GoalsService(this.app, this.settings.goalsFile || "");
-		await this.goalsService.loadGoals();
+		// Delay goals loading until vault is ready
+		this.app.workspace.onLayoutReady(() => this.goalsService.loadGoals());
 
 		// Register food autocomplete
 		this.foodSuggest = new FoodSuggest(this.app, this.settingsService, this.nutrientCache);
@@ -202,13 +203,11 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const useHtml = this.settings.totalDisplayMode === "document";
 			const totalText = this.nutritionTotal.calculateTotalNutrients(
 				content,
 				this.settingsService.currentEscapedFoodTag,
 				true,
-				this.goalsService.currentGoals,
-				useHtml
+				this.goalsService.currentGoals
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {

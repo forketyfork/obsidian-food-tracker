@@ -27,6 +27,8 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 ### 📊 Real-time Nutrition Tracking
 
 - **Automatic daily total**: Real-time calculation of total nutrition from all food entries in the current document
+- **Compact visual display**: Clean nutrition bar with emoji indicators and progress bars
+- **Interactive tooltips**: Hover over nutrition indicators to see detailed values and goal progress
 - **Flexible display modes**: Show nutrition total in status bar or directly in the document
 - **Comprehensive metrics**: Track calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
@@ -36,6 +38,8 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 - **Goals file support**: Define daily nutrition goals in a simple text file
 - **Visual progress bars**: Real-time progress indicators showing how close you are to your goals
 - **Color-coded feedback**: Green (within 10% of goal), yellow (below 90%), red (exceeding goal)
+- **Compact nutrition bar**: Bordered container with emoji progress indicators separated by vertical lines
+- **Enhanced tooltips**: Detailed hover information shows values and goal completion percentages
 - **Flexible goal setting**: Set goals for calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 
 ## Installation
@@ -131,13 +135,20 @@ The nutrition total will automatically update as you add food entries using any 
    sodium: 2300
    ```
 3. Configure the goals file path in plugin settings
-4. Your nutrition totals will now display with progress bars showing your progress toward each goal
+4. Your nutrition totals will now display as a compact nutrition bar with emoji progress indicators
+
+The nutrition bar displays as a bordered container with:
+
+- **Emoji indicators**: Each nutrient represented by an emoji (🔥 calories, 🥑 fats, 🥩 protein, etc.)
+- **Progress bars**: Visual progress indication within each emoji indicator
+- **Vertical separators**: Clean lines between each nutrient for clarity
+- **Interactive tooltips**: Hover over any emoji to see detailed values and goal completion percentages
 
 The progress bars use color coding:
 
-- **Green**: You're within 10% of your goal (90-100%)
+- **Green**: You're within 10% of your goal (90-110%)
 - **Yellow**: You're below 90% of your goal
-- **Red**: You've exceeded your goal (over 100%)
+- **Red**: You've exceeded your goal (over 110%)
 
 ### Configuration
 
