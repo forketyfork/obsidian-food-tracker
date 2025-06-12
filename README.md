@@ -2,10 +2,13 @@
   Food Tracker <img src="logo.svg" alt="Logo" height="24" style="vertical-align: middle;"/>
 </h1>
 
-
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
 
 An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition totals, intelligent food suggestions, and flexible entry methods including both database-driven and inline nutrition tracking.
+
+## Demo
+
+![Demo of Food Tracker](assets/demo.gif)
 
 ## Features
 

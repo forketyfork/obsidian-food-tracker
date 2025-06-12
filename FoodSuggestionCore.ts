@@ -229,11 +229,21 @@ export class FoodSuggestionCore {
 	 * @returns true if it's a nutrition keyword or measure keyword, false otherwise
 	 */
 	isNutritionKeyword(suggestion: string): boolean {
-		// Check if the suggestion ends with a nutrition or measure keyword
-		return (
-			this.nutritionKeywords.some(keyword => suggestion.endsWith(keyword)) ||
-			this.measureKeywords.some(keyword => suggestion.endsWith(keyword))
-		);
+		// Check if the suggestion is exactly a nutrition or measure keyword
+		// or ends with a number followed by a keyword (e.g., "100g", "50kcal")
+		if (this.nutritionKeywords.includes(suggestion) || this.measureKeywords.includes(suggestion)) {
+			return true;
+		}
+
+		// Check if it matches the pattern: number + keyword (e.g., "100g", "50kcal")
+		const numberKeywordRegex = /\d+([a-z]+)$/;
+		const match = suggestion.match(numberKeywordRegex);
+		if (match) {
+			const keyword = match[1];
+			return this.nutritionKeywords.includes(keyword) || this.measureKeywords.includes(keyword);
+		}
+
+		return false;
 	}
 
 	/**
