@@ -46,7 +46,13 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false, goals?: NutrientGoals): string {
+	calculateTotalNutrients(
+		content: string,
+		foodTag: string = "food",
+		escaped = false,
+		goals?: NutrientGoals,
+		useHtml = true
+	): string {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 			const foodEntries = this.parseFoodEntries(content, tag);
@@ -61,7 +67,7 @@ export default class NutritionTotal {
 
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
-			return this.formatTotal(combined, goals);
+			return this.formatTotal(combined, goals, useHtml);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return "";
@@ -219,7 +225,7 @@ export default class NutritionTotal {
 		}
 	}
 
-	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): string {
+	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals, useHtml = true): string {
 		const formatConfig: { key: keyof NutrientData; label: string; unit: string; decimals: number }[] = [
 			{ key: "calories", label: "🔥", unit: "kcal", decimals: 0 },
 			{ key: "fats", label: "🥑 Fats", unit: "g", decimals: 1 },
@@ -242,10 +248,25 @@ export default class NutritionTotal {
 					const goal = goals[config.key] as number;
 					const ratio = goal > 0 ? value / goal : 0;
 					const percent = Math.min(100, Math.round(ratio * 100));
-					const colorClass = ratio > 1 ? "ft-progress-red" : ratio >= 0.9 ? "ft-progress-green" : "ft-progress-yellow";
-					parts.push(
-						`<span class="ft-progress ${colorClass}" style="--ft-progress-percent:${percent}%">${config.label}${separator}${formattedValue}${unitSpace}${config.unit}</span>`
-					);
+
+					if (useHtml) {
+						// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
+						const colorClass =
+							ratio >= 0.9 && ratio <= 1.1
+								? "ft-progress-green"
+								: ratio > 1.1
+									? "ft-progress-red"
+									: "ft-progress-yellow";
+						parts.push(
+							`<span class="ft-progress ${colorClass}" style="--ft-progress-percent:${percent}%">${config.label}${separator}${formattedValue}${unitSpace}${config.unit}</span>`
+						);
+					} else {
+						// Plain text with goal indicator
+						const indicator = ratio >= 0.9 && ratio <= 1.1 ? "✅" : ratio > 1.1 ? "🔴" : "🟡";
+						parts.push(
+							`${config.label}${separator}${formattedValue}${unitSpace}${config.unit} ${indicator}${percent}%`
+						);
+					}
 				} else {
 					parts.push(`${config.label}${separator}${formattedValue}${unitSpace}${config.unit}`);
 				}

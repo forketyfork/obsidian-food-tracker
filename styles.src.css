@@ -157,3 +157,10 @@
 .ft-progress-red {
 	--ft-progress-color: var(--color-red, #d84c4c);
 }
+
+.goals-value {
+	background-color: var(--color-blue);
+	color: var(--text-on-accent);
+	border-radius: 4px;
+	padding: 0 4px;
+}
