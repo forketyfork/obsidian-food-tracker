@@ -242,6 +242,7 @@ export default class NutritionTotal {
 					const goal = goals[config.key] as number;
 					const ratio = goal > 0 ? value / goal : 0;
 					const percent = Math.min(100, Math.round(ratio * 100));
+					const actualPercent = Math.round(ratio * 100);
 
 					// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
 					const colorClass =
@@ -251,7 +252,7 @@ export default class NutritionTotal {
 								? "food-tracker-progress-red"
 								: "food-tracker-progress-yellow";
 
-					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${percent}% of ${goal} ${config.unit} goal)`;
+					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					parts.push(
 						`<span class="food-tracker-progress food-tracker-nutrient-item food-tracker-tooltip-host ${colorClass}" style="--food-tracker-progress-percent:${percent}%" data-tooltip="${goalTooltipText}">${config.emoji}</span>`
 					);

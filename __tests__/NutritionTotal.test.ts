@@ -510,6 +510,7 @@ End of day`;
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
 			expect(result).toContain("food-tracker-progress-red");
 			expect(result).toContain("--food-tracker-progress-percent:100%");
+			expect(result).toContain("(133% of 30 g goal)");
 		});
 
 		test("adds progress bar with yellow color when below 90% of goal", () => {
