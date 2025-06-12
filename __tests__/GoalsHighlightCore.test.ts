@@ -82,6 +82,19 @@ describe("GoalsHighlightCore", () => {
 				type: "value",
 			});
 		});
+
+		test("handles indented goal line", () => {
+			const text = "  calories: 2000"; // Note the leading spaces
+			const lineStart = 0;
+			const ranges = extractGoalsHighlightRanges(text, lineStart);
+
+			expect(ranges).toHaveLength(1);
+			expect(ranges[0]).toEqual({
+				start: 12, // 2 (spaces) + 8 (calories) + 1 (:) + 1 (space)
+				end: 16,
+				type: "value",
+			});
+		});
 	});
 
 	describe("extractMultilineGoalsHighlightRanges", () => {
@@ -164,6 +177,45 @@ fats: 70`;
 			expect(ranges).toHaveLength(2);
 			expect(ranges[0].start).toBe(110); // 100 + 10
 			expect(ranges[1].start).toBe(121); // 100 + 21
+		});
+
+		test("handles indented goals in multiline text", () => {
+			const text = `calories: 2000
+  fats: 70.5
+    protein: 120
+carbs: 250`;
+			const startOffset = 0;
+			const ranges = extractMultilineGoalsHighlightRanges(text, startOffset);
+
+			expect(ranges).toHaveLength(4);
+
+			// Check calories value (no indent)
+			expect(ranges[0]).toEqual({
+				start: 10,
+				end: 14,
+				type: "value",
+			});
+
+			// Check fats value (2 spaces indent): "calories: 2000\n" (15) + "  fats: " (8) = 23
+			expect(ranges[1]).toEqual({
+				start: 23,
+				end: 27,
+				type: "value",
+			});
+
+			// Check protein value (4 spaces indent): 15 + "  fats: 70.5\n" (13) + "    protein: " (13) = 41
+			expect(ranges[2]).toEqual({
+				start: 41,
+				end: 44,
+				type: "value",
+			});
+
+			// Check carbs value (no indent): 15 + 13 + "    protein: 120\n" (17) + "carbs: " (7) = 52
+			expect(ranges[3]).toEqual({
+				start: 52,
+				end: 55,
+				type: "value",
+			});
 		});
 	});
 });

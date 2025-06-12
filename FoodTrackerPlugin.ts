@@ -141,7 +141,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 
 		// Register CodeMirror extension for goals highlighting
-		this.goalsHighlightExtension = new GoalsHighlightExtension(this.settingsService);
+		this.goalsHighlightExtension = new GoalsHighlightExtension(
+			this.settingsService,
+			() => this.app.workspace.getActiveFile()?.path ?? null
+		);
 		this.registerEditorExtension(this.goalsHighlightExtension.createExtension());
 
 		// Initial total update

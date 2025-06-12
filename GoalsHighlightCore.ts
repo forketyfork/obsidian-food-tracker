@@ -12,13 +12,17 @@ export function extractGoalsHighlightRanges(text: string, lineStart: number): Go
 	const ranges: GoalsHighlightRange[] = [];
 
 	// Match pattern: "key: value" where value is a number (with optional decimal)
-	const goalsRegex = /^(\w+):\s*(\d+(?:\.\d+)?)/;
+	// Allow leading whitespace for indented goals
+	const goalsRegex = /^\s*(\w+):\s*(\d+(?:\.\d+)?)/;
 	const match = goalsRegex.exec(text);
 
-	if (match?.index !== undefined) {
-		const valueText = match[2];
-		const valueStart = lineStart + match.index + match[0].indexOf(valueText);
-		const valueEnd = valueStart + valueText.length;
+	if (match) {
+		// match[1] is the key, e.g., "calories"
+		// match[2] is the value, e.g., "2000"
+		// Calculate position more declaratively using capture group lengths
+		const prefix = match[0].substring(0, match[0].length - match[2].length);
+		const valueStart = lineStart + match.index + prefix.length;
+		const valueEnd = valueStart + match[2].length;
 
 		ranges.push({
 			start: valueStart,

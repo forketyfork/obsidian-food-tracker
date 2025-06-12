@@ -8,13 +8,17 @@ import { Subscription } from "rxjs";
 /**
  * CodeMirror extension that highlights values in goals files
  * Provides visual feedback for nutrition goal values
+ * Improved performance by avoiding expensive file detection
  */
 export default class GoalsHighlightExtension {
 	private settingsService: SettingsService;
 	private goalsFile: string = "";
 	private subscription: Subscription;
 
-	constructor(settingsService: SettingsService) {
+	constructor(
+		settingsService: SettingsService,
+		private getActiveFilePath: () => string | null
+	) {
 		this.settingsService = settingsService;
 
 		// Subscribe to goals file changes
@@ -32,12 +36,17 @@ export default class GoalsHighlightExtension {
 		}
 	}
 
+	/**
+	 * Creates the CodeMirror extension for goals highlighting
+	 * Uses efficient file path checking instead of content scanning
+	 */
 	createExtension(): Extension {
 		const goalsValueDecoration = Decoration.mark({
 			class: "goals-value",
 		});
 
 		const getGoalsFile = () => this.goalsFile;
+		const getActiveFilePath = this.getActiveFilePath;
 
 		const goalsHighlightPlugin = ViewPlugin.fromClass(
 			class {
@@ -48,32 +57,31 @@ export default class GoalsHighlightExtension {
 				}
 
 				update(update: ViewUpdate) {
-					// Always rebuild decorations when document changes or viewport changes
-					// This ensures highlighting updates when switching files
-					if (update.docChanged || update.viewportChanged) {
+					// Only rebuild decorations when document content changes
+					if (update.docChanged) {
 						this.decorations = this.buildDecorations(update.view);
 					}
 				}
 
 				/**
 				 * Scans visible text for goals entries and creates decorations for highlighting
-				 * Uses a simple heuristic to detect if we're in a goals file
+				 * Uses efficient file path checking instead of expensive content scanning
 				 */
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
 
 					const goalsFile = getGoalsFile();
-					if (!goalsFile) {
+					const activeFilePath = getActiveFilePath();
+
+					// Early return if no goals file configured or not in the goals file
+					if (!goalsFile || !activeFilePath) {
 						return builder.finish();
 					}
 
-					// Get the full document text to check if it looks like a goals file
-					const docText = view.state.doc.toString();
+					// Check if we're in the goals file by path comparison
+					const isGoalsFile = activeFilePath === goalsFile || activeFilePath.endsWith("/" + goalsFile);
 
-					// Simple heuristic: if the document contains goal-like patterns, highlight it
-					// This is more reliable than trying to get the file path from CodeMirror
-					const goalPatterns = /^(calories|fats|protein|carbs|fiber|sugar|sodium):\s*\d+/m;
-					if (!goalPatterns.test(docText)) {
+					if (!isGoalsFile) {
 						return builder.finish();
 					}
 

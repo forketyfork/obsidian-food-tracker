@@ -53,7 +53,8 @@ export default class FoodHighlightExtension {
 				}
 
 				update(update: ViewUpdate) {
-					if (update.docChanged || update.viewportChanged) {
+					// Only rebuild decorations when document content changes
+					if (update.docChanged) {
 						this.decorations = this.buildDecorations(update.view);
 					}
 				}
