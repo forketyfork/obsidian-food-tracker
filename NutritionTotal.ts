@@ -245,14 +245,20 @@ export default class NutritionTotal {
 
 					// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
 					const colorClass =
-						ratio >= 0.9 && ratio <= 1.1 ? "ft-progress-green" : ratio > 1.1 ? "ft-progress-red" : "ft-progress-yellow";
+						ratio >= 0.9 && ratio <= 1.1
+							? "food-tracker-progress-green"
+							: ratio > 1.1
+								? "food-tracker-progress-red"
+								: "food-tracker-progress-yellow";
 
 					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${percent}% of ${goal} ${config.unit} goal)`;
 					parts.push(
-						`<span class="ft-progress ft-nutrient-item ${colorClass}" style="--ft-progress-percent:${percent}%" title="${goalTooltipText}">${config.emoji}</span>`
+						`<span class="food-tracker-progress food-tracker-nutrient-item food-tracker-tooltip-host ${colorClass}" style="--food-tracker-progress-percent:${percent}%" data-tooltip="${goalTooltipText}">${config.emoji}</span>`
 					);
 				} else {
-					parts.push(`<span class="ft-nutrient-item" title="${tooltipText}">${config.emoji}</span>`);
+					parts.push(
+						`<span class="food-tracker-nutrient-item food-tracker-tooltip-host" data-tooltip="${tooltipText}">${config.emoji}</span>`
+					);
 				}
 			}
 		}
@@ -260,6 +266,6 @@ export default class NutritionTotal {
 		if (parts.length === 0) return "";
 
 		// Add the Food Tracker icon to the left of the nutrition bar
-		return `<div class="ft-nutrition-bar">${FOOD_TRACKER_ICON}<div class="ft-separator"></div>${parts.join('<div class="ft-separator"></div>')}</div>`;
+		return `<div class="food-tracker-nutrition-bar">${FOOD_TRACKER_ICON}<div class="food-tracker-separator"></div>${parts.join('<div class="food-tracker-separator"></div>')}</div>`;
 	}
 }

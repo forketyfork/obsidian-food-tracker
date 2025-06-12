@@ -21,7 +21,7 @@ describe("NutritionTotal", () => {
 			expect(result).toBe("");
 			return;
 		}
-		expect(result).toContain("ft-nutrition-bar");
+		expect(result).toContain("food-tracker-nutrition-bar");
 		expect(extractEmojis(result)).toBe(expectedEmojis);
 	};
 
@@ -481,8 +481,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 45 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("ft-progress-green");
-			expect(result).toContain("--ft-progress-percent:90%");
+			expect(result).toContain("food-tracker-progress-green");
+			expect(result).toContain("--food-tracker-progress-percent:90%");
 		});
 
 		test("adds progress bar with green color when within 10% of goal (above)", () => {
@@ -490,8 +490,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 55 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("ft-progress-green");
-			expect(result).toContain("--ft-progress-percent:100%");
+			expect(result).toContain("food-tracker-progress-green");
+			expect(result).toContain("--food-tracker-progress-percent:100%");
 		});
 
 		test("adds progress bar with green color when exactly at goal", () => {
@@ -499,8 +499,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 50 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("ft-progress-green");
-			expect(result).toContain("--ft-progress-percent:100%");
+			expect(result).toContain("food-tracker-progress-green");
+			expect(result).toContain("--food-tracker-progress-percent:100%");
 		});
 
 		test("adds progress bar with red color when exceeding goal by more than 10%", () => {
@@ -508,8 +508,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ carbs: 40 }); // 133% of goal
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("ft-progress-red");
-			expect(result).toContain("--ft-progress-percent:100%");
+			expect(result).toContain("food-tracker-progress-red");
+			expect(result).toContain("--food-tracker-progress-percent:100%");
 		});
 
 		test("adds progress bar with yellow color when below 90% of goal", () => {
@@ -517,8 +517,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ carbs: 80 }); // 80% of goal
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("ft-progress-yellow");
-			expect(result).toContain("--ft-progress-percent:80%");
+			expect(result).toContain("food-tracker-progress-yellow");
+			expect(result).toContain("--food-tracker-progress-percent:80%");
 		});
 	});
 });

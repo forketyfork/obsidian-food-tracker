@@ -79,11 +79,10 @@ export default class NutrientModal extends Modal {
 		// Apply initial modal styling
 		this.modalEl.addClass("nutrient-modal");
 
-		contentEl.createEl("h2", { text: "🍎 Add nutrient" });
-
 		// Create main container for side-by-side layout
 		this.mainContainer = contentEl.createDiv({ cls: "nutrient-modal-main" });
 		this.formContainer = this.mainContainer.createDiv({ cls: "nutrient-form-container" });
+		this.formContainer.appendChild(contentEl.createEl("h2", { text: "🍎 Add nutrient" }));
 
 		// Always create the search results container to maintain layout
 		this.searchResultsEl = this.mainContainer.createDiv({ cls: "search-results-container" });
@@ -137,8 +136,7 @@ export default class NutrientModal extends Modal {
 			});
 		});
 
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-		new Setting(this.formContainer!)
+		new Setting(this.formContainer)
 			.addButton(button =>
 				button
 					.setButtonText("Create")

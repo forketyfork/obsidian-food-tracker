@@ -1,5 +1,5 @@
 // Food Tracker plugin icon
-export const FOOD_TRACKER_ICON = `<span class="ft-icon" title="Food Tracker"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
+export const FOOD_TRACKER_ICON = `<span class="food-tracker-icon food-tracker-tooltip-host" data-tooltip="Food Tracker"><?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
    version="1.1"
    x="0px"
