@@ -22,6 +22,28 @@ export interface NutrientProvider {
 	getFileNameFromNutrientName(nutrientName: string): string | null;
 }
 
+/**
+ * Core logic for food suggestion and autocompletion system
+ *
+ * This class handles the analysis of user input to determine when and what suggestions
+ * to show. It supports both food name autocompletion and nutrition/measure keyword
+ * suggestions based on context.
+ *
+ * The class is designed to be independent of Obsidian's UI components for better
+ * testability and separation of concerns.
+ *
+ * @example
+ * ```typescript
+ * const core = new FoodSuggestionCore(settingsService);
+ *
+ * // Analyze what the user is typing
+ * const trigger = core.analyzeTrigger("#food apple 100", 15);
+ * if (trigger) {
+ *   const suggestions = core.getSuggestions(trigger.query, nutrientProvider);
+ *   // Show suggestions to user
+ * }
+ * ```
+ */
 export class FoodSuggestionCore {
 	private settingsService: SettingsService;
 	private subscription: Subscription;
@@ -72,9 +94,28 @@ export class FoodSuggestionCore {
 
 	/**
 	 * Analyzes a line of text to determine if food suggestions should be triggered
-	 * @param line The full line of text
-	 * @param cursorPosition The cursor position within the line
+	 *
+	 * This method examines the text before the cursor to determine if the user is
+	 * typing in a context where food suggestions should be shown. It can detect
+	 * three different contexts:
+	 * 1. Food name autocompletion (e.g., "#food appl...")
+	 * 2. Nutrition keyword completion (e.g., "#food apple 100k...")
+	 * 3. Measure keyword completion (e.g., "#food [[apple]] 100g...")
+	 *
+	 * @param line - The full line of text
+	 * @param cursorPosition - The cursor position within the line
 	 * @returns SuggestionTrigger if suggestions should be shown, null otherwise
+	 *
+	 * @example
+	 * ```typescript
+	 * // Food name completion
+	 * const trigger1 = core.analyzeTrigger("#food appl", 10);
+	 * // Returns: { query: "appl", startOffset: 6, endOffset: 10 }
+	 *
+	 * // Nutrition keyword completion
+	 * const trigger2 = core.analyzeTrigger("#food apple 100k", 16);
+	 * // Returns: { query: "100k", startOffset: 12, endOffset: 16, context: "nutrition" }
+	 * ```
 	 */
 	analyzeTrigger(line: string, cursorPosition: number): SuggestionTrigger | null {
 		// Early exit if cursor is at beginning of line
@@ -132,10 +173,26 @@ export class FoodSuggestionCore {
 
 	/**
 	 * Generates suggestions based on a query and context
-	 * @param query The search query
-	 * @param nutrientProvider Provider for nutrient data
-	 * @param context The context type (measure, nutrition, or undefined for food names)
+	 *
+	 * This method returns different types of suggestions based on the context:
+	 * - For nutrition/measure context: Returns keyword completions (e.g., "100kcal", "100g")
+	 * - For food name context: Returns matching food names from the nutrient provider
+	 *
+	 * @param query - The search query to match against
+	 * @param nutrientProvider - Provider for nutrient data and food names
+	 * @param context - The context type (measure, nutrition, or undefined for food names)
 	 * @returns Array of suggestion strings
+	 *
+	 * @example
+	 * ```typescript
+	 * // Get nutrition keyword suggestions
+	 * const nutritionSuggestions = core.getSuggestions("100k", provider, "nutrition");
+	 * // Returns: ["100kcal", "100kg"] (if both match)
+	 *
+	 * // Get food name suggestions
+	 * const foodSuggestions = core.getSuggestions("appl", provider);
+	 * // Returns: ["apple", "apple pie", ...] (matching food names)
+	 * ```
 	 */
 	getSuggestions(query: string, nutrientProvider: NutrientProvider, context?: "measure" | "nutrition"): string[] {
 		const lowerQuery = query.toLowerCase();

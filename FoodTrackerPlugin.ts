@@ -24,18 +24,42 @@ export default class FoodTrackerPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		this.initializeCore();
+		this.setupEventListeners();
+		this.registerCodeMirrorExtensions();
 
+		// Initial total update
+		void this.updateNutritionTotal();
+	}
+
+	/**
+	 * Initialize core services and components
+	 */
+	private initializeCore(): void {
+		// Initialize nutrient cache
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
-		await this.nutrientCache.initialize();
+		this.nutrientCache.initialize();
 
-		// Initialize settings service first
+		// Initialize settings service
 		this.settingsService = new SettingsService();
 		this.settingsService.initialize(this.settings);
 
+		// Initialize goals service
 		this.goalsService = new GoalsService(this.app, this.settings.goalsFile || "");
 		// Delay goals loading until vault is ready
 		this.app.workspace.onLayoutReady(() => this.goalsService.loadGoals());
 
+		// Initialize UI components
+		this.initializeUIComponents();
+
+		// Register commands and tabs
+		this.registerCommandsAndTabs();
+	}
+
+	/**
+	 * Initialize UI components and status bar
+	 */
+	private initializeUIComponents(): void {
 		// Register food autocomplete
 		this.foodSuggest = new FoodSuggest(this.app, this.settingsService, this.nutrientCache);
 		this.registerEditorSuggest(this.foodSuggest);
@@ -47,7 +71,12 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
+	}
 
+	/**
+	 * Register commands and settings tab
+	 */
+	private registerCommandsAndTabs(): void {
 		// Add settings tab
 		this.addSettingTab(new FoodTrackerSettingTab(this.app, this));
 
@@ -59,7 +88,20 @@ export default class FoodTrackerPlugin extends Plugin {
 				new NutrientModal(this.app, this).open();
 			},
 		});
+	}
 
+	/**
+	 * Setup all event listeners for file watching and updates
+	 */
+	private setupEventListeners(): void {
+		this.setupNutrientCacheEventListeners();
+		this.setupNutritionUpdateEventListeners();
+	}
+
+	/**
+	 * Setup event listeners for nutrient cache file watching
+	 */
+	private setupNutrientCacheEventListeners(): void {
 		// Register file watcher for nutrient directory
 		this.registerEvent(
 			this.app.vault.on("create", file => {
@@ -94,7 +136,7 @@ export default class FoodTrackerPlugin extends Plugin {
 					this.nutrientCache.handleRename(file, oldPath);
 				} else if (oldPath.startsWith(this.settings.nutrientDirectory + "/")) {
 					// If it's not a file but was in nutrient directory, do a full refresh
-					void this.nutrientCache.refresh();
+					this.nutrientCache.refresh();
 				}
 			})
 		);
@@ -109,10 +151,15 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerEvent(
 			this.app.metadataCache.on("resolved", () => {
 				// Refresh cache when metadata cache is fully resolved (on startup)
-				void this.nutrientCache.refresh();
+				this.nutrientCache.refresh();
 			})
 		);
+	}
 
+	/**
+	 * Setup event listeners for nutrition total updates
+	 */
+	private setupNutritionUpdateEventListeners(): void {
 		// Update nutrition total when files change
 		this.registerEvent(
 			this.app.vault.on("modify", () => {
@@ -135,7 +182,12 @@ export default class FoodTrackerPlugin extends Plugin {
 				void this.updateNutritionTotal();
 			})
 		);
+	}
 
+	/**
+	 * Register CodeMirror extensions for highlighting
+	 */
+	private registerCodeMirrorExtensions(): void {
 		// Register CodeMirror extension for food amount highlighting
 		this.foodHighlightExtension = new FoodHighlightExtension(this.settingsService);
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
@@ -146,9 +198,6 @@ export default class FoodTrackerPlugin extends Plugin {
 			() => this.app.workspace.getActiveFile()?.path ?? null
 		);
 		this.registerEditorExtension(this.goalsHighlightExtension.createExtension());
-
-		// Initial total update
-		void this.updateNutritionTotal();
 	}
 
 	onunload() {
@@ -169,7 +218,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		if (this.nutrientCache) {
-			await this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
+			this.nutrientCache.updateNutrientDirectory(this.settings.nutrientDirectory);
 		}
 
 		// Recreate nutrition total with new directory

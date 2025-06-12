@@ -14,6 +14,25 @@ interface NutrientData {
 /**
  * Manages caching of nutrient files and their frontmatter data
  * Maintains efficient lookups for food names, filenames, and nutrition data
+ *
+ * This class provides a high-performance cache for nutrient data stored in markdown files
+ * with frontmatter. It automatically watches for file changes and updates the cache accordingly.
+ *
+ * @example
+ * ```typescript
+ * // Initialize the cache for a specific directory
+ * const cache = new NutrientCache(app, "nutrients");
+ * cache.initialize();
+ *
+ * // Get nutrition data for a food item
+ * const appleData = cache.getNutritionData("apple");
+ * if (appleData) {
+ *   console.log(`Calories: ${appleData.calories}`);
+ * }
+ *
+ * // Get all available nutrient names for autocomplete
+ * const allFoods = cache.getNutrientNames();
+ * ```
  */
 export default class NutrientCache implements NutrientProvider {
 	private app: App;
@@ -26,8 +45,14 @@ export default class NutrientCache implements NutrientProvider {
 		this.nutrientDirectory = nutrientDirectory;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/require-await
-	async initialize(): Promise<void> {
+	/**
+	 * Initializes the nutrient cache by scanning all markdown files in the nutrient directory
+	 * Builds internal maps for efficient name and path lookups
+	 *
+	 * This method should be called once after creating the cache instance.
+	 * It will clear any existing cache data and rebuild from current files.
+	 */
+	initialize(): void {
 		this.nutrientDataCache.clear();
 		this.nameToPathMap.clear();
 
@@ -91,8 +116,8 @@ export default class NutrientCache implements NutrientProvider {
 		}
 	}
 
-	async refresh(): Promise<void> {
-		await this.initialize();
+	refresh(): void {
+		this.initialize();
 	}
 
 	isNutrientFile(file: TAbstractFile): file is TFile {
@@ -109,7 +134,7 @@ export default class NutrientCache implements NutrientProvider {
 			this.processNutrientFile(file);
 		} catch (error) {
 			console.error("Error updating nutrient cache:", error);
-			void this.refresh();
+			this.refresh();
 		}
 	}
 
@@ -186,10 +211,35 @@ export default class NutrientCache implements NutrientProvider {
 		return 0;
 	}
 
+	/**
+	 * Gets all available nutrient names in alphabetical order
+	 * Used for autocomplete and suggestion systems
+	 *
+	 * @returns Array of nutrient names sorted alphabetically
+	 *
+	 * @example
+	 * ```typescript
+	 * const names = cache.getNutrientNames();
+	 * // Returns: ["apple", "banana", "chicken breast", ...]
+	 * ```
+	 */
 	getNutrientNames(): string[] {
 		return Array.from(this.nameToPathMap.keys()).sort();
 	}
 
+	/**
+	 * Gets the filename (without .md extension) for a given nutrient name
+	 * Used for creating wikilinks in suggestions
+	 *
+	 * @param nutrientName - The nutrient name to look up
+	 * @returns The filename without extension, or null if not found
+	 *
+	 * @example
+	 * ```typescript
+	 * const filename = cache.getFileNameFromNutrientName("Chicken Breast");
+	 * // Returns: "chicken-breast" (if that's the actual filename)
+	 * ```
+	 */
 	getFileNameFromNutrientName(nutrientName: string): string | null {
 		const filePath = this.nameToPathMap.get(nutrientName);
 		if (!filePath) return null;
@@ -199,6 +249,21 @@ export default class NutrientCache implements NutrientProvider {
 		return parts[parts.length - 1].replace(".md", "");
 	}
 
+	/**
+	 * Gets nutrition data for a given filename
+	 * Used by NutritionTotal to calculate totals from food entries
+	 *
+	 * @param filename - The filename (without .md extension) to look up
+	 * @returns The nutrition data object, or null if not found
+	 *
+	 * @example
+	 * ```typescript
+	 * const data = cache.getNutritionData("apple");
+	 * if (data) {
+	 *   console.log(`Apple has ${data.calories} calories`);
+	 * }
+	 * ```
+	 */
 	getNutritionData(filename: string): NutrientData | null {
 		// Try direct lookup by filename (basename without .md)
 		for (const [path, entry] of this.nutrientDataCache) {
@@ -210,11 +275,11 @@ export default class NutrientCache implements NutrientProvider {
 		return null;
 	}
 
-	async updateNutrientDirectory(newDirectory: string): Promise<void> {
+	updateNutrientDirectory(newDirectory: string): void {
 		if (this.nutrientDirectory !== newDirectory) {
 			this.nutrientDirectory = newDirectory;
 			// Re-initialize cache to reflect the new directory
-			await this.initialize();
+			this.initialize();
 		}
 	}
 }
