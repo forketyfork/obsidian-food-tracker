@@ -27,7 +27,7 @@ export default class DocumentTotalManager {
 			cls: "food-tracker-total",
 		});
 
-		this.documentTotalElement.innerHTML = totalText;
+		this.documentTotalElement.textContent = totalText;
 
 		// Append at the end of contentEl so it appears at the bottom
 		contentEl.appendChild(this.documentTotalElement);
@@ -61,7 +61,7 @@ export default class DocumentTotalManager {
 		}
 
 		if (this.documentTotalElement) {
-			this.documentTotalElement.innerHTML = totalText;
+			this.documentTotalElement.textContent = totalText;
 		} else {
 			this.show(totalText, view);
 		}

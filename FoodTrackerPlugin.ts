@@ -68,7 +68,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize nutrition total
 		this.nutritionTotal = new NutritionTotal(this.nutrientCache);
 		this.statusBarItem = this.addStatusBarItem();
-		this.statusBarItem.innerHTML = "";
+		this.statusBarItem.setText("");
 
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
@@ -273,10 +273,10 @@ export default class FoodTrackerPlugin extends Plugin {
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
-				if (this.statusBarItem) this.statusBarItem.innerHTML = totalText;
+				if (this.statusBarItem) this.statusBarItem.setText(totalText);
 				this.documentTotalManager.remove();
 			} else {
-				if (this.statusBarItem) this.statusBarItem.innerHTML = "";
+				if (this.statusBarItem) this.statusBarItem.setText("");
 				this.documentTotalManager.show(totalText, activeView);
 			}
 		} catch (error) {
@@ -286,7 +286,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	private clearTotal(): void {
-		if (this.statusBarItem) this.statusBarItem.innerHTML = "";
+		if (this.statusBarItem) this.statusBarItem.setText("");
 		this.documentTotalManager.remove();
 	}
 }

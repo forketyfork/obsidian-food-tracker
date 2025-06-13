@@ -240,7 +240,11 @@ sodium: ${this.nutrientData.sodium}
 		} catch (error) {
 			console.error("Error searching OpenFoodFacts:", error);
 			if (this.searchResultsEl) {
-				this.searchResultsEl.innerHTML = `<div class="search-error">Search failed. Please check your internet connection and try again.</div>`;
+				this.searchResultsEl.empty();
+				this.searchResultsEl.createDiv({
+					cls: "search-error",
+					text: "Search failed. Please check your internet connection and try again.",
+				});
 				this.showSearchResults(true);
 			}
 		} finally {
