@@ -27,9 +27,6 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.initializeCore();
 		this.setupEventListeners();
 		this.registerCodeMirrorExtensions();
-
-		// Initial total update
-		void this.updateNutritionTotal();
 	}
 
 	/**
@@ -47,7 +44,11 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize goals service
 		this.goalsService = new GoalsService(this.app, this.settings.goalsFile || "");
 		// Delay goals loading until vault is ready
-		this.app.workspace.onLayoutReady(() => this.goalsService.loadGoals());
+		this.app.workspace.onLayoutReady(() => {
+			void this.goalsService.loadGoals();
+			// Update nutrition totals when workspace is ready
+			void this.updateNutritionTotal();
+		});
 
 		// Initialize UI components
 		this.initializeUIComponents();
@@ -152,6 +153,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.app.metadataCache.on("resolved", () => {
 				// Refresh cache when metadata cache is fully resolved (on startup)
 				this.nutrientCache.refresh();
+				// Update nutrition totals when metadata cache is resolved
+				void this.updateNutritionTotal();
 			})
 		);
 	}
@@ -179,6 +182,13 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Update nutrition total when active file changes
 		this.registerEvent(
 			this.app.workspace.on("active-leaf-change", () => {
+				void this.updateNutritionTotal();
+			})
+		);
+
+		// Update nutrition total when a file is opened
+		this.registerEvent(
+			this.app.workspace.on("file-open", () => {
 				void this.updateNutritionTotal();
 			})
 		);
