@@ -55,3 +55,4 @@ This file provides guidance to AI agents when working with code in this reposito
 - **Prefer metadata cache over file I/O**: Use `app.metadataCache.getFileCache(file)` instead of reading files with `app.vault.read()`
 - **Use efficient file queries**: Prefer `app.vault.getMarkdownFiles()` with filtering over folder traversal when working with multiple files
 - **Use Map for caching**: When caching file data, use `Map<string, T>` with file paths as keys for efficient updates and deletions
+- Using `innerHTML`, `outerHTML` or similar API's is a security risk. Instead, use the DOM API or the Obsidian helper functions, e.g. `book.createEl('div', { text: 'How to Take Smart Notes', cls: 'book__title' });`

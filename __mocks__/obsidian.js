@@ -119,4 +119,6 @@ module.exports = {
 			status: 200,
 			json: {},
 		}),
+	addIcon: () => {},
+	setIcon: () => {},
 };

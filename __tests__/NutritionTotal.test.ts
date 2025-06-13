@@ -1,28 +1,75 @@
 import NutritionTotal from "../NutritionTotal";
 import NutrientCache from "../NutrientCache";
 
+// Mock createEl function to simulate Obsidian's DOM creation
+declare global {
+	function createEl<T extends keyof HTMLElementTagNameMap>(
+		tag: T,
+		options?: { cls?: string | string[]; text?: string; attr?: Record<string, string> }
+	): HTMLElementTagNameMap[T];
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
+global.createEl = jest.fn().mockImplementation((tag: string, options?: any) => {
+	const element = document.createElement(tag) as any;
+	if (options?.cls) {
+		const classes = Array.isArray(options.cls) ? options.cls : [options.cls];
+		element.classList.add(...classes);
+	}
+	if (options?.text) {
+		element.textContent = options.text;
+	}
+	if (options?.attr) {
+		Object.entries(options.attr).forEach(([key, value]) => {
+			element.setAttribute(key, value as string);
+		});
+	}
+
+	// Add Obsidian-specific methods
+	element.addClass = jest.fn().mockImplementation((...classes: string[]) => {
+		element.classList.add(...classes);
+		return element;
+	});
+
+	return element;
+});
+
+// Mock createElementNS for SVG creation
+global.document.createElementNS = jest.fn().mockImplementation((_namespace: string, tag: string) => {
+	const element = document.createElement(tag) as any;
+	element.setAttribute = jest.fn();
+	element.appendChild = jest.fn();
+	return element;
+});
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
+
 describe("NutritionTotal", () => {
 	let nutritionTotal: NutritionTotal;
 	let mockGetNutritionData: jest.Mock;
 
-	// Helper function to extract just the emojis from the HTML output for easier testing
-	const extractEmojis = (html: string): string => {
-		const emojiRegex = />(🔥|🥑|🥩|🍞|🌾|🍯|🧂)<\/span>/g;
-		const matches = [];
-		let match;
-		while ((match = emojiRegex.exec(html)) !== null) {
-			matches.push(match[1]);
-		}
-		return matches.join(" ");
+	// Helper function to extract just the emojis from the HTMLElement output for easier testing
+	const extractEmojis = (element: HTMLElement | null): string => {
+		if (!element) return "";
+		const spans = element.querySelectorAll(".food-tracker-nutrient-item");
+		const emojis = Array.from(spans).map(span => span.textContent?.trim() ?? "");
+		return emojis.join(" ");
 	};
 
-	const expectEmojis = (result: string, expectedEmojis: string): void => {
+	const expectEmojis = (result: HTMLElement | null, expectedEmojis: string): void => {
 		if (expectedEmojis === "") {
-			expect(result).toBe("");
+			expect(result).toBeNull();
 			return;
 		}
-		expect(result).toContain("food-tracker-nutrition-bar");
+		expect(result).not.toBeNull();
+		expect(result!.classList.contains("food-tracker-nutrition-bar")).toBe(true);
 		expect(extractEmojis(result)).toBe(expectedEmojis);
+	};
+
+	// Helper function to check if HTMLElement contains specific class or attribute
+	const expectElementToContain = (element: HTMLElement | null, content: string): void => {
+		expect(element).not.toBeNull();
+		const html = element!.outerHTML;
+		expect(html).toContain(content);
 	};
 
 	beforeEach(() => {
@@ -36,10 +83,10 @@ describe("NutritionTotal", () => {
 	});
 
 	describe("calculateTotalNutrients", () => {
-		test("returns empty string for content with no food entries", () => {
+		test("returns null for content with no food entries", () => {
 			const content = "This is just regular text with no food entries.";
 			const result = nutritionTotal.calculateTotalNutrients(content);
-			expect(result).toBe("");
+			expect(result).toBeNull();
 		});
 
 		test("works with custom food tag", () => {
@@ -62,9 +109,9 @@ describe("NutritionTotal", () => {
 			expectEmojis(result, "🔥 🥑 🥩 🍞 🍯");
 		});
 
-		test("returns empty string for empty content", () => {
+		test("returns null for empty content", () => {
 			const result = nutritionTotal.calculateTotalNutrients("");
-			expect(result).toBe("");
+			expect(result).toBeNull();
 		});
 
 		test("calculates total nutrients for single food entry", () => {
@@ -115,7 +162,7 @@ Some other text
 			const content = "#food [[unknown-food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(result).toBe("");
+			expect(result).toBeNull();
 		});
 
 		test("handles cache errors gracefully", () => {
@@ -128,7 +175,7 @@ Some other text
 			const content = "#food [[error-food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(result).toBe("");
+			expect(result).toBeNull();
 			expect(consoleSpy).toHaveBeenCalledWith("Error reading nutrient data for error-food:", "Cache error");
 
 			consoleSpy.mockRestore();
@@ -315,7 +362,7 @@ Some other text
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(result).toBe("");
+			expect(result).toBeNull();
 		});
 
 		test("handles partial nutrient data", () => {
@@ -452,7 +499,7 @@ End of day`;
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			// Should not match inline pattern since it starts with [[
-			expect(result).toBe("");
+			expect(result).toBeNull();
 		});
 
 		test("handles complex food names in inline nutrition", () => {
@@ -481,8 +528,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 45 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("food-tracker-progress-green");
-			expect(result).toContain("--food-tracker-progress-percent:90%");
+			expectElementToContain(result, "food-tracker-progress-green");
+			expectElementToContain(result, "--food-tracker-progress-percent: 90%;");
 		});
 
 		test("adds progress bar with green color when within 10% of goal (above)", () => {
@@ -490,8 +537,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 55 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("food-tracker-progress-green");
-			expect(result).toContain("--food-tracker-progress-percent:100%");
+			expectElementToContain(result, "food-tracker-progress-green");
+			expectElementToContain(result, "--food-tracker-progress-percent: 100%;");
 		});
 
 		test("adds progress bar with green color when exactly at goal", () => {
@@ -499,18 +546,18 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ fats: 50 });
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("food-tracker-progress-green");
-			expect(result).toContain("--food-tracker-progress-percent:100%");
+			expectElementToContain(result, "food-tracker-progress-green");
+			expectElementToContain(result, "--food-tracker-progress-percent: 100%;");
 		});
 
-		test("adds progress bar with red color when exceeding goal by more than 10%", () => {
+		test("adds progress bar with red color when exceeding goal by more than 10%;", () => {
 			const goals = { carbs: 30 };
 			mockGetNutritionData.mockReturnValue({ carbs: 40 }); // 133% of goal
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("food-tracker-progress-red");
-			expect(result).toContain("--food-tracker-progress-percent:100%");
-			expect(result).toContain("(133% of 30 g goal)");
+			expectElementToContain(result, "food-tracker-progress-red");
+			expectElementToContain(result, "--food-tracker-progress-percent: 100%;");
+			expectElementToContain(result, "(133% of 30 g goal)");
 		});
 
 		test("adds progress bar with yellow color when below 90% of goal", () => {
@@ -518,8 +565,8 @@ End of day`;
 			mockGetNutritionData.mockReturnValue({ carbs: 80 }); // 80% of goal
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, goals);
-			expect(result).toContain("food-tracker-progress-yellow");
-			expect(result).toContain("--food-tracker-progress-percent:80%");
+			expectElementToContain(result, "food-tracker-progress-yellow");
+			expectElementToContain(result, "--food-tracker-progress-percent: 80%;");
 		});
 
 		test("calculates total nutrients for inline nutrition with fiber", () => {

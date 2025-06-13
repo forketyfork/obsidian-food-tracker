@@ -1,7 +1,8 @@
 import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
 import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
-import { FOOD_TRACKER_ICON } from "./icon";
+import { FOOD_TRACKER_ICON_NAME } from "./icon";
+import { setIcon } from "obsidian";
 
 interface NutrientData {
 	calories?: number;
@@ -51,14 +52,19 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
-	calculateTotalNutrients(content: string, foodTag: string = "food", escaped = false, goals?: NutrientGoals): string {
+	calculateTotalNutrients(
+		content: string,
+		foodTag: string = "food",
+		escaped = false,
+		goals?: NutrientGoals
+	): HTMLElement | null {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 			const foodEntries = this.parseFoodEntries(content, tag);
 			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
 
 			if (foodEntries.length === 0 && inlineEntries.length === 0) {
-				return "";
+				return null;
 			}
 
 			const totalNutrients = this.calculateTotals(foodEntries);
@@ -69,7 +75,7 @@ export default class NutritionTotal {
 			return this.formatTotal(combined, goals);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
-			return "";
+			return null;
 		}
 	}
 
@@ -224,7 +230,7 @@ export default class NutritionTotal {
 		}
 	}
 
-	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): string {
+	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): HTMLElement | null {
 		const formatConfig: { key: keyof NutrientData; emoji: string; name: string; unit: string; decimals: number }[] = [
 			{ key: "calories", emoji: "🔥", name: "Calories", unit: "kcal", decimals: 0 },
 			{ key: "fats", emoji: "🥑", name: "Fats", unit: "g", decimals: 1 },
@@ -235,12 +241,18 @@ export default class NutritionTotal {
 			{ key: "sodium", emoji: "🧂", name: "Sodium", unit: "mg", decimals: 1 },
 		];
 
-		const parts: string[] = [];
+		const elements: HTMLElement[] = [];
 		for (const config of formatConfig) {
 			const value = nutrients[config.key];
 			if (value && value > 0) {
 				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
 				const tooltipText = `${config.name}: ${formattedValue} ${config.unit}`;
+
+				const span = createEl("span", {
+					cls: ["food-tracker-nutrient-item", "food-tracker-tooltip-host"],
+					text: config.emoji,
+				});
+				span.setAttribute("data-tooltip", tooltipText);
 
 				if (goals?.[config.key] !== undefined) {
 					const goal = goals[config.key] as number;
@@ -257,20 +269,38 @@ export default class NutritionTotal {
 								: "food-tracker-progress-yellow";
 
 					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
-					parts.push(
-						`<span class="food-tracker-progress food-tracker-nutrient-item food-tracker-tooltip-host ${colorClass}" style="--food-tracker-progress-percent:${percent}%" data-tooltip="${goalTooltipText}">${config.emoji}</span>`
-					);
-				} else {
-					parts.push(
-						`<span class="food-tracker-nutrient-item food-tracker-tooltip-host" data-tooltip="${tooltipText}">${config.emoji}</span>`
-					);
+					span.addClass("food-tracker-progress", colorClass);
+					span.style.setProperty("--food-tracker-progress-percent", `${percent}%`);
+					span.setAttribute("data-tooltip", goalTooltipText);
 				}
+
+				elements.push(span);
 			}
 		}
 
-		if (parts.length === 0) return "";
+		if (elements.length === 0) return null;
 
-		// Add the Food Tracker icon to the left of the nutrition bar
-		return `<div class="food-tracker-nutrition-bar">${FOOD_TRACKER_ICON}<div class="food-tracker-separator"></div>${parts.join('<div class="food-tracker-separator"></div>')}</div>`;
+		// Create the main nutrition bar container
+		const container = createEl("div", { cls: "food-tracker-nutrition-bar" });
+
+		// Add the Food Tracker icon using Obsidian's registered icon
+		const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
+		iconContainer.setAttribute("data-tooltip", "Food Tracker");
+		iconContainer.setAttribute("aria-label", "Food Tracker");
+		setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
+		container.appendChild(iconContainer);
+
+		// Add separator after icon
+		container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+
+		// Add nutrient elements with separators between them
+		elements.forEach((element, index) => {
+			container.appendChild(element);
+			if (index < elements.length - 1) {
+				container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+			}
+		});
+
+		return container;
 	}
 }

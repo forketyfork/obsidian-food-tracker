@@ -1,4 +1,4 @@
-import { Plugin, MarkdownView, TFile } from "obsidian";
+import { Plugin, MarkdownView, TFile, addIcon } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
@@ -9,6 +9,7 @@ import GoalsHighlightExtension from "./GoalsHighlightExtension";
 import DocumentTotalManager from "./DocumentTotalManager";
 import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
 import GoalsService from "./GoalsService";
+import { FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT } from "./icon";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -23,6 +24,9 @@ export default class FoodTrackerPlugin extends Plugin {
 	private goalsHighlightExtension: GoalsHighlightExtension;
 
 	async onload() {
+		// Register the Food Tracker icon
+		addIcon(FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT);
+
 		await this.loadSettings();
 		this.initializeCore();
 		this.setupEventListeners();
@@ -265,7 +269,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			}
 
 			const content = await this.app.vault.read(activeView.file);
-			const totalText = this.nutritionTotal.calculateTotalNutrients(
+			const totalElement = this.nutritionTotal.calculateTotalNutrients(
 				content,
 				this.settingsService.currentEscapedFoodTag,
 				true,
@@ -273,11 +277,16 @@ export default class FoodTrackerPlugin extends Plugin {
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {
-				if (this.statusBarItem) this.statusBarItem.setText(totalText);
+				if (this.statusBarItem) {
+					this.statusBarItem.empty();
+					if (totalElement) {
+						this.statusBarItem.appendChild(totalElement);
+					}
+				}
 				this.documentTotalManager.remove();
 			} else {
 				if (this.statusBarItem) this.statusBarItem.setText("");
-				this.documentTotalManager.show(totalText, activeView);
+				this.documentTotalManager.show(totalElement, activeView);
 			}
 		} catch (error) {
 			console.error("Error updating nutrition total:", error);
