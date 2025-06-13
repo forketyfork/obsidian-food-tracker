@@ -25,6 +25,8 @@ interface InlineNutrientEntry {
 	protein?: number;
 	carbs?: number;
 	sugar?: number;
+	fiber?: number;
+	sodium?: number;
 }
 
 /**
@@ -41,6 +43,8 @@ export default class NutritionTotal {
 		prot: "protein",
 		carbs: "carbs",
 		sugar: "sugar",
+		fiber: "fiber",
+		sodium: "sodium",
 	};
 
 	constructor(nutrientCache: NutrientCache) {
@@ -118,7 +122,7 @@ export default class NutritionTotal {
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
 		// This single regex finds all number-unit pairs
-		const nutrientRegex = /(\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar)/gi;
+		const nutrientRegex = /(\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
 
 		const matches = nutrientString.matchAll(nutrientRegex);
 

@@ -184,7 +184,7 @@ describe("FoodSuggestionCore", () => {
 
 		test("should return multiple nutrition keywords", () => {
 			const suggestions = core.getSuggestions("100", provider);
-			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar"]);
+			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar", "100fiber", "100sodium"]);
 		});
 
 		test("should return partial nutrition keyword matches", () => {
@@ -214,7 +214,7 @@ describe("FoodSuggestionCore", () => {
 
 		test("should return nutrition suggestions for number queries in nutrition context", () => {
 			const suggestions = core.getSuggestions("100", provider, "nutrition");
-			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar"]);
+			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar", "100fiber", "100sodium"]);
 		});
 	});
 

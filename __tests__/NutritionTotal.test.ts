@@ -521,5 +521,68 @@ End of day`;
 			expect(result).toContain("food-tracker-progress-yellow");
 			expect(result).toContain("--food-tracker-progress-percent:80%");
 		});
+
+		test("calculates total nutrients for inline nutrition with fiber", () => {
+			const content = "#food High fiber cereal 150kcal 2fat 5prot 30carbs 8fiber";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾");
+		});
+
+		test("calculates total nutrients for inline nutrition with sodium", () => {
+			const content = "#food Soup 100kcal 3fat 4prot 12carbs 350sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🧂");
+		});
+
+		test("calculates total nutrients for inline nutrition with both fiber and sodium", () => {
+			const content = "#food Whole grain bread 120kcal 2fat 4prot 24carbs 3fiber 200sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🧂");
+		});
+
+		test("handles mixed inline nutrition with all nutrients including fiber and sodium", () => {
+			const content = "#food Complete meal 400kcal 18fat 25prot 35carbs 8sugar 12fiber 450sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🍯 🧂");
+		});
+
+		test("handles case insensitivity for fiber and sodium", () => {
+			const content = "#food Test meal 200kcal 10fat 15prot 20carbs 5FIBER 300SODIUM";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🧂");
+		});
+
+		test("handles mixed order with fiber and sodium", () => {
+			const content = "#food Mixed order 5fiber 200kcal 300sodium 10fat 15prot 25carbs";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🧂");
+		});
+
+		test("handles decimal values for fiber and sodium", () => {
+			const content = "#food Precise meal 180kcal 8.5fat 12.2prot 22.1carbs 6.8fiber 275.5sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🧂");
+		});
+
+		test("handles partial inline nutrition with only fiber", () => {
+			const content = "#food Fiber supplement 20kcal 15fiber";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🌾");
+		});
+
+		test("handles partial inline nutrition with only sodium", () => {
+			const content = "#food Salt water 0kcal 500sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🧂");
+		});
 	});
 });
