@@ -6,7 +6,7 @@
 
 An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition totals, intelligent food suggestions, and flexible entry methods including both database-driven and inline nutrition tracking.
 
-<img width="987" alt="Screenshot 2025-06-12 at 16 05 09" src="https://github.com/user-attachments/assets/057c8d9b-1aed-4744-a224-1df6bba92408" />
+![Demo of Food Tracker](demo.png)
 
 ## Demo
 
