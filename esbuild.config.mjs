@@ -40,6 +40,9 @@ const sharedOptions = {
 	outfile: "main.js",
 	minify: prod,
 	keepNames: true,
+	jsx: "transform",
+	jsxFactory: "React.createElement",
+	jsxFragment: "React.Fragment",
 	banner: {
 		js: banner,
 	},
