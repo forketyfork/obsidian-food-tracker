@@ -104,10 +104,7 @@ export const createLinkedFoodRegex = (escapedFoodTag: string) =>
  * ```
  */
 export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
-	new RegExp(
-                `#${escapedFoodTag}\\s+\\[[^\\]]+\\]\\]\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
-		"i"
-	);
+	new RegExp(`#${escapedFoodTag}\\s+\\[[^\\]]+\\]\\]\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`, "i");
 
 // ================================
 // Advanced highlighting regex patterns
@@ -125,7 +122,7 @@ const createInlineNutritionPattern = () =>
  * Example: "#food [[Chicken]] 200g"
  */
 const createLinkedFoodPattern = () =>
-        `\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`;
+	`\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`;
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types
