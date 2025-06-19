@@ -83,12 +83,11 @@ describe("FoodHighlightCore", () => {
 				});
 			});
 
-			test("handles food names without brackets", () => {
+			test("ignores amounts without brackets", () => {
 				const text = "#food Chicken 200g";
 				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
 
-				expect(ranges).toHaveLength(1);
-				expect(ranges[0]).toEqual({ start: 14, end: 18, type: "amount" }); // 200g
+				expect(ranges).toHaveLength(0);
 			});
 
 			test("handles decimal amounts", () => {
