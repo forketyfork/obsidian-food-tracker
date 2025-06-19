@@ -1,6 +1,6 @@
 import { App, Modal, Setting, Notice } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
-import { INVALID_FILENAME_CHARS_REGEX } from "./constants";
+import { INVALID_FILENAME_CHARS_REGEX, convertGermanUmlauts } from "./constants";
 
 interface NutrientData {
 	name: string;
@@ -165,7 +165,7 @@ export default class NutrientModal extends Modal {
 
 		try {
 			const directory = this.plugin.settings.nutrientDirectory;
-			const fileName = `${this.nutrientData.name.replace(INVALID_FILENAME_CHARS_REGEX, "_")}.md`;
+			const fileName = `${convertGermanUmlauts(this.nutrientData.name).replace(INVALID_FILENAME_CHARS_REGEX, "_")}.md`;
 			const filePath = `${directory}/${fileName}`;
 
 			// Check if file already exists
