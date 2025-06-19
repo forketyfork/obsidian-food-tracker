@@ -91,21 +91,21 @@ export const createLinkedFoodRegex = (escapedFoodTag: string) =>
 	new RegExp(`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`, "i");
 
 /**
- * Creates regex to match linked food entries for highlighting (broader pattern)
+ * Creates regex to match linked food entries for highlighting
  *
  * @param escapedFoodTag - The escaped food tag
- * @returns RegExp that matches linked or non-linked food with amounts
+ * @returns RegExp that matches linked food entries with amounts
  *
  * @example
  * ```typescript
  * const regex = createLinkedFoodHighlightRegex("food");
- * // Matches: "#food [[Apple]] 150g" or "#food Apple 150g"
+ * // Matches: "#food [[Apple]] 150g"
  * // Captures: ["150g"]
  * ```
  */
 export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
 	new RegExp(
-		`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
+                `#${escapedFoodTag}\\s+\\[[^\\]]+\\]\\]\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`,
 		"i"
 	);
 
@@ -122,11 +122,10 @@ const createInlineNutritionPattern = () =>
 
 /**
  * Creates a regex pattern for linked food entries with amounts (internal helper)
- * Example: "#food [[Chicken]] 200g" or "#food Chicken 200g"
+ * Example: "#food [[Chicken]] 200g"
  */
 const createLinkedFoodPattern = () =>
-	`(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`;
-
+        `\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l))`;
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types
