@@ -1,7 +1,7 @@
 {
 	"id": "food-tracker",
 	"name": "Food Tracker",
-	"version": "0.2.7",
+	"version": "0.2.8",
 	"author": "Forketyfork",
 	"minAppVersion": "0.15.0",
 	"description": "Track your food intake (calories, macronutrients) and nutritional information",
