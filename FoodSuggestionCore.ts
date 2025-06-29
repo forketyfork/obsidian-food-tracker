@@ -48,7 +48,7 @@ export class FoodSuggestionCore {
 	private settingsService: SettingsService;
 	private subscription: Subscription;
 	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar"];
-	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp"];
+	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp", "pc"];
 
 	// Precompiled regex patterns for performance
 	private foodTagRegex: RegExp;

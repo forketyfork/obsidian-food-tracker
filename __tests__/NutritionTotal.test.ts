@@ -228,6 +228,17 @@ Some other text
 			expectEmojis(result2, "🔥"); // 1 tsp = 5ml ≈ 5g, so 5/100 * 100 = 5
 		});
 
+		test("supports piece units when gramsInPiece is defined", () => {
+			mockGetNutritionData.mockReturnValue({
+				calories: 100,
+				gramsInPiece: 120,
+			});
+
+			const content = "#food [[food]] 1pc";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+			expectEmojis(result, "🔥"); // 1 piece = 120g -> 120/100*100
+		});
+
 		test("handles decimal amounts", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
@@ -267,6 +278,11 @@ Some other text
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			expectEmojis(result, "🔥");
+
+			const contentPc = "#food [[food]] 1PC";
+			const resultPc = nutritionTotal.calculateTotalNutrients(contentPc);
+
+			expectEmojis(resultPc, "🔥");
 		});
 
 		test("formats calories as rounded integers", () => {

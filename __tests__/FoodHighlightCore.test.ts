@@ -74,6 +74,7 @@ describe("FoodHighlightCore", () => {
 					{ text: "#food [[Cheese]] 4oz", expectedRange: { start: 17, end: 20 } },
 					{ text: "#food [[Meat]] 1.2lb", expectedRange: { start: 15, end: 20 } },
 					{ text: "#food [[Water]] 1l", expectedRange: { start: 16, end: 18 } },
+					{ text: "#food [[Banana]] 1pc", expectedRange: { start: 17, end: 20 } },
 				];
 
 				testCases.forEach(({ text, expectedRange }) => {
