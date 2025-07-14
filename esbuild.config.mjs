@@ -14,7 +14,7 @@ const prod = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
 
 const sharedOptions = {
-	entryPoints: ["main.ts"],
+	entryPoints: ["src/main.ts"],
 	bundle: true,
 	external: [
 		"obsidian",
@@ -56,7 +56,7 @@ async function buildJS() {
 }
 
 function buildCSS() {
-	const input = fs.readFileSync("styles.src.css", "utf-8");
+	const input = fs.readFileSync("src/styles.src.css", "utf-8");
 	const output = minify(input).css;
 	fs.writeFileSync("styles.css", output);
 	console.log("Minified styles.css");
