@@ -132,16 +132,16 @@
 	padding: 0 4px;
 }
 
-/* Search button loading state */
-.setting-item-control button:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-}
-
 /* Fixed width for search button to prevent resizing */
-.setting-item-control button[data-food-tracker-search-button] {
+.food-tracker-search-button {
 	min-width: 110px;
 	text-align: center;
+}
+
+/* Search button loading state */
+.food-tracker-search-button-searching {
+	opacity: 0.6;
+	cursor: not-allowed;
 }
 
 .food-tracker-progress {

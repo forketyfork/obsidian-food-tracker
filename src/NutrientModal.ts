@@ -105,7 +105,7 @@ export default class NutrientModal extends Modal {
 			})
 			.addButton(button => {
 				this.searchButton = button.buttonEl;
-				this.searchButton.setAttribute("data-food-tracker-search-button", "true");
+				this.searchButton.addClass("food-tracker-search-button");
 				return button
 					.setButtonText("🔍 Search")
 					.setTooltip("Search OpenFoodFacts database")
@@ -358,7 +358,13 @@ sodium: ${this.nutrientData.sodium}
 		this.isSearching = searching;
 		if (this.searchButton) {
 			this.searchButton.disabled = searching;
-			this.searchButton.textContent = searching ? "⏳ Searching..." : "🔍 Search";
+			if (searching) {
+				this.searchButton.textContent = "⏳ Searching...";
+				this.searchButton.addClass("food-tracker-search-button-searching");
+			} else {
+				this.searchButton.textContent = "🔍 Search";
+				this.searchButton.removeClass("food-tracker-search-button-searching");
+			}
 		}
 	}
 }
