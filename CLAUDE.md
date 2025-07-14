@@ -50,6 +50,12 @@ This file provides guidance to AI agents when working with code in this reposito
 - Avoid committing package-lock.json, since we use yarn; if this file is created as a result of your actions, remove it
 - **Create separate files for new classes**: As a rule, add new classes as separate files unless they are tightly coupled to existing code
 
+## CSS Best Practices
+
+- All CSS classes should have the prefix `food-tracker-`.
+- All user data attributes should start with `data-food-tracker-`
+- Do not overwrite Obsidian core styling, always use custom classes or data attributes.
+
 ## Obsidian API Best Practices
 
 - **Prefer metadata cache over file I/O**: Use `app.metadataCache.getFileCache(file)` instead of reading files with `app.vault.read()`

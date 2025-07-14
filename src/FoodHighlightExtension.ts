@@ -35,11 +35,11 @@ export default class FoodHighlightExtension {
 
 	createExtension(): Extension {
 		const foodAmountDecoration = Decoration.mark({
-			class: "food-value",
+			class: "food-tracker-value",
 		});
 
 		const nutritionValueDecoration = Decoration.mark({
-			class: "food-nutrition-value",
+			class: "food-tracker-nutrition-value",
 		});
 
 		const getEscapedFoodTag = () => this.escapedFoodTag;
