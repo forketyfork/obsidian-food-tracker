@@ -268,7 +268,7 @@ export default class FoodTrackerPlugin extends Plugin {
 				return;
 			}
 
-			const content = await this.app.vault.read(activeView.file);
+			const content = await this.app.vault.cachedRead(activeView.file);
 			const totalElement = this.nutritionTotal.calculateTotalNutrients(
 				content,
 				this.settingsService.currentEscapedFoodTag,
