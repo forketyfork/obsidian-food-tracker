@@ -285,8 +285,8 @@ export default class NutritionTotal {
 
 		// Add the Food Tracker icon using Obsidian's registered icon
 		const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
-		iconContainer.setAttribute("data-food-tracker-tooltip", "Food Tracker");
-		iconContainer.setAttribute("aria-label", "Food Tracker");
+		iconContainer.setAttribute("data-food-tracker-tooltip", "Food tracker");
+		iconContainer.setAttribute("aria-label", "Food tracker");
 		setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
 		container.appendChild(iconContainer);
 
