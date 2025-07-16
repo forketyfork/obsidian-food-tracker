@@ -1,9 +1,20 @@
 // Mock for Obsidian API
 module.exports = {
+	Component: class Component {
+		addChild() {}
+		removeChild() {}
+		onload() {}
+		onunload() {}
+		load() {}
+		unload() {}
+		register() {}
+		registerEvent() {}
+	},
 	Plugin: class Plugin {
 		constructor(app, manifest) {
 			this.app = app;
 			this.manifest = manifest;
+			this._children = [];
 		}
 		loadData() {
 			return Promise.resolve({});
@@ -15,6 +26,14 @@ module.exports = {
 		addCommand() {}
 		addRibbonIcon() {
 			return {};
+		}
+		addChild(child) {
+			this._children.push(child);
+			if (typeof child.onload === "function") child.onload();
+		}
+		removeChild(child) {
+			this._children = this._children.filter(c => c !== child);
+			if (typeof child.onunload === "function") child.onunload();
 		}
 		registerEvent() {}
 		registerEditorSuggest() {}
@@ -105,6 +124,17 @@ module.exports = {
 		}
 		onTrigger() {
 			return null;
+		}
+		getSuggestions() {
+			return [];
+		}
+		renderSuggestion() {}
+		selectSuggestion() {}
+	},
+	AbstractInputSuggest: class AbstractInputSuggest {
+		constructor(app, inputEl) {
+			this.app = app;
+			this.inputEl = inputEl;
 		}
 		getSuggestions() {
 			return [];

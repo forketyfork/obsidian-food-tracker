@@ -4,13 +4,14 @@ import { RangeSetBuilder } from "@codemirror/state";
 import { extractMultilineGoalsHighlightRanges } from "./GoalsHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
+import { Component } from "obsidian";
 
 /**
  * CodeMirror extension that highlights values in goals files
  * Provides visual feedback for nutrition goal values
  * Improved performance by avoiding expensive file detection
  */
-export default class GoalsHighlightExtension {
+export default class GoalsHighlightExtension extends Component {
 	private settingsService: SettingsService;
 	private goalsFile: string = "";
 	private subscription: Subscription;
@@ -19,9 +20,11 @@ export default class GoalsHighlightExtension {
 		settingsService: SettingsService,
 		private getActiveFilePath: () => string | null
 	) {
+		super();
 		this.settingsService = settingsService;
+	}
 
-		// Subscribe to goals file changes
+	onload() {
 		this.subscription = this.settingsService.goalsFile$.subscribe(goalsFile => {
 			this.goalsFile = goalsFile;
 		});
@@ -30,7 +33,7 @@ export default class GoalsHighlightExtension {
 	/**
 	 * Clean up subscriptions when the extension is destroyed
 	 */
-	destroy(): void {
+	onunload(): void {
 		if (this.subscription) {
 			this.subscription.unsubscribe();
 		}
@@ -57,8 +60,7 @@ export default class GoalsHighlightExtension {
 				}
 
 				update(update: ViewUpdate) {
-					// Only rebuild decorations when document content changes
-					if (update.docChanged) {
+					if (update.docChanged || update.viewportChanged) {
 						this.decorations = this.buildDecorations(update.view);
 					}
 				}

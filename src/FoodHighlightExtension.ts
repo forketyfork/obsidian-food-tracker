@@ -4,21 +4,24 @@ import { RangeSetBuilder } from "@codemirror/state";
 import { extractMultilineHighlightRanges } from "./FoodHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
+import { Component } from "obsidian";
 
 /**
  * CodeMirror extension that highlights food amounts and nutrition values in the editor
  * Provides visual feedback for food entries and nutritional data
  * Uses reactive food tag updates via SettingsService
  */
-export default class FoodHighlightExtension {
+export default class FoodHighlightExtension extends Component {
 	private settingsService: SettingsService;
 	private escapedFoodTag: string = "";
 	private subscription: Subscription;
 
 	constructor(settingsService: SettingsService) {
+		super();
 		this.settingsService = settingsService;
+	}
 
-		// Subscribe to food tag changes
+	onload() {
 		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
 			this.escapedFoodTag = escapedFoodTag;
 		});
@@ -27,7 +30,7 @@ export default class FoodHighlightExtension {
 	/**
 	 * Clean up subscriptions when the extension is destroyed
 	 */
-	destroy(): void {
+	onunload(): void {
 		if (this.subscription) {
 			this.subscription.unsubscribe();
 		}
@@ -53,8 +56,7 @@ export default class FoodHighlightExtension {
 				}
 
 				update(update: ViewUpdate) {
-					// Only rebuild decorations when document content changes
-					if (update.docChanged) {
+					if (update.docChanged || update.viewportChanged) {
 						this.decorations = this.buildDecorations(update.view);
 					}
 				}
