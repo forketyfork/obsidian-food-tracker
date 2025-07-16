@@ -63,3 +63,8 @@ This file provides guidance to AI agents when working with code in this reposito
 - **Use efficient file queries**: Prefer `app.vault.getMarkdownFiles()` with filtering over folder traversal when working with multiple files
 - **Use Map for caching**: When caching file data, use `Map<string, T>` with file paths as keys for efficient updates and deletions
 - Using `innerHTML`, `outerHTML` or similar API's is a security risk. Instead, use the DOM API or the Obsidian helper functions, e.g. `book.createEl('div', { text: 'How to Take Smart Notes', cls: 'book__title' });`
+- Register plugin sub-components with `this.addChild` and implement `onload`/`onunload` in those classes for cleanup
+- Use `normalizePath` to sanitize user provided paths before using them
+- Prefer the Vault API (`app.vault`) over direct adapter access
+- Use `requestUrl` for external HTTP requests instead of `fetch`
+- When letting users select files or folders, provide an `AbstractInputSuggest` for type-ahead support
