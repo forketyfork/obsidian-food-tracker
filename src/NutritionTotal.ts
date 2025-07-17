@@ -252,7 +252,7 @@ export default class NutritionTotal {
 					cls: ["food-tracker-nutrient-item", "food-tracker-tooltip-host"],
 					text: config.emoji,
 				});
-				span.setAttribute("data-tooltip", tooltipText);
+				span.setAttribute("data-food-tracker-tooltip", tooltipText);
 
 				if (goals?.[config.key] !== undefined) {
 					const goal = goals[config.key] as number;
@@ -271,7 +271,7 @@ export default class NutritionTotal {
 					const goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					span.addClass("food-tracker-progress", colorClass);
 					span.style.setProperty("--food-tracker-progress-percent", `${percent}%`);
-					span.setAttribute("data-tooltip", goalTooltipText);
+					span.setAttribute("data-food-tracker-tooltip", goalTooltipText);
 				}
 
 				elements.push(span);
@@ -285,8 +285,8 @@ export default class NutritionTotal {
 
 		// Add the Food Tracker icon using Obsidian's registered icon
 		const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
-		iconContainer.setAttribute("data-tooltip", "Food Tracker");
-		iconContainer.setAttribute("aria-label", "Food Tracker");
+		iconContainer.setAttribute("data-food-tracker-tooltip", "Food tracker");
+		iconContainer.setAttribute("aria-label", "Food tracker");
 		setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
 		container.appendChild(iconContainer);
 

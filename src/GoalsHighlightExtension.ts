@@ -42,7 +42,7 @@ export default class GoalsHighlightExtension {
 	 */
 	createExtension(): Extension {
 		const goalsValueDecoration = Decoration.mark({
-			class: "goals-value",
+			class: "food-tracker-goals-value",
 		});
 
 		const getGoalsFile = () => this.goalsFile;

@@ -77,15 +77,15 @@ export default class NutrientModal extends Modal {
 		contentEl.empty();
 
 		// Apply initial modal styling
-		this.modalEl.addClass("nutrient-modal");
+		this.modalEl.addClass("food-tracker-nutrient-modal");
 
 		// Create main container for side-by-side layout
-		this.mainContainer = contentEl.createDiv({ cls: "nutrient-modal-main" });
-		this.formContainer = this.mainContainer.createDiv({ cls: "nutrient-form-container" });
+		this.mainContainer = contentEl.createDiv({ cls: "food-tracker-nutrient-modal-main" });
+		this.formContainer = this.mainContainer.createDiv({ cls: "food-tracker-nutrient-form-container" });
 		this.formContainer.appendChild(contentEl.createEl("h2", { text: "🍎 Add nutrient" }));
 
 		// Always create the search results container to maintain layout
-		this.searchResultsEl = this.mainContainer.createDiv({ cls: "search-results-container" });
+		this.searchResultsEl = this.mainContainer.createDiv({ cls: "food-tracker-search-results-container" });
 		this.searchResultsEl.hide();
 
 		new Setting(this.formContainer)
@@ -105,7 +105,7 @@ export default class NutrientModal extends Modal {
 			})
 			.addButton(button => {
 				this.searchButton = button.buttonEl;
-				this.searchButton.setAttribute("data-search-button", "true");
+				this.searchButton.addClass("food-tracker-search-button");
 				return button
 					.setButtonText("🔍 Search")
 					.setTooltip("Search OpenFoodFacts database")
@@ -242,7 +242,7 @@ sodium: ${this.nutrientData.sodium}
 			if (this.searchResultsEl) {
 				this.searchResultsEl.empty();
 				this.searchResultsEl.createDiv({
-					cls: "search-error",
+					cls: "food-tracker-search-error",
 					text: "Search failed. Please check your internet connection and try again.",
 				});
 				this.showSearchResults(true);
@@ -261,24 +261,24 @@ sodium: ${this.nutrientData.sodium}
 		this.searchResultsEl.empty();
 
 		if (this.searchResults.length === 0) {
-			this.searchResultsEl.createDiv({ text: "No results found.", cls: "search-no-results" });
+			this.searchResultsEl.createDiv({ text: "No results found.", cls: "food-tracker-search-no-results" });
 			return;
 		}
 
-		const resultsContainer = this.searchResultsEl.createDiv({ cls: "search-results" });
+		const resultsContainer = this.searchResultsEl.createDiv({ cls: "food-tracker-search-results" });
 		resultsContainer.createEl("h3", { text: "🔍 Search results from OpenFoodFacts:" });
 
 		this.searchResults.forEach(product => {
-			const productEl = resultsContainer.createDiv({ cls: "search-result-item" });
+			const productEl = resultsContainer.createDiv({ cls: "food-tracker-search-result-item" });
 
 			// Make entire item clickable
 			productEl.onclick = () => this.fillFromOpenFoodFacts(product);
 
-			const productName = productEl.createDiv({ cls: "product-name" });
+			const productName = productEl.createDiv({ cls: "food-tracker-product-name" });
 			productName.textContent = product.product_name ?? "Unknown product";
 
 			// Add brand and category information
-			const productInfo = productEl.createDiv({ cls: "product-info" });
+			const productInfo = productEl.createDiv({ cls: "food-tracker-product-info" });
 			const brandText = product.brands ? `Brand: ${product.brands}` : "";
 			const categoryText = product.categories ? `Category: ${product.categories.split(",")[0]}` : "";
 			const quantityText = product.quantity ? `Size: ${product.quantity}` : "";
@@ -288,7 +288,7 @@ sodium: ${this.nutrientData.sodium}
 				productInfo.textContent = infoItems.join(" • ");
 			}
 
-			const nutritionInfo = productEl.createDiv({ cls: "nutrition-preview" });
+			const nutritionInfo = productEl.createDiv({ cls: "food-tracker-nutrition-preview" });
 			const nutriments = product.nutriments;
 
 			const calories = Number(nutriments["energy-kcal_100g"] ?? 0);
@@ -327,10 +327,10 @@ sodium: ${this.nutrientData.sodium}
 		if (this.searchResultsEl) {
 			if (show) {
 				this.searchResultsEl.show();
-				this.modalEl.addClass("nutrient-modal-expanded");
+				this.modalEl.addClass("food-tracker-nutrient-modal-expanded");
 			} else {
 				this.searchResultsEl.hide();
-				this.modalEl.removeClass("nutrient-modal-expanded");
+				this.modalEl.removeClass("food-tracker-nutrient-modal-expanded");
 			}
 		}
 	}
@@ -358,7 +358,13 @@ sodium: ${this.nutrientData.sodium}
 		this.isSearching = searching;
 		if (this.searchButton) {
 			this.searchButton.disabled = searching;
-			this.searchButton.textContent = searching ? "⏳ Searching..." : "🔍 Search";
+			if (searching) {
+				this.searchButton.textContent = "⏳ Searching...";
+				this.searchButton.addClass("food-tracker-search-button-searching");
+			} else {
+				this.searchButton.textContent = "🔍 Search";
+				this.searchButton.removeClass("food-tracker-search-button-searching");
+			}
 		}
 	}
 }
