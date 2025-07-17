@@ -36,13 +36,14 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Code Style
 
+- All source code (TypeScript, CSS, tests, mocks) should reside in the src directory.
 - Avoid useless comments, use them to communicate obscure things and intentions which are not clear from the code rather than obvious details
 - Use Obsidian API imports from a single import statement
 - Use interfaces for type definitions
 - Add explicit error handling with try/catch blocks
 - Use async/await for asynchronous operations
 - Error messages should be user-friendly
-- Avoid unnecessary logging to the console, no debug messages, only errors
+- Avoid unnecessary logging to the console, no debug messages, only actual errors using console.error()
 - Use consistent indentation (tabs) and spacing
 - Class methods order: lifecycle methods first, then functionality
 - Any text in UI elements should use "Sentence case" instead of "Title Case"
@@ -52,8 +53,8 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## CSS Best Practices
 
-- All CSS classes should have the prefix `food-tracker-`.
-- All user data attributes should start with `data-food-tracker-`
+- All CSS classes should have the prefix `youtrack-fetcher-`.
+- All user data attributes should start with `data-youtrack-fetcher-`
 - Do not overwrite Obsidian core styling, always use custom classes or data attributes.
 
 ## Obsidian API Best Practices
