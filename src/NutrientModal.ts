@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice } from "obsidian";
+import { App, Modal, Setting, Notice, normalizePath, requestUrl } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import { INVALID_FILENAME_CHARS_REGEX, convertGermanUmlauts } from "./constants";
 
@@ -166,17 +166,17 @@ export default class NutrientModal extends Modal {
 		try {
 			const directory = this.plugin.settings.nutrientDirectory;
 			const fileName = `${convertGermanUmlauts(this.nutrientData.name).replace(INVALID_FILENAME_CHARS_REGEX, "_")}.md`;
-			const filePath = `${directory}/${fileName}`;
+			const filePath = normalizePath(`${directory}/${fileName}`);
 
 			// Check if file already exists
-			const fileExists = await this.app.vault.adapter.exists(filePath);
+			const fileExists = this.app.vault.getAbstractFileByPath(filePath) !== null;
 			if (fileExists) {
 				new Notice(`File "${fileName}" already exists in ${directory}`, 5000);
 				return;
 			}
 
 			// Ensure directory exists
-			const folderExists = await this.app.vault.adapter.exists(directory);
+			const folderExists = this.app.vault.getAbstractFileByPath(directory) !== null;
 			if (!folderExists) {
 				await this.app.vault.createFolder(directory);
 			}
@@ -218,13 +218,9 @@ sodium: ${this.nutrientData.sodium}
 			const searchTerm = encodeURIComponent(this.nutrientData.name.trim());
 			const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5`;
 
-			const response = await fetch(url);
+			const response = await requestUrl({ url });
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data = (await response.json()) as OpenFoodFactsSearchResponse;
+			const data = response.json as OpenFoodFactsSearchResponse;
 
 			// Handle different response formats and limit to 5 results
 			if (data.products && Array.isArray(data.products)) {

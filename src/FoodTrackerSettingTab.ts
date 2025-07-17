@@ -1,5 +1,7 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, normalizePath } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
+import FolderSuggest from "./FolderSuggest";
+import FileSuggest from "./FileSuggest";
 /**
  * Settings tab for configuring the Food Tracker plugin
  * Provides options for nutrient directory, display mode, and food tag
@@ -19,12 +21,13 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Nutrient directory")
 			.setDesc("Directory where nutrient files will be created")
-			.addText(text =>
+			.addText(text => {
 				text.setValue(this.plugin.settings.nutrientDirectory).onChange(async value => {
-					this.plugin.settings.nutrientDirectory = value;
+					this.plugin.settings.nutrientDirectory = normalizePath(value);
 					await this.plugin.saveSettings();
-				})
-			);
+				});
+				new FolderSuggest(this.app, text.inputEl);
+			});
 
 		new Setting(containerEl)
 			.setName("Nutrition total display")
@@ -53,14 +56,15 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Goals file")
 			.setDesc("File containing daily nutrition goals")
-			.addText(text =>
+			.addText(text => {
 				text
 					.setPlaceholder("nutrition-goals.md")
 					.setValue(this.plugin.settings.goalsFile)
 					.onChange(async value => {
-						this.plugin.settings.goalsFile = value;
+						this.plugin.settings.goalsFile = normalizePath(value);
 						await this.plugin.saveSettings();
-					})
-			);
+					});
+				new FileSuggest(this.app, text.inputEl);
+			});
 	}
 }

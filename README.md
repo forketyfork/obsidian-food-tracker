@@ -162,10 +162,10 @@ The progress bars use color coding:
 
 Go to Settings > Food Tracker to configure:
 
-- **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
+- **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients"). The setting now offers type-ahead folder suggestions.
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
-- **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md")
+- **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md"). The field includes type-ahead file suggestions.
 
 > **Note**: When you change the food tag setting, the plugin will only recognize the new tag. Existing `#food` entries will need to be manually updated to use the new tag if you want them to be included in nutrition calculations.
 

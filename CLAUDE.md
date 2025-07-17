@@ -14,7 +14,7 @@ This file provides guidance to AI agents when working with code in this reposito
 - `yarn test:dev` - Run development build and then tests
 - `yarn test:watch` - Run development build and then tests in watch mode
 - `yarn build` - Production build (includes tests, typecheck and formatting)
-- `yarn build:css` - Minify CSS with CSSO (from styles.src.css to styles.css)
+- `yarn build:css` - Minify CSS with CSSO (from src/styles.src.css to styles.css)
 - `yarn version` - Bump version in manifest.json and versions.json
 
 ## General guidelines
@@ -62,4 +62,11 @@ This file provides guidance to AI agents when working with code in this reposito
 - **Use cached read from the vault** when not intending to change the file: `app.vault.cachedRead()` instead of `app.vault.read()`
 - **Use efficient file queries**: Prefer `app.vault.getMarkdownFiles()` with filtering over folder traversal when working with multiple files
 - **Use Map for caching**: When caching file data, use `Map<string, T>` with file paths as keys for efficient updates and deletions
-- Using `innerHTML`, `outerHTML` or similar API's is a security risk. Instead, use the DOM API or the Obsidian helper functions, e.g. `book.createEl('div', { text: 'How to Take Smart Notes', cls: 'book__title' });`
+- **SECURITY**: Using `innerHTML`, `outerHTML` or similar API's is a security risk. Instead, use the DOM API or the Obsidian helper functions, e.g. `book.createEl('div', { text: 'How to Take Smart Notes', cls: 'book__title' });`
+- **Component lifecycle**: Register plugin sub-components with `this.addChild` and implement `onload`/`onunload` in those classes for cleanup
+- **Path sanitization**: Use `normalizePath` to sanitize user provided paths before using them
+- **Vault API**: Prefer the Vault API (`app.vault`) over direct adapter access
+- **Network requests**: Use `requestUrl` for external HTTP requests instead of `fetch`
+- **User input**: When letting users select files or folders, provide an `AbstractInputSuggest` for type-ahead support
+- **Type safety**: Always validate and coerce types from frontmatter and user input (e.g., `String(value)` for frontmatter fields that might not be strings)
+- **Component pattern**: Extend `Component` class for plugin sub-components to ensure proper cleanup and lifecycle management

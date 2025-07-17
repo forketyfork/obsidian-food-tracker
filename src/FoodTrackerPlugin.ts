@@ -153,14 +153,12 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
-		this.registerEvent(
-			this.app.metadataCache.on("resolved", () => {
-				// Refresh cache when metadata cache is fully resolved (on startup)
-				this.nutrientCache.refresh();
-				// Update nutrition totals when metadata cache is resolved
-				void this.updateNutritionTotal();
-			})
-		);
+		const onResolved = () => {
+			this.nutrientCache.refresh();
+			void this.updateNutritionTotal();
+			this.app.metadataCache.off("resolved", onResolved);
+		};
+		this.registerEvent(this.app.metadataCache.on("resolved", onResolved));
 	}
 
 	/**
@@ -183,13 +181,6 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
-		// Update nutrition total when active file changes
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", () => {
-				void this.updateNutritionTotal();
-			})
-		);
-
 		// Update nutrition total when a file is opened
 		this.registerEvent(
 			this.app.workspace.on("file-open", () => {
@@ -204,6 +195,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	private registerCodeMirrorExtensions(): void {
 		// Register CodeMirror extension for food amount highlighting
 		this.foodHighlightExtension = new FoodHighlightExtension(this.settingsService);
+		this.addChild(this.foodHighlightExtension);
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 
 		// Register CodeMirror extension for goals highlighting
@@ -211,17 +203,12 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.settingsService,
 			() => this.app.workspace.getActiveFile()?.path ?? null
 		);
+		this.addChild(this.goalsHighlightExtension);
 		this.registerEditorExtension(this.goalsHighlightExtension.createExtension());
 	}
 
 	onunload() {
 		this.documentTotalManager.remove();
-		if (this.foodHighlightExtension) {
-			this.foodHighlightExtension.destroy();
-		}
-		if (this.goalsHighlightExtension) {
-			this.goalsHighlightExtension.destroy();
-		}
 		this.foodSuggest?.suggestionCore?.destroy();
 	}
 
