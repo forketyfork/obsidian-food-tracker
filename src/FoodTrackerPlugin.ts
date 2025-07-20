@@ -1,4 +1,4 @@
-import { Plugin, MarkdownView, TFile, addIcon } from "obsidian";
+import { Plugin, MarkdownView, TFile, addIcon, Platform } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
@@ -213,7 +213,16 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<FoodTrackerPluginSettings>);
+		const savedData = (await this.loadData()) as Partial<FoodTrackerPluginSettings>;
+
+		// Create mobile-aware default settings
+		const mobileAwareDefaults = {
+			...DEFAULT_SETTINGS,
+			// On mobile devices, default to "document" display mode for better visibility
+			totalDisplayMode: Platform.isMobile ? "document" : DEFAULT_SETTINGS.totalDisplayMode,
+		} as FoodTrackerPluginSettings;
+
+		this.settings = Object.assign({}, mobileAwareDefaults, savedData);
 	}
 
 	async saveSettings() {
