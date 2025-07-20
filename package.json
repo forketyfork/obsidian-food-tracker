@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-food-tracker",
-	"version": "0.4.1",
+	"version": "0.4.3",
 	"description": "A plugin to track your food intake (calories, macronutrients) and nutritional information in Obsidian.",
 	"main": "main.js",
 	"scripts": {
@@ -17,7 +17,7 @@
 		"build": "yarn typecheck && yarn lint && yarn format && yarn prod && yarn test",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"build:css": "csso styles.src.css --output styles.css",
-		"release": "yarn version && git checkout -b release/$(node -p \"require('./package.json').version\") && git push origin release/$(node -p \"require('./package.json').version\")",
+		"release": "yarn version --no-git-tag-version && git add . && git commit -m \"v$(node -p \"require('./package.json').version\")\" && git checkout -b release/$(node -p \"require('./package.json').version\") && git push origin release/$(node -p \"require('./package.json').version\")",
 		"tag-release": "git tag v$(node -p \"require('./package.json').version\") && git push origin --tags"
 	},
 	"keywords": [
