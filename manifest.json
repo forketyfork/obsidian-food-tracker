@@ -6,5 +6,5 @@
 	"minAppVersion": "0.15.0",
 	"description": "Track your food intake (calories, macronutrients) and nutritional information",
 	"authorUrl": "https://github.com/forketyfork",
-	"isDesktopOnly": true
+	"isDesktopOnly": false
 }
