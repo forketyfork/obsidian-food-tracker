@@ -242,3 +242,16 @@
 	border-radius: 4px;
 	padding: 0 4px;
 }
+
+@media (max-width: 600px) {
+	.food-tracker-nutrient-modal-main {
+		flex-direction: column;
+	}
+
+	.food-tracker-nutrient-form-container,
+	.food-tracker-search-results-container {
+		min-width: 100%;
+		max-width: 100%;
+		padding-right: 0;
+	}
+}
