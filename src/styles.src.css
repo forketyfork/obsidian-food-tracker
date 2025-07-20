@@ -245,7 +245,7 @@
 
 @media (max-width: 600px) {
 	.food-tracker-nutrient-modal-main {
-		flex-direction: column;
+		flex-direction: column-reverse;
 	}
 
 	.food-tracker-nutrient-form-container,
