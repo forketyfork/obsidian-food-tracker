@@ -9,6 +9,7 @@ interface NutrientData {
 	fiber?: number;
 	sugar?: number;
 	sodium?: number;
+	measure?: "100 grams" | "piece";
 }
 
 /**
@@ -177,7 +178,7 @@ export default class NutrientCache implements NutrientProvider {
 			const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
 			if (!frontmatter) return {};
 
-			const nutrientFields: { key: keyof NutrientData; aliases: string[] }[] = [
+			const nutrientFields: { key: keyof Omit<NutrientData, "measure">; aliases: string[] }[] = [
 				{ key: "calories", aliases: ["calories"] },
 				{ key: "fats", aliases: ["fats"] },
 				{ key: "protein", aliases: ["protein"] },
@@ -193,6 +194,12 @@ export default class NutrientCache implements NutrientProvider {
 				const value = field.aliases.map(alias => frontmatter[alias] as unknown).find(v => v !== undefined);
 				if (value !== undefined) {
 					data[field.key] = this.parseNumber(value);
+				}
+			}
+			if (typeof frontmatter.measure === "string") {
+				const measure = frontmatter.measure.toLowerCase();
+				if (measure === "piece" || measure === "100 grams") {
+					data.measure = measure;
 				}
 			}
 			return data;
