@@ -1,5 +1,5 @@
 <h1>
-  Food Tracker <img src="logo.svg" alt="Logo" height="24" style="vertical-align: middle;"/>
+  Food Tracker <img src="images/logo.svg" alt="Logo" height="24" style="vertical-align: middle;"/>
 </h1>
 
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
