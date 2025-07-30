@@ -8,11 +8,11 @@ An Obsidian plugin to track your food intake (calories, macronutrients) and nutr
 
 This plugin works on **mobile** and **desktop**, with layouts that adapt to smaller screens.
 
-![Demo of Food Tracker](demo.png)
+![Demo of Food Tracker](images/demo.png)
 
 ## Demo
 
-![Demo of Food Tracker](demo.gif)
+![Demo of Food Tracker](images/demo.gif)
 
 ## Features
 
