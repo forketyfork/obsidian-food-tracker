@@ -3,6 +3,7 @@
 </h1>
 
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/forketyfork/obsidian-food-tracker)](https://github.com/forketyfork/obsidian-food-tracker/releases/latest)
 
 An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition totals, intelligent food suggestions, and flexible entry methods including both database-driven and inline nutrition tracking.
 
