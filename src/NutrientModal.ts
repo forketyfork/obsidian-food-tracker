@@ -11,10 +11,11 @@ interface NutrientData {
 	fiber: number;
 	protein: number;
 	sodium: number;
+	measure: "100 grams" | "piece";
 }
 
 type NutrientField = {
-	key: keyof Omit<NutrientData, "name">;
+	key: keyof Omit<NutrientData, "name" | "measure">;
 	name: string;
 	unit: string;
 };
@@ -69,6 +70,7 @@ export default class NutrientModal extends Modal {
 			fiber: 0,
 			protein: 0,
 			sodium: 0,
+			measure: "100 grams",
 		};
 	}
 
@@ -136,6 +138,14 @@ export default class NutrientModal extends Modal {
 			});
 		});
 
+		new Setting(this.formContainer).setName("Measure").addDropdown(drop => {
+			drop.addOption("100 grams", "100 grams");
+			drop.addOption("piece", "Piece");
+			drop.setValue(this.nutrientData.measure).onChange(value => {
+				this.nutrientData.measure = value as "100 grams" | "piece";
+			});
+		});
+
 		new Setting(this.formContainer)
 			.addButton(button =>
 				button
@@ -190,6 +200,7 @@ sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
 protein: ${this.nutrientData.protein}
 sodium: ${this.nutrientData.sodium}
+measure: ${this.nutrientData.measure}
 ---
 
 `;
@@ -347,6 +358,11 @@ sodium: ${this.nutrientData.sodium}
 					input.value = typeof value === "number" ? value.toString() : String(value);
 				}
 			});
+
+			const dropdown = this.formContainer.querySelector<HTMLSelectElement>("select");
+			if (dropdown) {
+				dropdown.value = this.nutrientData.measure;
+			}
 		}
 	}
 
