@@ -113,6 +113,13 @@ export const createLinkedFoodRegex = (escapedFoodTag: string) =>
 	new RegExp(`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l)`, "i");
 
 /**
+ * Creates regex to match linked food entries without amounts
+ * Used for foods measured per piece
+ */
+export const createLinkedFoodPieceRegex = (escapedFoodTag: string) =>
+	new RegExp(`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\](?:\\s+(\\d+(?:\\.\\d+)?))?\\s*$`, "i");
+
+/**
  * Creates regex to match linked food entries for highlighting
  *
  * @param escapedFoodTag - The escaped food tag

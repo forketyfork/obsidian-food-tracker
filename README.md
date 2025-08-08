@@ -29,7 +29,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Configurable food tag**: Customize the tag used for food entries (default: `#food`, can be changed to `#meal`, `#nutrition`, etc.)
 - **Intelligent autocomplete**: Type your food tag followed by a food name for intelligent suggestions from your nutrient database
 - **Flexible food formats**: Multiple ways to track your food:
-  - **Database entries**: `#food [[food-name]] amount` - uses your nutrient database
+  - **Database entries**: `#food [[food-name]] amount` - uses your nutrient database. If the nutrient is measured per piece, omit the amount for a single piece or add a number for multiple pieces: `#food [[food-name]]` or `#food [[food-name]] 2`
   - **Inline nutrition**: `#food Food Name 300kcal 20fat 10prot 30carbs 3sugar` - specify nutrition directly
 - **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cup, tbsp, tsp
 - **Visual highlighting**: Food amounts and nutrition values are highlighted in the editor for easy identification
@@ -83,7 +83,9 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
      - Fats (in grams)
      - Carbohydrates, sugar, fiber (in grams)
      - Protein (in grams)
-     - Sodium (in milligrams)
+   - Sodium (in milligrams)
+   - **Measure**: Choose "100 grams" (default) or "piece"
+   - **Weight of a piece**: Optional, in grams; defaults to 100g if not specified
 4. Click "Create" to save the nutrient file
 
 ### Tracking Food Intake
@@ -97,7 +99,9 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
    #food [[apple]] 150g
    #food [[chicken-breast]] 200g
    #food [[oats]] 50g
+   #food [[banana]]
    ```
+   Use a bare wikilink when the nutrient is measured per piece, optionally followed by a number to specify multiple pieces.
 
 #### Method 2: Inline Nutrition Entry
 
