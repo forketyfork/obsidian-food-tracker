@@ -55,6 +55,11 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Enhanced tooltips**: Detailed hover information shows values and goal completion percentages
 - **Flexible goal setting**: Set goals for calories, fats, protein, carbohydrates, fiber, sugar, and sodium
 
+### 📈 Monthly statistics
+
+- **Quick access**: Ribbon button opens a window with a month picker and daily macronutrient table
+- **Daily breakdown**: Each row shows the same compact nutrition bar used in the status bar
+
 ## Installation
 
 ### From Obsidian Community Plugins

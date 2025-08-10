@@ -10,6 +10,7 @@ import DocumentTotalManager from "./DocumentTotalManager";
 import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import { FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT } from "./icon";
+import StatisticsModal from "./StatisticsModal";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -76,6 +77,11 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
+
+		// Add ribbon button for statistics
+		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "Open nutrition statistics", () => {
+			new StatisticsModal(this.app, this).open();
+		});
 	}
 
 	/**
