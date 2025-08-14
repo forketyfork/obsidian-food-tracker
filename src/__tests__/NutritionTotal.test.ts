@@ -300,8 +300,10 @@ Some other text
 
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(mockGetNutritionData).toHaveBeenCalledTimes(1);
+			expect(mockGetNutritionData).toHaveBeenCalledTimes(3);
 			expect(mockGetNutritionData).toHaveBeenCalledWith("complete");
+			expect(mockGetNutritionData).toHaveBeenCalledWith("no-amount");
+			expect(mockGetNutritionData).toHaveBeenCalledWith("no-unit");
 			expectEmojis(result, "🔥");
 		});
 
@@ -314,6 +316,47 @@ Some other text
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			expectEmojis(result, "🔥");
+		});
+
+		test("calculates nutrients for piece measure", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 100, measure: "piece", weight: 120 });
+
+			const content = "#food [[banana]]";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
+			expectElementToContain(result, "Calories: 120 kcal");
+			expectEmojis(result, "🔥");
+		});
+
+		test("calculates nutrients for multiple pieces", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 100, measure: "piece", weight: 120 });
+
+			const content = "#food [[banana]] 2";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
+			expectElementToContain(result, "Calories: 240 kcal");
+			expectEmojis(result, "🔥");
+		});
+
+		test("uses default weight when unspecified", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 100, measure: "piece" });
+
+			const content = "#food [[banana]] 2";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectElementToContain(result, "Calories: 200 kcal");
+			expectEmojis(result, "🔥");
+		});
+
+		test("ignores entry without amount for gram measure", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 50, measure: "100 grams" });
+
+			const content = "#food [[banana]]";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBeNull();
 		});
 
 		test("formats calories as rounded integers", () => {
