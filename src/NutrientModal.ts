@@ -11,10 +11,12 @@ interface NutrientData {
 	fiber: number;
 	protein: number;
 	sodium: number;
+	measure: "100 grams" | "piece";
+	weight?: number;
 }
 
 type NutrientField = {
-	key: keyof Omit<NutrientData, "name">;
+	key: keyof Omit<NutrientData, "name" | "measure" | "weight">;
 	name: string;
 	unit: string;
 };
@@ -69,6 +71,8 @@ export default class NutrientModal extends Modal {
 			fiber: 0,
 			protein: 0,
 			sodium: 0,
+			measure: "100 grams",
+			weight: undefined,
 		};
 	}
 
@@ -136,6 +140,33 @@ export default class NutrientModal extends Modal {
 			});
 		});
 
+		new Setting(this.formContainer).setName("Measure").addDropdown(drop => {
+			drop.addOption("100 grams", "100 grams");
+			drop.addOption("piece", "Piece");
+			drop.setValue(this.nutrientData.measure).onChange(value => {
+				this.nutrientData.measure = value as "100 grams" | "piece";
+				updateWeightVisibility();
+			});
+		});
+
+		const weightSetting = new Setting(this.formContainer).setName("Weight of a piece (g)").addText(text => {
+			text.inputEl.setAttribute("data-nutrient-key", "weight");
+			text.setValue(this.nutrientData.weight?.toString() ?? "").onChange(value => {
+				const parsed = parseFloat(value);
+				this.nutrientData.weight = isNaN(parsed) ? undefined : parsed;
+			});
+		});
+
+		const updateWeightVisibility = () => {
+			if (this.nutrientData.measure === "piece") {
+				weightSetting.settingEl.show();
+			} else {
+				weightSetting.settingEl.hide();
+			}
+		};
+
+		updateWeightVisibility();
+
 		new Setting(this.formContainer)
 			.addButton(button =>
 				button
@@ -181,6 +212,8 @@ export default class NutrientModal extends Modal {
 				await this.app.vault.createFolder(directory);
 			}
 
+			const weightLine = this.nutrientData.weight !== undefined ? `weight: ${this.nutrientData.weight}\n` : "";
+
 			const content = `---
 name: ${this.nutrientData.name}
 calories: ${this.nutrientData.calories}
@@ -190,7 +223,8 @@ sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
 protein: ${this.nutrientData.protein}
 sodium: ${this.nutrientData.sodium}
----
+measure: ${this.nutrientData.measure}
+${weightLine}---
 
 `;
 
@@ -347,6 +381,11 @@ sodium: ${this.nutrientData.sodium}
 					input.value = typeof value === "number" ? value.toString() : String(value);
 				}
 			});
+
+			const dropdown = this.formContainer.querySelector<HTMLSelectElement>("select");
+			if (dropdown) {
+				dropdown.value = this.nutrientData.measure;
+			}
 		}
 	}
 
