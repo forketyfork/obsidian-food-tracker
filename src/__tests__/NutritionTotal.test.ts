@@ -300,8 +300,9 @@ Some other text
 
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(mockGetNutritionData).toHaveBeenCalledTimes(1);
+			expect(mockGetNutritionData).toHaveBeenCalledTimes(2);
 			expect(mockGetNutritionData).toHaveBeenCalledWith("complete");
+			expect(mockGetNutritionData).toHaveBeenCalledWith("no-amount");
 			expectEmojis(result, "🔥");
 		});
 
@@ -314,6 +315,25 @@ Some other text
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			expectEmojis(result, "🔥");
+		});
+
+		test("calculates nutrients for piece measure", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 50, measure: "piece" });
+
+			const content = "#food [[banana]]";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
+			expectEmojis(result, "🔥");
+		});
+
+		test("ignores entry without amount for gram measure", () => {
+			mockGetNutritionData.mockReturnValue({ calories: 50, measure: "100 grams" });
+
+			const content = "#food [[banana]]";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).toBeNull();
 		});
 
 		test("formats calories as rounded integers", () => {
