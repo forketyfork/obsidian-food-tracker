@@ -1,6 +1,11 @@
 import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
-import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
+import {
+	SPECIAL_CHARS_REGEX,
+	createInlineNutritionRegex,
+	createLinkedFoodRegex,
+	createLinkedFoodPieceRegex,
+} from "./constants";
 import { FOOD_TRACKER_ICON_NAME } from "./icon";
 import { setIcon } from "obsidian";
 
@@ -12,12 +17,14 @@ interface NutrientData {
 	fiber?: number;
 	sugar?: number;
 	sodium?: number;
+	measure?: "100 grams" | "piece";
+	weight?: number;
 }
 
 interface FoodEntry {
 	filename: string;
-	amount: number;
-	unit: string;
+	amount?: number;
+	unit?: string;
 }
 
 interface InlineNutrientEntry {
@@ -83,6 +90,7 @@ export default class NutritionTotal {
 		const entries: FoodEntry[] = [];
 		const lines = content.split("\n");
 		const entryRegex = createLinkedFoodRegex(escapedFoodTag);
+		const pieceRegex = createLinkedFoodPieceRegex(escapedFoodTag);
 
 		for (const line of lines) {
 			const match = entryRegex.exec(line);
@@ -91,11 +99,15 @@ export default class NutritionTotal {
 				const amount = parseFloat(match[2]);
 				const unit = match[3].toLowerCase();
 
-				entries.push({
-					filename,
-					amount,
-					unit,
-				});
+				entries.push({ filename, amount, unit });
+				continue;
+			}
+
+			const pieceMatch = pieceRegex.exec(line);
+			if (pieceMatch) {
+				const filename = pieceMatch[1];
+				const amount = pieceMatch[2] ? parseFloat(pieceMatch[2]) : undefined;
+				entries.push({ filename, amount });
 			}
 		}
 
@@ -149,7 +161,7 @@ export default class NutritionTotal {
 	 */
 	private addNutrients(target: NutrientData, source: NutrientData, multiplier: number = 1): void {
 		// Get all keys from the source object
-		const keys = Object.keys(source) as Array<keyof NutrientData>;
+		const keys = Object.keys(source) as Array<keyof Omit<NutrientData, "measure" | "weight">>;
 		for (const key of keys) {
 			// Ensure both target and source have the property before adding
 			if (source[key] !== undefined) {
@@ -177,7 +189,7 @@ export default class NutritionTotal {
 		for (const entry of entries) {
 			const nutrients = this.getNutrientDataForFile(entry.filename);
 			if (nutrients) {
-				const multiplier = this.getMultiplier(entry.amount, entry.unit);
+				const multiplier = this.getMultiplier(entry.amount, entry.unit, nutrients.measure, nutrients.weight);
 				this.addNutrients(totals, nutrients, multiplier);
 			}
 		}
@@ -201,8 +213,22 @@ export default class NutritionTotal {
 	 * Handles weight and volume conversions with reasonable approximations
 	 * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
 	 */
-	private getMultiplier(amount: number, unit: string): number {
-		// Assume nutrient data is per 100g by default
+	private getMultiplier(
+		amount: number | undefined,
+		unit: string | undefined,
+		measure: "100 grams" | "piece" | undefined,
+		weight?: number
+	): number {
+		if (measure === "piece") {
+			const pieceWeight = weight ?? 100;
+			const pieces = amount ?? 1;
+			return (pieces * pieceWeight) / 100;
+		}
+
+		if (amount === undefined || !unit) {
+			return 0;
+		}
+
 		const baseAmount = 100;
 
 		switch (unit) {
@@ -231,7 +257,13 @@ export default class NutritionTotal {
 	}
 
 	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): HTMLElement | null {
-		const formatConfig: { key: keyof NutrientData; emoji: string; name: string; unit: string; decimals: number }[] = [
+		const formatConfig: {
+			key: keyof Omit<NutrientData, "measure" | "weight">;
+			emoji: string;
+			name: string;
+			unit: string;
+			decimals: number;
+		}[] = [
 			{ key: "calories", emoji: "🔥", name: "Calories", unit: "kcal", decimals: 0 },
 			{ key: "fats", emoji: "🥑", name: "Fats", unit: "g", decimals: 1 },
 			{ key: "protein", emoji: "🥩", name: "Protein", unit: "g", decimals: 1 },
