@@ -16,7 +16,7 @@
 		"lint": "eslint .",
 		"build": "yarn typecheck && yarn lint && yarn format && yarn prod && yarn test",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"build:css": "csso styles.src.css --output styles.css",
+		"build:css": "csso src/styles.src.css --output styles.css",
 		"release": "yarn version --no-git-tag-version && git add . && git commit -m \"v$(node -p \"require('./package.json').version\")\" && git checkout -b release/$(node -p \"require('./package.json').version\") && git push origin release/$(node -p \"require('./package.json').version\")",
 		"tag-release": "git tag $(node -p \"require('./package.json').version\") && git push origin --tags"
 	},
