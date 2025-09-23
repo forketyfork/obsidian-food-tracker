@@ -15,7 +15,7 @@
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             # Node.js and package manager
-            nodejs_20
+            nodejs_24
             yarn
 
             # Development tools
