@@ -1,13 +1,13 @@
 name: Build
 
+permissions:
+  contents: read
+
 on:
   push:
     branches:
       - main
   pull_request:
-
-permissions:
-  contents: read
 
 jobs:
   build:
