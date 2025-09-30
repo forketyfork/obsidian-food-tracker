@@ -165,7 +165,7 @@ export default class NutrientCache implements NutrientProvider {
 		try {
 			const parsedFrontMatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
 			if (parsedFrontMatter?.name) {
-				return parsedFrontMatter.name as string;
+				return String(parsedFrontMatter.name);
 			}
 		} catch (error) {
 			console.error("Error extracting nutrient name from file:", file.path, error);

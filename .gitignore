@@ -24,3 +24,6 @@ data.json
 
 # Code coverage dir
 coverage/
+
+# direnv
+.direnv

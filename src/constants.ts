@@ -36,8 +36,30 @@ export const SUGAR_REGEX = /(\d+(?:\.\d+)?)sugar/i;
 // File and content validation patterns
 // ================================
 
-/** Regex to identify invalid characters for filenames */
-export const INVALID_FILENAME_CHARS_REGEX = /[^a-zA-Z0-9]/g;
+/** Regex to identify invalid characters for filenames (preserves German umlauts and Eszett) */
+export const INVALID_FILENAME_CHARS_REGEX = /[^a-zA-Z0-9äöüÄÖÜß]/g;
+
+/** Lookup map for German umlaut and Eszett conversion - created once for performance */
+const UMLAUT_MAP: Record<string, string> = {
+	ü: "ue",
+	ä: "ae",
+	ö: "oe",
+	Ü: "Ue",
+	Ä: "Ae",
+	Ö: "Oe",
+	ß: "ss",
+};
+
+/**
+ * Converts German umlauts and Eszett to their letter equivalents for filename safety
+ * while preserving readability. Uses single regex pass for optimal performance.
+ *
+ * @param text - The text containing potential umlauts or Eszett
+ * @returns Text with umlauts converted to letter pairs
+ */
+export const convertGermanUmlauts = (text: string): string => {
+	return text.replace(/[üäöÜÄÖß]/g, match => UMLAUT_MAP[match]);
+};
 
 // ================================
 // Factory functions for dynamic regex creation
@@ -49,7 +71,7 @@ export const INVALID_FILENAME_CHARS_REGEX = /[^a-zA-Z0-9]/g;
  *
  * @returns RegExp that matches nutrition values like "300kcal", "25prot", etc.
  */
-export const createNutritionValueRegex = () => /\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar)/gi;
+export const createNutritionValueRegex = () => /\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
 
 // ================================
 // Food entry parsing factory functions
@@ -70,7 +92,7 @@ export const createNutritionValueRegex = () => /\d+(?:\.\d+)?(?:kcal|fat|prot|ca
  */
 export const createInlineNutritionRegex = (escapedFoodTag: string) =>
 	new RegExp(
-		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`,
+		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`,
 		"i"
 	);
 
@@ -94,23 +116,20 @@ export const createLinkedFoodRegex = (escapedFoodTag: string) =>
 	);
 
 /**
- * Creates regex to match linked food entries for highlighting (broader pattern)
+ * Creates regex to match linked food entries for highlighting
  *
  * @param escapedFoodTag - The escaped food tag
- * @returns RegExp that matches linked or non-linked food with amounts
+ * @returns RegExp that matches linked food entries with amounts
  *
  * @example
  * ```typescript
  * const regex = createLinkedFoodHighlightRegex("food");
- * // Matches: "#food [[Apple]] 150g" or "#food Apple 150g"
+ * // Matches: "#food [[Apple]] 150g"
  * // Captures: ["150g"]
  * ```
  */
 export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
-	new RegExp(
-		`#${escapedFoodTag}\\s+(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?))`,
-		"i"
-	);
+	new RegExp(`#${escapedFoodTag}\\s+\\[[^\\]]+\\]\\]\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs))`, "i");
 
 // ================================
 // Advanced highlighting regex patterns
@@ -121,15 +140,14 @@ export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
  * Example: "#food Chicken Breast 300kcal 25prot 5fat"
  */
 const createInlineNutritionPattern = () =>
-	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar))*)`;
+	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`;
 
 /**
  * Creates a regex pattern for linked food entries with amounts (internal helper)
- * Example: "#food [[Chicken]] 200g" or "#food Chicken 200g"
+ * Example: "#food [[Chicken]] 200g"
  */
 const createLinkedFoodPattern = () =>
-	`(?:\\[\\[[^\\]]+\\]\\]|[^\\s]+)\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?))`;
-
+	`\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs))`;
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types

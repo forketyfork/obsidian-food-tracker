@@ -36,7 +36,7 @@ export default class GoalsService {
 		try {
 			let file = this.app.vault.getAbstractFileByPath(this.goalsFile);
 			if (file instanceof TFile) {
-				const content = await this.app.vault.read(file);
+				const content = await this.app.vault.cachedRead(file);
 				this.goals = this.parseGoals(content);
 			} else {
 				this.goals = {};

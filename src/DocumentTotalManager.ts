@@ -11,10 +11,10 @@ export default class DocumentTotalManager {
 	 * Shows the nutrition total as an in-document element
 	 * Positioned at the bottom of the document content
 	 */
-	show(totalText: string, view: MarkdownView): void {
+	show(totalElement: HTMLElement | null, view: MarkdownView): void {
 		this.remove();
 
-		if (!totalText) {
+		if (!totalElement) {
 			return;
 		}
 
@@ -27,7 +27,7 @@ export default class DocumentTotalManager {
 			cls: "food-tracker-total",
 		});
 
-		this.documentTotalElement.innerHTML = totalText;
+		this.documentTotalElement.appendChild(totalElement);
 
 		// Append at the end of contentEl so it appears at the bottom
 		contentEl.appendChild(this.documentTotalElement);
@@ -51,19 +51,20 @@ export default class DocumentTotalManager {
 	}
 
 	/**
-	 * Updates the document total with new text
+	 * Updates the document total with new element
 	 * More efficient than remove+show when element already exists
 	 */
-	update(totalText: string, view: MarkdownView): void {
-		if (!totalText) {
+	update(totalElement: HTMLElement | null, view: MarkdownView): void {
+		if (!totalElement) {
 			this.remove();
 			return;
 		}
 
 		if (this.documentTotalElement) {
-			this.documentTotalElement.innerHTML = totalText;
+			this.documentTotalElement.empty();
+			this.documentTotalElement.appendChild(totalElement);
 		} else {
-			this.show(totalText, view);
+			this.show(totalElement, view);
 		}
 	}
 

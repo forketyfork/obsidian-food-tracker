@@ -1,16 +1,21 @@
 <h1>
-  Food Tracker <img src="logo.svg" alt="Logo" height="24" style="vertical-align: middle;"/>
+  Food Tracker <img src="images/logo.svg" alt="Logo" height="24" style="vertical-align: middle;"/>
 </h1>
 
 [![Build status](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml/badge.svg)](https://github.com/forketyfork/obsidian-food-tracker/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/forketyfork/obsidian-food-tracker)](https://github.com/forketyfork/obsidian-food-tracker/releases/latest)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 
 An Obsidian plugin to track your food intake (calories, macronutrients) and nutritional information with real-time nutrition totals, intelligent food suggestions, and flexible entry methods including both database-driven and inline nutrition tracking.
 
-<img width="987" alt="Screenshot 2025-06-12 at 16 05 09" src="https://github.com/user-attachments/assets/057c8d9b-1aed-4744-a224-1df6bba92408" />
+This plugin works on **mobile** and **desktop**, with layouts that adapt to smaller screens.
+
+![Demo of Food Tracker](images/demo.png)
 
 ## Demo
 
-![Demo of Food Tracker](demo.gif)
+![Demo of Food Tracker](images/demo.gif)
 
 ## Features
 
@@ -163,10 +168,10 @@ The progress bars use color coding:
 
 Go to Settings > Food Tracker to configure:
 
-- **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients")
+- **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients"). The setting now offers type-ahead folder suggestions.
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
-- **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md")
+- **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md"). The field includes type-ahead file suggestions.
 
 > **Note**: When you change the food tag setting, the plugin will only recognize the new tag. Existing `#food` entries will need to be manually updated to use the new tag if you want them to be included in nutrition calculations.
 
