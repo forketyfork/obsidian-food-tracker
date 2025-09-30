@@ -275,10 +275,10 @@ Some other text
 			expectEmojis(result2, "🔥"); // 1 tsp = 5ml ≈ 5g, so 5/100 * 100 = 5
 		});
 
-		test("supports piece units when gramsInPiece is defined", () => {
+		test("supports piece units when serving_size is defined", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 100,
-				gramsInPiece: 120,
+				serving_size: 120,
 			});
 
 			const content = "#food [[food]] 1pc";

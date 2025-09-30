@@ -9,7 +9,7 @@ interface NutrientData {
 	fiber?: number;
 	sugar?: number;
 	sodium?: number;
-	gramsInPiece?: number;
+	serving_size?: number;
 }
 
 /**
@@ -186,7 +186,7 @@ export default class NutrientCache implements NutrientProvider {
 				{ key: "fiber", aliases: ["fiber"] },
 				{ key: "sugar", aliases: ["sugar"] },
 				{ key: "sodium", aliases: ["sodium"] },
-				{ key: "gramsInPiece", aliases: ["gramsInPiece"] },
+				{ key: "serving_size", aliases: ["serving_size", "servingSize"] },
 			];
 
 			const data: NutrientData = {};

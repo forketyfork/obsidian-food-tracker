@@ -11,7 +11,7 @@ interface NutrientData {
 	fiber: number;
 	protein: number;
 	sodium: number;
-	gramsInPiece: number;
+	serving_size: number;
 }
 
 type NutrientField = {
@@ -70,7 +70,7 @@ export default class NutrientModal extends Modal {
 			fiber: 0,
 			protein: 0,
 			sodium: 0,
-			gramsInPiece: 0,
+			serving_size: 0,
 		};
 	}
 
@@ -124,7 +124,7 @@ export default class NutrientModal extends Modal {
 			{ key: "fiber", name: "🌾 Fiber", unit: "g" },
 			{ key: "protein", name: "🥩 Protein", unit: "g" },
 			{ key: "sodium", name: "🧂 Sodium", unit: "mg" },
-			{ key: "gramsInPiece", name: "🍌 Grams in piece", unit: "g" },
+			{ key: "serving_size", name: "🍌 Serving size", unit: "g" },
 		];
 
 		if (!this.formContainer) return;
@@ -183,7 +183,7 @@ export default class NutrientModal extends Modal {
 			if (!folderExists) {
 				await this.app.vault.createFolder(directory);
 			}
-			const gramsLine = this.nutrientData.gramsInPiece ? `gramsInPiece: ${this.nutrientData.gramsInPiece}\n` : "";
+			const servingSizeLine = this.nutrientData.serving_size ? `serving_size: ${this.nutrientData.serving_size}\n` : "";
 			const content = `---
 name: ${this.nutrientData.name}
 calories: ${this.nutrientData.calories}
@@ -193,7 +193,7 @@ sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
 protein: ${this.nutrientData.protein}
 sodium: ${this.nutrientData.sodium}
-${gramsLine}---
+${servingSizeLine}---
 
 `;
 

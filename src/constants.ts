@@ -147,7 +147,7 @@ const createInlineNutritionPattern = () =>
  * Example: "#food [[Chicken]] 200g"
  */
 const createLinkedFoodPattern = () =>
-	`\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs))`;
+	`\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?))`;
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types

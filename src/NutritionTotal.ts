@@ -12,7 +12,7 @@ interface NutrientData {
 	fiber?: number;
 	sugar?: number;
 	sodium?: number;
-	gramsInPiece?: number;
+	serving_size?: number;
 }
 
 interface FoodEntry {
@@ -178,7 +178,7 @@ export default class NutritionTotal {
 		for (const entry of entries) {
 			const nutrients = this.getNutrientDataForFile(entry.filename);
 			if (nutrients) {
-				const multiplier = this.getMultiplier(entry.amount, entry.unit, nutrients.gramsInPiece);
+				const multiplier = this.getMultiplier(entry.amount, entry.unit, nutrients.serving_size);
 				this.addNutrients(totals, nutrients, multiplier);
 			}
 		}
@@ -202,7 +202,7 @@ export default class NutritionTotal {
 	 * Handles weight and volume conversions with reasonable approximations
 	 * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
 	 */
-	private getMultiplier(amount: number, unit: string, gramsInPiece?: number): number {
+	private getMultiplier(amount: number, unit: string, servingSize?: number): number {
 		// Assume nutrient data is per 100g by default
 		const baseAmount = 100;
 
@@ -228,8 +228,8 @@ export default class NutritionTotal {
 				return (amount * 5) / baseAmount; // 1 teaspoon = 5ml ≈ 5g
 			case "pc":
 			case "pcs":
-				if (gramsInPiece && gramsInPiece > 0) {
-					return (amount * gramsInPiece) / baseAmount;
+				if (servingSize && servingSize > 0) {
+					return (amount * servingSize) / baseAmount;
 				}
 				return amount / baseAmount;
 			default:
@@ -239,7 +239,7 @@ export default class NutritionTotal {
 
 	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): HTMLElement | null {
 		const formatConfig: {
-			key: keyof Omit<NutrientData, "gramsInPiece">;
+			key: keyof Omit<NutrientData, "serving_size">;
 			emoji: string;
 			name: string;
 			unit: string;

@@ -87,7 +87,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
      - Carbohydrates, sugar, fiber (in grams)
      - Protein (in grams)
      - Sodium (in milligrams)
-   - _Optional_: **Grams in piece** to specify typical weight of one piece
+   - _Optional_: **Serving size** to specify typical weight of one piece (in grams)
 4. Click "Create" to save the nutrient file
 
 ### Tracking Food Intake
