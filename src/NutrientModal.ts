@@ -228,6 +228,10 @@ ${servingSizeLine}---
 
 			const response = await requestUrl({ url });
 
+			if (response.status !== 200) {
+				throw new Error(`HTTP error: ${response.status}`);
+			}
+
 			const data = response.json as OpenFoodFactsSearchResponse;
 
 			// Handle different response formats and limit to 5 results
