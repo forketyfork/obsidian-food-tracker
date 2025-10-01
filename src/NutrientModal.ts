@@ -70,7 +70,7 @@ export default class NutrientModal extends Modal {
 			fiber: 0,
 			protein: 0,
 			sodium: 0,
-			serving_size: 0,
+			serving_size: 100,
 		};
 	}
 
@@ -163,6 +163,11 @@ export default class NutrientModal extends Modal {
 
 	async createNutrientFile() {
 		if (!this.nutrientData.name.trim()) {
+			return;
+		}
+
+		if (this.nutrientData.serving_size <= 0) {
+			new Notice("Serving size must be a positive number", 5000);
 			return;
 		}
 
