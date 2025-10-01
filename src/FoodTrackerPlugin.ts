@@ -79,7 +79,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.documentTotalManager = new DocumentTotalManager();
 
 		// Add ribbon button for statistics
-		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "Open nutrition statistics", () => {
+		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "View monthly nutrition statistics", () => {
 			new StatisticsModal(this.app, this).open();
 		});
 	}
