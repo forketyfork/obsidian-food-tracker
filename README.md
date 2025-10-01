@@ -34,7 +34,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Flexible food formats**: Multiple ways to track your food:
   - **Database entries**: `#food [[food-name]] amount` - uses your nutrient database
   - **Inline nutrition**: `#food Food Name 300kcal 20fat 10prot 30carbs 3sugar` - specify nutrition directly
-- **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cup, tbsp, tsp
+  - **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cup, tbsp, tsp, pc
 - **Visual highlighting**: Food amounts and nutrition values are highlighted in the editor for easy identification
 
 ### 📊 Real-time Nutrition Tracking
@@ -92,6 +92,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
      - Carbohydrates, sugar, fiber (in grams)
      - Protein (in grams)
      - Sodium (in milligrams)
+   - _Optional_: **Serving size** to specify typical weight of one piece (in grams)
 4. Click "Create" to save the nutrient file
 
 ### Tracking Food Intake
@@ -134,7 +135,7 @@ You can combine both methods in the same document:
 ```
 #food [[oatmeal]] 50g
 #food Quick protein bar 200kcal 8fat 15prot 20carbs
-#food [[banana]] 120g
+#food [[banana]] 1pc
 ```
 
 The nutrition total will automatically update as you add food entries using any method.

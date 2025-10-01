@@ -12,6 +12,7 @@ interface NutrientData {
 	fiber?: number;
 	sugar?: number;
 	sodium?: number;
+	serving_size?: number;
 }
 
 interface FoodEntry {
@@ -177,7 +178,7 @@ export default class NutritionTotal {
 		for (const entry of entries) {
 			const nutrients = this.getNutrientDataForFile(entry.filename);
 			if (nutrients) {
-				const multiplier = this.getMultiplier(entry.amount, entry.unit);
+				const multiplier = this.getMultiplier(entry.amount, entry.unit, nutrients.serving_size);
 				this.addNutrients(totals, nutrients, multiplier);
 			}
 		}
@@ -201,8 +202,7 @@ export default class NutritionTotal {
 	 * Handles weight and volume conversions with reasonable approximations
 	 * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
 	 */
-	private getMultiplier(amount: number, unit: string): number {
-		// Assume nutrient data is per 100g by default
+	private getMultiplier(amount: number, unit: string, servingSize?: number): number {
 		const baseAmount = 100;
 
 		switch (unit) {
@@ -211,7 +211,7 @@ export default class NutritionTotal {
 			case "kg":
 				return (amount * 1000) / baseAmount;
 			case "ml":
-				return amount / baseAmount; // Assume 1ml = 1g for simplicity
+				return amount / baseAmount;
 			case "l":
 				return (amount * 1000) / baseAmount;
 			case "oz":
@@ -220,18 +220,28 @@ export default class NutritionTotal {
 				return (amount * 453.6) / baseAmount;
 			case "cup":
 			case "cups":
-				return (amount * 240) / baseAmount; // 1 cup = 240ml ≈ 240g
+				return (amount * 240) / baseAmount;
 			case "tbsp":
-				return (amount * 15) / baseAmount; // 1 tablespoon = 15ml ≈ 15g
+				return (amount * 15) / baseAmount;
 			case "tsp":
-				return (amount * 5) / baseAmount; // 1 teaspoon = 5ml ≈ 5g
+				return (amount * 5) / baseAmount;
+			case "pc":
+			case "pcs":
+				const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
+				return (amount * effectiveServingSize) / baseAmount;
 			default:
-				return amount / baseAmount; // Default to grams
+				return amount / baseAmount;
 		}
 	}
 
 	private formatTotal(nutrients: NutrientData, goals?: NutrientGoals): HTMLElement | null {
-		const formatConfig: { key: keyof NutrientData; emoji: string; name: string; unit: string; decimals: number }[] = [
+		const formatConfig: {
+			key: keyof Omit<NutrientData, "serving_size">;
+			emoji: string;
+			name: string;
+			unit: string;
+			decimals: number;
+		}[] = [
 			{ key: "calories", emoji: "🔥", name: "Calories", unit: "kcal", decimals: 0 },
 			{ key: "fats", emoji: "🥑", name: "Fats", unit: "g", decimals: 1 },
 			{ key: "protein", emoji: "🥩", name: "Protein", unit: "g", decimals: 1 },

@@ -204,7 +204,18 @@ describe("FoodSuggestionCore", () => {
 
 		test("should return measure suggestions for number queries in measure context", () => {
 			const suggestions = core.getSuggestions("100", provider, "measure");
-			expect(suggestions).toEqual(["100g", "100ml", "100kg", "100l", "100oz", "100lb", "100cup", "100tbsp", "100tsp"]);
+			expect(suggestions).toEqual([
+				"100g",
+				"100ml",
+				"100kg",
+				"100l",
+				"100oz",
+				"100lb",
+				"100cup",
+				"100tbsp",
+				"100tsp",
+				"100pc",
+			]);
 		});
 
 		test("should return measure suggestions for partial measure queries", () => {
@@ -233,6 +244,7 @@ describe("FoodSuggestionCore", () => {
 			expect(core.isNutritionKeyword("25kg")).toBe(true);
 			expect(core.isNutritionKeyword("30l")).toBe(true);
 			expect(core.isNutritionKeyword("15oz")).toBe(true);
+			expect(core.isNutritionKeyword("2pc")).toBe(true);
 		});
 
 		test("should not identify regular food names as nutrition keywords", () => {
