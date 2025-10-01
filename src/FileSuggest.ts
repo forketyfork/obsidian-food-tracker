@@ -9,9 +9,8 @@ export default class FileSuggest extends AbstractInputSuggest<TFile> {
 	}
 
 	getSuggestions(query: string): TFile[] {
-		return this.appInstance.vault
-			.getMarkdownFiles()
-			.filter(file => file.path.toLowerCase().includes(query.toLowerCase()));
+		const trimmedQuery = query.trim().toLowerCase();
+		return this.appInstance.vault.getMarkdownFiles().filter(file => file.path.toLowerCase().includes(trimmedQuery));
 	}
 
 	renderSuggestion(file: TFile, el: HTMLElement): void {
@@ -20,6 +19,6 @@ export default class FileSuggest extends AbstractInputSuggest<TFile> {
 
 	selectSuggestion(file: TFile): void {
 		this.inputEl.value = file.path;
-		this.inputEl.trigger("input");
+		this.inputEl.dispatchEvent(new Event("input"));
 	}
 }

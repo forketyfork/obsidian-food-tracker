@@ -9,9 +9,8 @@ export default class FolderSuggest extends AbstractInputSuggest<TFolder> {
 	}
 
 	getSuggestions(query: string): TFolder[] {
-		return this.appInstance.vault
-			.getAllFolders()
-			.filter(folder => folder.path.toLowerCase().includes(query.toLowerCase()));
+		const trimmedQuery = query.trim().toLowerCase();
+		return this.appInstance.vault.getAllFolders().filter(folder => folder.path.toLowerCase().includes(trimmedQuery));
 	}
 
 	renderSuggestion(folder: TFolder, el: HTMLElement): void {
@@ -20,6 +19,6 @@ export default class FolderSuggest extends AbstractInputSuggest<TFolder> {
 
 	selectSuggestion(folder: TFolder): void {
 		this.inputEl.value = folder.path;
-		this.inputEl.trigger("input");
+		this.inputEl.dispatchEvent(new Event("input"));
 	}
 }
