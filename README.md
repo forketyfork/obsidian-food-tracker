@@ -17,7 +17,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 
 ![Demo of Food Tracker](images/demo.gif)
 
-![Montlhy nutrition statistics](images/stats.jpg)
+![Montlhy nutrition statistics](images/stats.png)
 
 ## Features
 
