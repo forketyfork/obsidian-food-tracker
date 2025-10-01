@@ -59,6 +59,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 
 - **Quick access**: Ribbon button opens a window with a month picker and daily macronutrient table
 - **Daily breakdown**: Each row shows the same compact nutrition bar used in the status bar
+- **Date format requirement**: Daily notes must be named starting with `YYYY-MM-DD` format (e.g., `2024-08-01.md`)
 
 ## Installation
 

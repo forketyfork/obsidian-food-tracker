@@ -11,6 +11,7 @@ import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./
 import GoalsService from "./GoalsService";
 import { FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT } from "./icon";
 import StatisticsModal from "./StatisticsModal";
+import StatsService from "./StatsService";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -21,6 +22,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	documentTotalManager: DocumentTotalManager;
 	settingsService: SettingsService;
 	goalsService: GoalsService;
+	private statsService: StatsService;
 	private foodHighlightExtension: FoodHighlightExtension;
 	private goalsHighlightExtension: GoalsHighlightExtension;
 
@@ -78,9 +80,12 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
 
+		// Initialize stats service
+		this.statsService = new StatsService(this.app, this.nutritionTotal, this.settingsService, this.goalsService);
+
 		// Add ribbon button for statistics
 		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "Open nutrition statistics", () => {
-			new StatisticsModal(this.app, this).open();
+			new StatisticsModal(this.app, this.statsService).open();
 		});
 	}
 

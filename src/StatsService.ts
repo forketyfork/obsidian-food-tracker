@@ -43,12 +43,13 @@ export default class StatsService {
 		}
 
 		const daysInMonth = new Date(year, month, 0).getDate();
-		const stats: DailyStat[] = [];
 
-		for (let day = 1; day <= daysInMonth; day++) {
+		const statsPromises = Array.from({ length: daysInMonth }, async (_, index) => {
+			const day = index + 1;
 			const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 			const file = filesByDay.get(day);
 			let element: HTMLElement | null = null;
+
 			if (file) {
 				try {
 					const content = await (this.app.vault.cachedRead?.(file) ?? this.app.vault.read(file));
@@ -59,12 +60,14 @@ export default class StatsService {
 						this.goalsService.currentGoals
 					);
 				} catch (error) {
-					console.error("Error calculating stats for", file.path, error);
+					console.error(`Error calculating nutrition stats for ${file.path} on ${dateStr}:`, error);
 				}
 			}
-			stats.push({ date: dateStr, element });
-		}
 
+			return { date: dateStr, element };
+		});
+
+		const stats = await Promise.all(statsPromises);
 		return stats;
 	}
 }

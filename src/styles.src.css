@@ -255,3 +255,48 @@
 		padding-right: 0;
 	}
 }
+
+/* Statistics modal styling */
+.food-tracker-stats-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 1rem;
+}
+
+.food-tracker-stats-row {
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.food-tracker-stats-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.food-tracker-stats-date {
+	padding: 8px 12px;
+	font-weight: 500;
+	min-width: 120px;
+	color: var(--text-muted);
+}
+
+.food-tracker-stats-nutrients {
+	padding: 8px 12px;
+	width: 100%;
+}
+
+.food-tracker-stats-empty {
+	color: var(--text-faint);
+	font-style: italic;
+}
+
+.food-tracker-loading {
+	padding: 2rem;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.food-tracker-error {
+	padding: 1rem;
+	color: var(--text-error);
+	background-color: var(--background-modifier-error);
+	border-radius: 4px;
+}
