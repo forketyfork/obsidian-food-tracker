@@ -132,11 +132,11 @@ describe("NutritionTotal", () => {
 			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾 🍯 🧂");
 		});
 
-		test("calculates total nutrients for multiple food entries", () => {
-			mockGetNutritionData
-				.mockReturnValueOnce({
-					calories: 100,
-					fats: 10,
+                test("calculates total nutrients for multiple food entries", () => {
+                        mockGetNutritionData
+                                .mockReturnValueOnce({
+                                        calories: 100,
+                                        fats: 10,
 					protein: 20,
 				})
 				.mockReturnValueOnce({
@@ -152,14 +152,50 @@ Some other text
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			expect(mockGetNutritionData).toHaveBeenCalledWith("apple");
-			expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
-			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾");
-		});
+                        expect(mockGetNutritionData).toHaveBeenCalledWith("banana");
+                        expectEmojis(result, "🔥 🥑 🥩 🍞 🌾");
+                });
 
-		test("handles missing nutrient data gracefully", () => {
-			mockGetNutritionData.mockReturnValue(null);
+                test("subtracts workout calories using workout tag", () => {
+                        const content = `#food Lunch 500kcal\n#workout Running 200kcal`;
+                        const result = nutritionTotal.calculateTotalNutrients(content);
 
-			const content = "#food [[unknown-food]] 100g";
+                        expect(result).not.toBeNull();
+                        expect(
+                                result?.querySelector('[data-food-tracker-tooltip*="Calories: 300"]')
+                        ).not.toBeNull();
+                });
+
+                test("subtracts negative calories logged under food tag", () => {
+                        const content = `#food Breakfast 400kcal\n#food Recovery -150kcal`;
+                        const result = nutritionTotal.calculateTotalNutrients(content);
+
+                        expect(result).not.toBeNull();
+                        expect(
+                                result?.querySelector('[data-food-tracker-tooltip*="Calories: 250"]')
+                        ).not.toBeNull();
+                });
+
+                test("supports custom workout tag", () => {
+                        const content = `#food Dinner 600kcal\n#workout-session Evening ride 275kcal`;
+                        const result = nutritionTotal.calculateTotalNutrients(
+                                content,
+                                "food",
+                                false,
+                                undefined,
+                                "workout-session"
+                        );
+
+                        expect(result).not.toBeNull();
+                        expect(
+                                result?.querySelector('[data-food-tracker-tooltip*="Calories: 325"]')
+                        ).not.toBeNull();
+                });
+
+                test("handles missing nutrient data gracefully", () => {
+                        mockGetNutritionData.mockReturnValue(null);
+
+                        const content = "#food [[unknown-food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
 			expect(result).toBeNull();

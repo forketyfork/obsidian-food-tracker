@@ -57,19 +57,39 @@ export default class NutritionTotal {
 		content: string,
 		foodTag: string = "food",
 		escaped = false,
-		goals?: NutrientGoals
+		goals?: NutrientGoals,
+		workoutTag: string = "workout",
+		workoutTagEscaped?: boolean
 	): HTMLElement | null {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+			const hasWorkoutTag = workoutTag.trim().length > 0;
+			const workoutEscaped = workoutTagEscaped ?? escaped;
+			const normalizedWorkoutTag = hasWorkoutTag
+				? workoutEscaped
+					? workoutTag
+					: workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&")
+				: null;
 			const foodEntries = this.parseFoodEntries(content, tag);
 			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
+			const workoutEntries = normalizedWorkoutTag
+				? this.parseInlineNutrientEntries(content, normalizedWorkoutTag)
+				: [];
 
-			if (foodEntries.length === 0 && inlineEntries.length === 0) {
+			if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
 				return null;
 			}
 
 			const totalNutrients = this.calculateTotals(foodEntries);
 			const inlineTotals = this.calculateInlineTotals(inlineEntries);
+
+			if (workoutEntries.length > 0) {
+				const workoutTotals = this.calculateInlineTotals(workoutEntries);
+				const normalizedWorkoutTotals = this.normalizeWorkoutTotals(workoutTotals);
+				if (Object.keys(normalizedWorkoutTotals).length > 0) {
+					this.addNutrients(inlineTotals, normalizedWorkoutTotals, -1);
+				}
+			}
 
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
@@ -129,7 +149,7 @@ export default class NutritionTotal {
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
 		// This single regex finds all number-unit pairs
-		const nutrientRegex = /(\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
+		const nutrientRegex = /(-?\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
 
 		const matches = nutrientString.matchAll(nutrientRegex);
 
@@ -165,6 +185,18 @@ export default class NutritionTotal {
 			this.addNutrients(totals, entry);
 		}
 		return totals;
+	}
+
+	private normalizeWorkoutTotals(nutrients: NutrientData): NutrientData {
+		const normalized: NutrientData = {};
+		const keys = Object.keys(nutrients) as Array<keyof NutrientData>;
+		for (const key of keys) {
+			const value = nutrients[key];
+			if (value !== undefined) {
+				normalized[key] = Math.abs(value);
+			}
+		}
+		return normalized;
 	}
 
 	private combineNutrients(nutrients1: NutrientData, nutrients2: NutrientData): NutrientData {

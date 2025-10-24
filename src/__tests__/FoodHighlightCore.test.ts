@@ -25,21 +25,29 @@ describe("FoodHighlightCore", () => {
 				expect(ranges[1]).toEqual({ start: 23, end: 30, type: "nutrition" }); // 12.3fat
 			});
 
-			test("handles mixed case nutrition keywords", () => {
-				const text = "#food Snack 200KCAL 10FAT 15PROT";
-				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+                        test("handles mixed case nutrition keywords", () => {
+                                const text = "#food Snack 200KCAL 10FAT 15PROT";
+                                const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
 
-				expect(ranges).toHaveLength(3);
-				expect(ranges[0]).toEqual({ start: 12, end: 19, type: "nutrition" }); // 200KCAL
-				expect(ranges[1]).toEqual({ start: 20, end: 25, type: "nutrition" }); // 10FAT
-				expect(ranges[2]).toEqual({ start: 26, end: 32, type: "nutrition" }); // 15PROT
-			});
+                                expect(ranges).toHaveLength(3);
+                                expect(ranges[0]).toEqual({ start: 12, end: 19, type: "nutrition" }); // 200KCAL
+                                expect(ranges[1]).toEqual({ start: 20, end: 25, type: "nutrition" }); // 10FAT
+                                expect(ranges[2]).toEqual({ start: 26, end: 32, type: "nutrition" }); // 15PROT
+                        });
 
-			test("handles complex food names with multiple words", () => {
-				const text = "#food Grilled Chicken with Rice and Vegetables 450kcal 35prot 8fat 45carbs 2sugar";
-				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+                        test("handles negative nutrition values", () => {
+                                const text = "#food Recovery -150kcal";
+                                const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
 
-				expect(ranges).toHaveLength(5);
+                                expect(ranges).toHaveLength(1);
+                                expect(ranges[0]).toEqual({ start: 15, end: 23, type: "nutrition" }); // -150kcal
+                        });
+
+                        test("handles complex food names with multiple words", () => {
+                                const text = "#food Grilled Chicken with Rice and Vegetables 450kcal 35prot 8fat 45carbs 2sugar";
+                                const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+                                expect(ranges).toHaveLength(5);
 				expect(ranges[0]).toEqual({ start: 47, end: 54, type: "nutrition" }); // 450kcal
 				expect(ranges[1]).toEqual({ start: 55, end: 61, type: "nutrition" }); // 35prot
 				expect(ranges[2]).toEqual({ start: 62, end: 66, type: "nutrition" }); // 8fat
