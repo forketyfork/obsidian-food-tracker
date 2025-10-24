@@ -53,14 +53,14 @@ export default class StatsService {
 			if (file) {
 				try {
 					const content = await (this.app.vault.cachedRead?.(file) ?? this.app.vault.read(file));
-                                        element = this.nutritionTotal.calculateTotalNutrients(
-                                                content,
-                                                this.settingsService.currentEscapedFoodTag,
-                                                true,
-                                                this.goalsService.currentGoals,
-                                                this.settingsService.currentEscapedWorkoutTag,
-                                                true
-                                        );
+					element = this.nutritionTotal.calculateTotalNutrients(
+						content,
+						this.settingsService.currentEscapedFoodTag,
+						true,
+						this.goalsService.currentGoals,
+						this.settingsService.currentEscapedWorkoutTag,
+						true
+					);
 				} catch (error) {
 					console.error(`Error calculating nutrition stats for ${file.path} on ${dateStr}:`, error);
 				}

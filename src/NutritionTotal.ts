@@ -72,9 +72,7 @@ export default class NutritionTotal {
 				: null;
 			const foodEntries = this.parseFoodEntries(content, tag);
 			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
-			const workoutEntries = normalizedWorkoutTag
-				? this.parseInlineNutrientEntries(content, normalizedWorkoutTag)
-				: [];
+			const workoutEntries = normalizedWorkoutTag ? this.parseInlineNutrientEntries(content, normalizedWorkoutTag) : [];
 
 			if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
 				return null;
