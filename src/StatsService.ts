@@ -57,7 +57,9 @@ export default class StatsService {
 						content,
 						this.settingsService.currentEscapedFoodTag,
 						true,
-						this.goalsService.currentGoals
+						this.goalsService.currentGoals,
+						this.settingsService.currentEscapedWorkoutTag,
+						true
 					);
 				} catch (error) {
 					console.error(`Error calculating nutrition stats for ${file.path} on ${dateStr}:`, error);

@@ -35,6 +35,14 @@ describe("FoodHighlightCore", () => {
 				expect(ranges[2]).toEqual({ start: 26, end: 32, type: "nutrition" }); // 15PROT
 			});
 
+			test("handles negative nutrition values", () => {
+				const text = "#food Recovery -150kcal";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 15, end: 23, type: "nutrition" }); // -150kcal
+			});
+
 			test("handles complex food names with multiple words", () => {
 				const text = "#food Grilled Chicken with Rice and Vegetables 450kcal 35prot 8fat 45carbs 2sugar";
 				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);

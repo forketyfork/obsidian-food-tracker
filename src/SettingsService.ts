@@ -6,6 +6,7 @@ export interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
 	foodTag: string;
+	workoutTag: string;
 	goalsFile: string;
 }
 
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	nutrientDirectory: "nutrients",
 	totalDisplayMode: "status-bar",
 	foodTag: "food",
+	workoutTag: "workout",
 	goalsFile: "nutrition-goals.md",
 };
 
@@ -38,10 +40,24 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the workout tag
+	 */
+	get workoutTag$(): Observable<string> {
+		return this.settings$.pipe(map(settings => settings.workoutTag));
+	}
+
+	/**
 	 * Observable stream of the escaped food tag (for regex usage)
 	 */
 	get escapedFoodTag$(): Observable<string> {
 		return this.foodTag$.pipe(map(foodTag => foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&")));
+	}
+
+	/**
+	 * Observable stream of the escaped workout tag (for regex usage)
+	 */
+	get escapedWorkoutTag$(): Observable<string> {
+		return this.workoutTag$.pipe(map(workoutTag => workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&")));
 	}
 
 	/**
@@ -80,10 +96,24 @@ export class SettingsService {
 	}
 
 	/**
+	 * Get the current workout tag value synchronously
+	 */
+	get currentWorkoutTag(): string {
+		return this.currentSettings.workoutTag;
+	}
+
+	/**
 	 * Get the current escaped food tag value synchronously
 	 */
 	get currentEscapedFoodTag(): string {
 		return this.currentFoodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+	}
+
+	/**
+	 * Get the current escaped workout tag value synchronously
+	 */
+	get currentEscapedWorkoutTag(): string {
+		return this.currentWorkoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 	}
 
 	/**
@@ -130,6 +160,13 @@ export class SettingsService {
 	 */
 	updateFoodTag(newFoodTag: string): void {
 		this.updateSetting("foodTag", newFoodTag);
+	}
+
+	/**
+	 * Updates the workout tag and notifies all subscribers
+	 */
+	updateWorkoutTag(newWorkoutTag: string): void {
+		this.updateSetting("workoutTag", newWorkoutTag);
 	}
 
 	/**
