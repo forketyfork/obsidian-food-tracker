@@ -10,8 +10,8 @@
 /** Regex to escape special characters in strings for use in regex */
 export const SPECIAL_CHARS_REGEX = /[.*+?^${}()|[\]\\]/g;
 
-/** Regex to extract leading numbers from strings (e.g., "100g" -> "100") */
-export const LEADING_NUMBER_REGEX = /^\d+/;
+/** Regex to extract leading numbers from strings (e.g., "100g" -> "100", "-100kcal" -> "-100") */
+export const LEADING_NUMBER_REGEX = /^-?\d+/;
 
 // ================================
 // Individual nutrition value parsing patterns
@@ -71,7 +71,7 @@ export const convertGermanUmlauts = (text: string): string => {
  *
  * @returns RegExp that matches nutrition values like "300kcal", "25prot", etc.
  */
-export const createNutritionValueRegex = () => /\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
+export const createNutritionValueRegex = () => /-?\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
 
 // ================================
 // Food entry parsing factory functions
@@ -92,7 +92,7 @@ export const createNutritionValueRegex = () => /\d+(?:\.\d+)?(?:kcal|fat|prot|ca
  */
 export const createInlineNutritionRegex = (escapedFoodTag: string) =>
 	new RegExp(
-		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`,
+		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`,
 		"i"
 	);
 
@@ -140,7 +140,7 @@ export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
  * Example: "#food Chicken Breast 300kcal 25prot 5fat"
  */
 const createInlineNutritionPattern = () =>
-	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`;
+	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`;
 
 /**
  * Creates a regex pattern for linked food entries with amounts (internal helper)
@@ -151,20 +151,23 @@ const createLinkedFoodPattern = () =>
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types
+ * Supports both food and workout tags
  *
  * @param escapedFoodTag - The escaped food tag (e.g., "food" or "food\\-tracker")
+ * @param escapedWorkoutTag - The escaped workout tag (e.g., "workout" or "workout\\-tag")
  * @returns RegExp that matches food entries and captures relevant parts
  *
  * @example
  * ```typescript
- * const regex = createCombinedFoodHighlightRegex("food");
+ * const regex = createCombinedFoodHighlightRegex("food", "workout");
  * // Matches: "#food Chicken 300kcal 25prot" (captures nutritionValues)
  * // Matches: "#food [[Apple]] 150g" (captures amountValue)
+ * // Matches: "#workout training 300kcal" (captures nutritionValues)
  * ```
  */
-export const createCombinedFoodHighlightRegex = (escapedFoodTag: string) => {
+export const createCombinedFoodHighlightRegex = (escapedFoodTag: string, escapedWorkoutTag: string) => {
 	const inlinePattern = createInlineNutritionPattern();
 	const linkedPattern = createLinkedFoodPattern();
 
-	return new RegExp(`#${escapedFoodTag}\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
+	return new RegExp(`#(?<tag>${escapedFoodTag}|${escapedWorkoutTag})\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
 };

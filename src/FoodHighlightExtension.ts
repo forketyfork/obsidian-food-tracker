@@ -14,6 +14,9 @@ import { Component } from "obsidian";
 export default class FoodHighlightExtension extends Component {
 	private settingsService: SettingsService;
 	private escapedFoodTag: string = "";
+	private escapedWorkoutTag: string = "";
+	private foodTag: string = "";
+	private workoutTag: string = "";
 	private subscription: Subscription;
 
 	constructor(settingsService: SettingsService) {
@@ -22,8 +25,11 @@ export default class FoodHighlightExtension extends Component {
 	}
 
 	onload() {
-		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
-			this.escapedFoodTag = escapedFoodTag;
+		this.subscription = this.settingsService.settings$.subscribe(settings => {
+			this.foodTag = settings.foodTag;
+			this.workoutTag = settings.workoutTag;
+			this.escapedFoodTag = this.foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			this.escapedWorkoutTag = this.workoutTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 		});
 	}
 
@@ -45,7 +51,16 @@ export default class FoodHighlightExtension extends Component {
 			class: "food-tracker-nutrition-value",
 		});
 
-		const getEscapedFoodTag = () => this.escapedFoodTag;
+		const negativeKcalDecoration = Decoration.mark({
+			class: "food-tracker-negative-kcal",
+		});
+
+		const getHighlightOptions = () => ({
+			escapedFoodTag: this.escapedFoodTag,
+			escapedWorkoutTag: this.escapedWorkoutTag,
+			foodTag: this.foodTag,
+			workoutTag: this.workoutTag,
+		});
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
 			class {
@@ -68,11 +83,11 @@ export default class FoodHighlightExtension extends Component {
 				buildDecorations(view: EditorView): DecorationSet {
 					const builder = new RangeSetBuilder<Decoration>();
 
-					// Get current escaped food tag from plugin instance through closure
-					const escapedFoodTag = getEscapedFoodTag();
+					// Get current escaped tags from plugin instance through closure
+					const { escapedFoodTag, escapedWorkoutTag, foodTag, workoutTag } = getHighlightOptions();
 
-					// Skip if food tag is not yet initialized
-					if (!escapedFoodTag) {
+					// Skip if tags are not yet initialized
+					if (!escapedFoodTag || !escapedWorkoutTag || !foodTag || !workoutTag) {
 						return builder.finish();
 					}
 
@@ -80,11 +95,23 @@ export default class FoodHighlightExtension extends Component {
 						const text = view.state.doc.sliceString(from, to);
 
 						// Extract highlight ranges using the pure function
-						const ranges = extractMultilineHighlightRanges(text, from, { escapedFoodTag });
+						const ranges = extractMultilineHighlightRanges(text, from, {
+							escapedFoodTag,
+							escapedWorkoutTag,
+							foodTag,
+							workoutTag,
+						});
 
 						// Convert ranges to CodeMirror decorations
 						for (const range of ranges) {
-							const decoration = range.type === "nutrition" ? nutritionValueDecoration : foodAmountDecoration;
+							let decoration;
+							if (range.type === "negative-kcal") {
+								decoration = negativeKcalDecoration;
+							} else if (range.type === "nutrition") {
+								decoration = nutritionValueDecoration;
+							} else {
+								decoration = foodAmountDecoration;
+							}
 							builder.add(range.start, range.end, decoration);
 						}
 					}

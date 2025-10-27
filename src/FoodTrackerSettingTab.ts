@@ -54,6 +54,16 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Workout tag")
+			.setDesc("Tag name for logging workouts (without #)")
+			.addText(text =>
+				text.setValue(this.plugin.settings.workoutTag).onChange(async value => {
+					this.plugin.settings.workoutTag = value || "workout";
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
 			.setName("Goals file")
 			.setDesc("File containing daily nutrition goals")
 			.addText(text => {

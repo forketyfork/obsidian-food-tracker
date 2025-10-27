@@ -1,7 +1,12 @@
 import { extractFoodHighlightRanges, extractMultilineHighlightRanges } from "../FoodHighlightCore";
 
 describe("FoodHighlightCore", () => {
-	const defaultOptions = { escapedFoodTag: "food" };
+	const defaultOptions = {
+		escapedFoodTag: "food",
+		escapedWorkoutTag: "workout",
+		foodTag: "food",
+		workoutTag: "workout",
+	};
 
 	describe("extractFoodHighlightRanges", () => {
 		describe("inline nutrition format", () => {
@@ -33,6 +38,14 @@ describe("FoodHighlightCore", () => {
 				expect(ranges[0]).toEqual({ start: 12, end: 19, type: "nutrition" }); // 200KCAL
 				expect(ranges[1]).toEqual({ start: 20, end: 25, type: "nutrition" }); // 10FAT
 				expect(ranges[2]).toEqual({ start: 26, end: 32, type: "nutrition" }); // 15PROT
+			});
+
+			test("handles negative nutrition values", () => {
+				const text = "#food Recovery -150kcal";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 15, end: 23, type: "negative-kcal" }); // -150kcal
 			});
 
 			test("handles complex food names with multiple words", () => {
@@ -103,7 +116,12 @@ describe("FoodHighlightCore", () => {
 		describe("custom food tags", () => {
 			test("works with custom food tags", () => {
 				const text = "#nutrition Chicken Breast 300kcal 25prot";
-				const ranges = extractFoodHighlightRanges(text, 0, { escapedFoodTag: "nutrition" });
+				const ranges = extractFoodHighlightRanges(text, 0, {
+					escapedFoodTag: "nutrition",
+					escapedWorkoutTag: "workout",
+					foodTag: "nutrition",
+					workoutTag: "workout",
+				});
 
 				expect(ranges).toHaveLength(2);
 				expect(ranges[0]).toEqual({ start: 26, end: 33, type: "nutrition" }); // 300kcal
@@ -112,7 +130,12 @@ describe("FoodHighlightCore", () => {
 
 			test("works with escaped special characters in food tags", () => {
 				const text = "#food-tracker Chicken 300kcal";
-				const ranges = extractFoodHighlightRanges(text, 0, { escapedFoodTag: "food\\-tracker" });
+				const ranges = extractFoodHighlightRanges(text, 0, {
+					escapedFoodTag: "food\\-tracker",
+					escapedWorkoutTag: "workout",
+					foodTag: "food-tracker",
+					workoutTag: "workout",
+				});
 
 				expect(ranges).toHaveLength(1);
 				expect(ranges[0]).toEqual({ start: 22, end: 29, type: "nutrition" }); // 300kcal
@@ -218,6 +241,62 @@ Regular text line
 			expect(ranges).toHaveLength(2);
 			expect(ranges[0]).toEqual({ start: 66, end: 73, type: "nutrition" }); // 300kcal (16 + 50)
 			expect(ranges[1]).toEqual({ start: 86, end: 93, type: "nutrition" }); // 200kcal (36 + 50)
+		});
+	});
+
+	describe("workout tag support", () => {
+		test("highlights nutrition values with workout tag using red style", () => {
+			const text = "#workout training 300kcal";
+			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(1);
+			expect(ranges[0]).toEqual({ start: 18, end: 25, type: "negative-kcal" }); // 300kcal (red for workout)
+		});
+
+		test("does not highlight negative kcal values with workout tag", () => {
+			const text = "#workout cardio -150kcal";
+			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(0); // Negative workout calories are invalid and not highlighted
+		});
+
+		test("still highlights negative kcal values with food tag", () => {
+			const text = "#food workout -150kcal";
+			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(1);
+			expect(ranges[0]).toEqual({ start: 14, end: 22, type: "negative-kcal" }); // -150kcal
+		});
+
+		test("treats #workout inside food entry as food highlight", () => {
+			const text = "#food #workout shake 150kcal";
+			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(1);
+			expect(ranges[0]).toEqual({ start: 21, end: 28, type: "nutrition" }); // 150kcal stays blue
+		});
+
+		test("highlights multiple nutrition values with workout tag (only kcal in red)", () => {
+			const text = "#workout strength 500kcal 40prot 10fat";
+			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(3);
+			expect(ranges[0]).toEqual({ start: 18, end: 25, type: "negative-kcal" }); // 500kcal (red for workout)
+			expect(ranges[1]).toEqual({ start: 26, end: 32, type: "nutrition" }); // 40prot (normal blue)
+			expect(ranges[2]).toEqual({ start: 33, end: 38, type: "nutrition" }); // 10fat (normal blue)
+		});
+
+		test("works with both food and workout tags in multiline text", () => {
+			const text = `#food Breakfast 300kcal
+#workout training 150kcal
+#food Lunch 200kcal`;
+
+			const ranges = extractMultilineHighlightRanges(text, 0, defaultOptions);
+
+			expect(ranges).toHaveLength(3);
+			expect(ranges[0]).toEqual({ start: 16, end: 23, type: "nutrition" }); // 300kcal from food (normal blue)
+			expect(ranges[1]).toEqual({ start: 42, end: 49, type: "negative-kcal" }); // 150kcal from workout (red)
+			expect(ranges[2]).toEqual({ start: 62, end: 69, type: "nutrition" }); // 200kcal from food (normal blue)
 		});
 	});
 });

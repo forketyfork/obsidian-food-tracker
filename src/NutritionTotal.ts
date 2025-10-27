@@ -57,23 +57,44 @@ export default class NutritionTotal {
 		content: string,
 		foodTag: string = "food",
 		escaped = false,
-		goals?: NutrientGoals
+		goals?: NutrientGoals,
+		workoutTag: string = "workout",
+		workoutTagEscaped?: boolean
 	): HTMLElement | null {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+			const hasWorkoutTag = workoutTag.trim().length > 0;
+			const workoutEscaped = workoutTagEscaped ?? escaped;
+			const normalizedWorkoutTag = hasWorkoutTag
+				? workoutEscaped
+					? workoutTag
+					: workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&")
+				: null;
 			const foodEntries = this.parseFoodEntries(content, tag);
 			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
+			const workoutEntries = normalizedWorkoutTag ? this.parseInlineNutrientEntries(content, normalizedWorkoutTag) : [];
 
-			if (foodEntries.length === 0 && inlineEntries.length === 0) {
+			if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
 				return null;
 			}
 
 			const totalNutrients = this.calculateTotals(foodEntries);
 			const inlineTotals = this.calculateInlineTotals(inlineEntries);
 
+			if (workoutEntries.length > 0) {
+				const validWorkoutEntries = this.filterValidWorkoutEntries(workoutEntries);
+				if (validWorkoutEntries.length > 0) {
+					const workoutTotals = this.calculateInlineTotals(validWorkoutEntries);
+					if (Object.keys(workoutTotals).length > 0) {
+						this.addNutrients(inlineTotals, workoutTotals, -1);
+					}
+				}
+			}
+
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
-			return this.formatTotal(combined, goals);
+			const clamped = this.clampNutrientsToZero(combined);
+			return this.formatTotal(clamped, goals);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return null;
@@ -129,7 +150,7 @@ export default class NutritionTotal {
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
 		// This single regex finds all number-unit pairs
-		const nutrientRegex = /(\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
+		const nutrientRegex = /(-?\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
 
 		const matches = nutrientString.matchAll(nutrientRegex);
 
@@ -167,10 +188,30 @@ export default class NutritionTotal {
 		return totals;
 	}
 
+	private filterValidWorkoutEntries(entries: InlineNutrientEntry[]): InlineNutrientEntry[] {
+		return entries.filter(entry => {
+			const hasPositiveValues = Object.values(entry).some(value => value !== undefined && value > 0);
+			const hasNoNegativeCalories = entry.calories === undefined || entry.calories >= 0;
+			return hasPositiveValues && hasNoNegativeCalories;
+		});
+	}
+
 	private combineNutrients(nutrients1: NutrientData, nutrients2: NutrientData): NutrientData {
-		const combined: NutrientData = { ...nutrients1 }; // Start with a copy of the first
+		const combined: NutrientData = { ...nutrients1 };
 		this.addNutrients(combined, nutrients2);
 		return combined;
+	}
+
+	private clampNutrientsToZero(nutrients: NutrientData): NutrientData {
+		const clamped: NutrientData = {};
+		const keys = Object.keys(nutrients) as Array<keyof NutrientData>;
+		for (const key of keys) {
+			const value = nutrients[key];
+			if (value !== undefined) {
+				clamped[key] = Math.max(0, value);
+			}
+		}
+		return clamped;
 	}
 
 	private calculateTotals(entries: FoodEntry[]): NutrientData {
@@ -254,7 +295,8 @@ export default class NutritionTotal {
 		const elements: HTMLElement[] = [];
 		for (const config of formatConfig) {
 			const value = nutrients[config.key];
-			if (value && value > 0) {
+			const shouldShow = value !== undefined && (value > 0 || (config.key === "calories" && value === 0));
+			if (shouldShow) {
 				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
 				const tooltipText = `${config.name}: ${formattedValue} ${config.unit}`;
 
