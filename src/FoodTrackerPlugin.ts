@@ -205,7 +205,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	 */
 	private registerCodeMirrorExtensions(): void {
 		// Register CodeMirror extension for food amount highlighting
-		this.foodHighlightExtension = new FoodHighlightExtension(this.settingsService);
+                this.foodHighlightExtension = new FoodHighlightExtension(this.settingsService, this.nutrientCache);
 		this.addChild(this.foodHighlightExtension);
 		this.registerEditorExtension(this.foodHighlightExtension.createExtension());
 

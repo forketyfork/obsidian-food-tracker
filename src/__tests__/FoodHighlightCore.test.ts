@@ -1,4 +1,8 @@
-import { extractFoodHighlightRanges, extractMultilineHighlightRanges } from "../FoodHighlightCore";
+import {
+	extractFoodHighlightRanges,
+	extractMultilineHighlightRanges,
+	extractInlineCalorieAnnotations,
+} from "../FoodHighlightCore";
 
 describe("FoodHighlightCore", () => {
 	const defaultOptions = {
@@ -245,9 +249,9 @@ Regular text line
 	});
 
 	describe("workout tag support", () => {
-		test("highlights nutrition values with workout tag using red style", () => {
-			const text = "#workout training 300kcal";
-			const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+	        test("highlights nutrition values with workout tag using red style", () => {
+	                const text = "#workout training 300kcal";
+	                const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
 
 			expect(ranges).toHaveLength(1);
 			expect(ranges[0]).toEqual({ start: 18, end: 25, type: "negative-kcal" }); // 300kcal (red for workout)
@@ -296,7 +300,70 @@ Regular text line
 			expect(ranges).toHaveLength(3);
 			expect(ranges[0]).toEqual({ start: 16, end: 23, type: "nutrition" }); // 300kcal from food (normal blue)
 			expect(ranges[1]).toEqual({ start: 42, end: 49, type: "negative-kcal" }); // 150kcal from workout (red)
-			expect(ranges[2]).toEqual({ start: 62, end: 69, type: "nutrition" }); // 200kcal from food (normal blue)
-		});
+	                expect(ranges[2]).toEqual({ start: 62, end: 69, type: "nutrition" }); // 200kcal from food (normal blue)
+	        });
+	});
+
+	describe("extractInlineCalorieAnnotations", () => {
+	        const calorieMap: Record<string, number> = {
+	                bread: 290,
+	                pasta: 350,
+	        };
+
+	        const provider = {
+	                getCaloriesForFood: (fileName: string): number | null => {
+	                        return calorieMap[fileName.toLowerCase()] ?? null;
+	                },
+	        };
+
+	        test("adds annotation for gram-based food entry", () => {
+	                const text = "#food [[Bread]] 10g";
+	                const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+	                expect(annotations).toEqual([
+	                        {
+	                                position: text.length,
+	                                text: "29kcal",
+	                        },
+	                ]);
+	        });
+
+	        test("normalizes wikilink aliases", () => {
+	                const text = "#food [[bread|Slice]] 20g";
+	                const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+	                expect(annotations).toEqual([
+	                        {
+	                                position: text.length,
+	                                text: "58kcal",
+	                        },
+	                ]);
+	        });
+
+	        test("respects start offset", () => {
+	                const text = "#food [[Pasta]] 50g";
+	                const annotations = extractInlineCalorieAnnotations(text, 100, defaultOptions, provider);
+
+	                expect(annotations).toEqual([
+	                        {
+	                                position: text.length + 100,
+	                                text: "175kcal",
+	                        },
+	                ]);
+	        });
+
+	        test("skips entries when calorie data is missing", () => {
+	                const text = "#food [[Unknown]] 10g";
+	                const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+	                expect(annotations).toEqual([]);
+	        });
+
+	        test("ignores non-gram units", () => {
+	                const text = "#food [[Bread]] 100ml";
+	                const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+	                expect(annotations).toEqual([]);
+	        });
 	});
 });

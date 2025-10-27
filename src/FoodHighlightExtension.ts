@@ -1,10 +1,15 @@
 import { Extension } from "@codemirror/state";
-import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { extractMultilineHighlightRanges } from "./FoodHighlightCore";
+import {
+	extractMultilineHighlightRanges,
+	extractInlineCalorieAnnotations,
+	CalorieProvider,
+} from "./FoodHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
 import { Component } from "obsidian";
+import NutrientCache from "./NutrientCache";
 
 /**
  * CodeMirror extension that highlights food amounts and nutrition values in the editor
@@ -18,10 +23,12 @@ export default class FoodHighlightExtension extends Component {
 	private foodTag: string = "";
 	private workoutTag: string = "";
 	private subscription: Subscription;
+	private nutrientCache: NutrientCache;
 
-	constructor(settingsService: SettingsService) {
+	constructor(settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super();
 		this.settingsService = settingsService;
+		this.nutrientCache = nutrientCache;
 	}
 
 	onload() {
@@ -44,7 +51,7 @@ export default class FoodHighlightExtension extends Component {
 
 	createExtension(): Extension {
 		const foodAmountDecoration = Decoration.mark({
-			class: "food-tracker-value",
+				class: "food-tracker-value",
 		});
 
 		const nutritionValueDecoration = Decoration.mark({
@@ -52,13 +59,42 @@ export default class FoodHighlightExtension extends Component {
 		});
 
 		const negativeKcalDecoration = Decoration.mark({
-			class: "food-tracker-negative-kcal",
+				class: "food-tracker-negative-kcal",
 		});
 
+		const calorieProvider: CalorieProvider = {
+				getCaloriesForFood: (fileName: string) => {
+				        const normalized = fileName.trim();
+				        if (!normalized) {
+				                return null;
+				        }
+
+				        const data = this.nutrientCache.getNutritionData(normalized);
+				        const calories = data?.calories;
+				        return typeof calories === "number" && isFinite(calories) ? calories : null;
+				},
+		};
+
+		class InlineCaloriesWidget extends WidgetType {
+				private text: string;
+
+				constructor(text: string) {
+				        super();
+				        this.text = text;
+				}
+
+				toDOM(): HTMLElement {
+				        const span = document.createElement("span");
+				        span.classList.add("food-tracker-inline-calories");
+				        span.textContent = ` (${this.text})`;
+				        return span;
+				}
+		}
+
 		const getHighlightOptions = () => ({
-			escapedFoodTag: this.escapedFoodTag,
-			escapedWorkoutTag: this.escapedWorkoutTag,
-			foodTag: this.foodTag,
+				escapedFoodTag: this.escapedFoodTag,
+				escapedWorkoutTag: this.escapedWorkoutTag,
+				foodTag: this.foodTag,
 			workoutTag: this.workoutTag,
 		});
 
@@ -95,30 +131,47 @@ export default class FoodHighlightExtension extends Component {
 						const text = view.state.doc.sliceString(from, to);
 
 						// Extract highlight ranges using the pure function
-						const ranges = extractMultilineHighlightRanges(text, from, {
-							escapedFoodTag,
-							escapedWorkoutTag,
-							foodTag,
-							workoutTag,
-						});
+				                        const options = {
+				                                escapedFoodTag,
+				                                escapedWorkoutTag,
+				                                foodTag,
+				                                workoutTag,
+				                        };
 
-						// Convert ranges to CodeMirror decorations
-						for (const range of ranges) {
-							let decoration;
-							if (range.type === "negative-kcal") {
+				                        const ranges = extractMultilineHighlightRanges(text, from, options);
+
+				                        // Convert ranges to CodeMirror decorations
+				                        for (const range of ranges) {
+				                                let decoration;
+				                                if (range.type === "negative-kcal") {
 								decoration = negativeKcalDecoration;
 							} else if (range.type === "nutrition") {
 								decoration = nutritionValueDecoration;
 							} else {
 								decoration = foodAmountDecoration;
-							}
-							builder.add(range.start, range.end, decoration);
-						}
-					}
+				                                }
+				                                builder.add(range.start, range.end, decoration);
+				                        }
 
-					return builder.finish();
-				}
-			},
+				                        const calorieAnnotations = extractInlineCalorieAnnotations(
+				                                text,
+				                                from,
+				                                options,
+				                                calorieProvider
+				                        );
+
+				                        for (const annotation of calorieAnnotations) {
+				                                const widget = Decoration.widget({
+				                                        widget: new InlineCaloriesWidget(annotation.text),
+				                                        side: 1,
+				                                });
+				                                builder.add(annotation.position, annotation.position, widget);
+				                        }
+				                }
+
+				                return builder.finish();
+				        }
+				},
 			{
 				decorations: v => v.decorations,
 			}

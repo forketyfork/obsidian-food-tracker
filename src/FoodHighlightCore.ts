@@ -6,6 +6,15 @@ export interface HighlightRange {
 	type: "nutrition" | "amount" | "negative-kcal";
 }
 
+export interface CalorieAnnotation {
+	position: number;
+	text: string;
+}
+
+export interface CalorieProvider {
+	getCaloriesForFood(fileName: string): number | null;
+}
+
 export interface HighlightOptions {
 	escapedFoodTag: string;
 	escapedWorkoutTag: string;
@@ -104,4 +113,62 @@ export function extractMultilineHighlightRanges(
 	}
 
 	return ranges;
+}
+
+/**
+ * Extracts inline calorie annotations for food entries measured in grams
+ * Returns the document position where the annotation should be inserted and the formatted calorie text
+ */
+export function extractInlineCalorieAnnotations(
+	text: string,
+	startOffset: number,
+	options: HighlightOptions,
+	calorieProvider: CalorieProvider
+): CalorieAnnotation[] {
+	const annotations: CalorieAnnotation[] = [];
+
+	const gramsRegex = new RegExp(`#${options.escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(g)`, "gi");
+
+	for (const match of text.matchAll(gramsRegex)) {
+		const fullMatch = match[0];
+		const rawFileName = match[1];
+		const amountString = match[2];
+
+		const amount = parseFloat(amountString);
+		if (!isFinite(amount) || amount <= 0) {
+			continue;
+		}
+
+		const normalizedFileName = rawFileName
+			.split("|")[0]
+			.split("#")[0]
+			.split("/")
+			.pop()?.trim();
+		if (!normalizedFileName) {
+			continue;
+		}
+
+		const caloriesPerHundred = calorieProvider.getCaloriesForFood(normalizedFileName);
+		if (caloriesPerHundred === null || caloriesPerHundred === undefined || !isFinite(caloriesPerHundred)) {
+			continue;
+		}
+
+		const calculatedCalories = (amount / 100) * caloriesPerHundred;
+		if (!isFinite(calculatedCalories) || calculatedCalories <= 0) {
+			continue;
+		}
+
+		const formattedCalories = Math.round(calculatedCalories);
+		if (formattedCalories <= 0) {
+			continue;
+		}
+
+		const position = startOffset + (match.index ?? 0) + fullMatch.length;
+		annotations.push({
+			position,
+			text: `${formattedCalories}kcal`,
+		});
+	}
+
+	return annotations;
 }
