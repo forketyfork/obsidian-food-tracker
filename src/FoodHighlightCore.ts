@@ -3,11 +3,14 @@ import { createNutritionValueRegex, createCombinedFoodHighlightRegex } from "./c
 export interface HighlightRange {
 	start: number;
 	end: number;
-	type: "nutrition" | "amount";
+	type: "nutrition" | "amount" | "negative-kcal";
 }
 
 export interface HighlightOptions {
 	escapedFoodTag: string;
+	escapedWorkoutTag: string;
+	foodTag: string;
+	workoutTag: string;
 }
 
 /**
@@ -20,11 +23,15 @@ export function extractFoodHighlightRanges(
 	options: HighlightOptions
 ): HighlightRange[] {
 	const ranges: HighlightRange[] = [];
-	const combinedRegex = createCombinedFoodHighlightRegex(options.escapedFoodTag);
+	const combinedRegex = createCombinedFoodHighlightRegex(options.escapedFoodTag, options.escapedWorkoutTag);
 
 	const match = combinedRegex.exec(text);
 	if (match?.groups && match.index !== undefined) {
 		const fullMatchIndex = match.index;
+
+		const matchedTag = match.groups.tag?.toLowerCase() ?? "";
+		const workoutTag = options.workoutTag.toLowerCase();
+		const isWorkoutTag = workoutTag.length > 0 && matchedTag === workoutTag;
 
 		if (match.groups.nutritionValues) {
 			// Inline nutrition format: highlight each nutritional value
@@ -40,10 +47,24 @@ export function extractFoodHighlightRanges(
 			for (const valueMatch of allValueMatches) {
 				const valueStart = nutritionStringStart + valueMatch.index;
 				const valueEnd = valueStart + valueMatch[0].length;
+				const value = valueMatch[0];
+
+				const isNegative = value.startsWith("-");
+				const isKcal = value.toLowerCase().includes("kcal");
+
+				// Skip negative workout calories (they're invalid and ignored in calculations)
+				if (isWorkoutTag && isNegative && isKcal) {
+					continue;
+				}
+
+				// Determine highlight type
+				const isNegativeKcal = isNegative && isKcal;
+				const isWorkoutKcal = isWorkoutTag && isKcal;
+
 				ranges.push({
 					start: valueStart,
 					end: valueEnd,
-					type: "nutrition",
+					type: isNegativeKcal || isWorkoutKcal ? "negative-kcal" : "nutrition",
 				});
 			}
 		} else if (match.groups.amountValue) {

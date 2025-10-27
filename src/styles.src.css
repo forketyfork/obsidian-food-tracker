@@ -132,6 +132,13 @@
 	padding: 0 4px;
 }
 
+.food-tracker-negative-kcal {
+	background-color: rgba(var(--color-red-rgb), 0.5);
+	color: var(--text-on-accent-inverted);
+	border-radius: 4px;
+	padding: 0 4px;
+}
+
 /* Fixed width for search button to prevent resizing */
 .food-tracker-search-button {
 	min-width: 110px;

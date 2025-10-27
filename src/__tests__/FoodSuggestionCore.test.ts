@@ -50,6 +50,37 @@ describe("FoodSuggestionCore", () => {
 			expect(result).not.toBeNull();
 			expect(result?.query).toBe("apple");
 		});
+
+		test("should not show suggestions for workout tag without numbers", () => {
+			const result = core.analyzeTrigger("#workout training", 17);
+			expect(result).toBeNull();
+		});
+
+		test("should treat latest workout tag in mixed line as workout context", () => {
+			const line = "#food Banana 120kcal #workout Running 200";
+			const trigger = core.analyzeTrigger(line, line.length);
+
+			expect(trigger).toEqual({
+				query: "200",
+				startOffset: line.length - 3,
+				endOffset: line.length,
+				context: "nutrition",
+				tagType: "workout",
+			});
+
+			const suggestions = core.getSuggestions(trigger!.query, provider, trigger!.context, trigger!.tagType);
+			expect(suggestions).toEqual(["200kcal"]);
+		});
+
+		test("should react to workout tag updates", async () => {
+			settingsService.updateWorkoutTag("exercise");
+			// Give some time for the observable to update
+			await new Promise(resolve => setTimeout(resolve, 0));
+			const result = core.analyzeTrigger("#exercise cardio 300", 20);
+			expect(result).not.toBeNull();
+			expect(result?.query).toBe("300");
+			expect(result?.tagType).toBe("workout");
+		});
 	});
 
 	describe("analyzeTrigger", () => {
@@ -69,6 +100,7 @@ describe("FoodSuggestionCore", () => {
 				query: "apple",
 				startOffset: 6,
 				endOffset: 11,
+				tagType: "food",
 			});
 		});
 
@@ -78,6 +110,7 @@ describe("FoodSuggestionCore", () => {
 				query: "",
 				startOffset: 6,
 				endOffset: 6,
+				tagType: "food",
 			});
 		});
 
@@ -87,6 +120,7 @@ describe("FoodSuggestionCore", () => {
 				query: "app",
 				startOffset: 6,
 				endOffset: 9,
+				tagType: "food",
 			});
 		});
 
@@ -97,6 +131,7 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 12,
 				endOffset: 16,
 				context: "nutrition",
+				tagType: "food",
 			});
 		});
 
@@ -107,6 +142,7 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 12,
 				endOffset: 15,
 				context: "nutrition",
+				tagType: "food",
 			});
 		});
 
@@ -116,6 +152,7 @@ describe("FoodSuggestionCore", () => {
 				query: "apple text",
 				startOffset: 6,
 				endOffset: 16,
+				tagType: "food",
 			});
 		});
 
@@ -128,6 +165,7 @@ describe("FoodSuggestionCore", () => {
 				query: "apple",
 				startOffset: 10,
 				endOffset: 15,
+				tagType: "food",
 			});
 		});
 
@@ -137,6 +175,7 @@ describe("FoodSuggestionCore", () => {
 				query: "multiple word query",
 				startOffset: 6,
 				endOffset: 25,
+				tagType: "food",
 			});
 		});
 
@@ -147,6 +186,7 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 29,
 				endOffset: 32,
 				context: "measure",
+				tagType: "food",
 			});
 		});
 
@@ -157,6 +197,51 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 29,
 				endOffset: 33,
 				context: "measure",
+				tagType: "food",
+			});
+		});
+
+		test("should trigger nutrition suggestions for negative numbers", () => {
+			const result = core.analyzeTrigger("#food workout -100", 18);
+			expect(result).toEqual({
+				query: "-100",
+				startOffset: 14,
+				endOffset: 18,
+				context: "nutrition",
+				tagType: "food",
+			});
+		});
+
+		test("should trigger nutrition suggestions for negative numbers with letters", () => {
+			const result = core.analyzeTrigger("#food workout -100k", 19);
+			expect(result).toEqual({
+				query: "-100k",
+				startOffset: 14,
+				endOffset: 19,
+				context: "nutrition",
+				tagType: "food",
+			});
+		});
+
+		test("should trigger suggestions with workout tag", () => {
+			const result = core.analyzeTrigger("#workout training 300", 21);
+			expect(result).toEqual({
+				query: "300",
+				startOffset: 18,
+				endOffset: 21,
+				context: "nutrition",
+				tagType: "workout",
+			});
+		});
+
+		test("should trigger suggestions with workout tag and partial keyword", () => {
+			const result = core.analyzeTrigger("#workout training 300k", 22);
+			expect(result).toEqual({
+				query: "300k",
+				startOffset: 18,
+				endOffset: 22,
+				context: "nutrition",
+				tagType: "workout",
 			});
 		});
 	});
@@ -227,6 +312,57 @@ describe("FoodSuggestionCore", () => {
 			const suggestions = core.getSuggestions("100", provider, "nutrition");
 			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar", "100fiber", "100sodium"]);
 		});
+
+		test("should return only kcal suggestion for negative number queries", () => {
+			const suggestions = core.getSuggestions("-100", provider);
+			expect(suggestions).toEqual(["-100kcal"]);
+		});
+
+		test("should return only kcal suggestion for negative number with partial keyword", () => {
+			const suggestions = core.getSuggestions("-100k", provider);
+			expect(suggestions).toEqual(["-100kcal"]);
+		});
+
+		test("should return empty array for negative numbers with non-kcal keywords", () => {
+			const suggestions = core.getSuggestions("-100f", provider);
+			expect(suggestions).toEqual([]);
+		});
+
+		test("should return empty array for negative numbers in measure context", () => {
+			const suggestions = core.getSuggestions("-100", provider, "measure");
+			expect(suggestions).toEqual([]);
+		});
+
+		test("should return only kcal suggestion for workout tag", () => {
+			const suggestions = core.getSuggestions("300", provider, "nutrition", "workout");
+			expect(suggestions).toEqual(["300kcal"]);
+		});
+
+		test("should return only kcal suggestion for workout tag with partial keyword", () => {
+			const suggestions = core.getSuggestions("300k", provider, "nutrition", "workout");
+			expect(suggestions).toEqual(["300kcal"]);
+		});
+
+		test("should not return non-kcal suggestions for workout tag", () => {
+			const suggestions = core.getSuggestions("300p", provider, "nutrition", "workout");
+			expect(suggestions).toEqual([]);
+		});
+
+		test("should not support negative kcal for workout tag", () => {
+			const suggestions = core.getSuggestions("-100", provider, "nutrition", "workout");
+			expect(suggestions).toEqual([]);
+		});
+
+		test("should not support negative kcal with partial keyword for workout tag", () => {
+			const suggestions = core.getSuggestions("-100k", provider, "nutrition", "workout");
+			expect(suggestions).toEqual([]);
+		});
+
+		test("should not suggest zero calories for workout tag", () => {
+			expect(core.getSuggestions("0", provider, "nutrition", "workout")).toEqual([]);
+			expect(core.getSuggestions("0k", provider, "nutrition", "workout")).toEqual([]);
+			expect(core.getSuggestions("0kcal", provider, undefined, "workout")).toEqual([]);
+		});
 	});
 
 	describe("isNutritionKeyword", () => {
@@ -251,6 +387,10 @@ describe("FoodSuggestionCore", () => {
 			expect(core.isNutritionKeyword("apple")).toBe(false);
 			expect(core.isNutritionKeyword("banana")).toBe(false);
 			expect(core.isNutritionKeyword("chicken breast")).toBe(false);
+		});
+
+		test("should identify negative kcal keywords only", () => {
+			expect(core.isNutritionKeyword("-100kcal")).toBe(true);
 		});
 	});
 
@@ -323,6 +463,33 @@ describe("FoodSuggestionCore", () => {
 			// Generate replacement for measure
 			const replacement = core.getNutritionKeywordReplacement("123g");
 			expect(replacement).toBe("123g ");
+		});
+
+		test("should handle workout tag workflow with only kcal suggestions", () => {
+			// User types "#workout running"
+			let trigger = core.analyzeTrigger("#workout running", 16);
+			expect(trigger).toBeNull(); // No suggestions for food names with workout tag
+
+			// User types "#workout running 300"
+			trigger = core.analyzeTrigger("#workout running 300", 20);
+			expect(trigger?.query).toBe("300");
+			expect(trigger?.context).toBe("nutrition");
+			expect(trigger?.tagType).toBe("workout");
+
+			// Get suggestions - should only return kcal
+			let suggestions = core.getSuggestions("300", provider, trigger?.context, trigger?.tagType);
+			expect(suggestions).toEqual(["300kcal"]);
+
+			// User types "#workout running 300k"
+			trigger = core.analyzeTrigger("#workout running 300k", 21);
+			expect(trigger?.query).toBe("300k");
+
+			suggestions = core.getSuggestions("300k", provider, trigger?.context, trigger?.tagType);
+			expect(suggestions).toEqual(["300kcal"]);
+
+			// Generate replacement
+			const replacement = core.getNutritionKeywordReplacement("300kcal");
+			expect(replacement).toBe("300kcal ");
 		});
 	});
 });

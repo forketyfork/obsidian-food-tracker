@@ -280,7 +280,9 @@ export default class FoodTrackerPlugin extends Plugin {
 				content,
 				this.settingsService.currentEscapedFoodTag,
 				true,
-				this.goalsService.currentGoals
+				this.goalsService.currentGoals,
+				this.settingsService.currentEscapedWorkoutTag,
+				true
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {

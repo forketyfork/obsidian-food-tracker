@@ -38,6 +38,12 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
   - **Inline nutrition**: `#food Food Name 300kcal 20fat 10prot 30carbs 3sugar` - specify nutrition directly
   - **Multiple units**: Support for various units including g, kg, ml, l, oz, lb, cup, tbsp, tsp, pc
 - **Visual highlighting**: Food amounts and nutrition values are highlighted in the editor for easy identification
+  - Blue highlighting for calorie intake and nutrition values
+  - Red highlighting for calorie burns (workout tag or negative calories)
+- **Workout logging**: Track exercise with a dedicated tag (default: `#workout`) or by entering negative calories to subtract
+  them from your totals
+  - Autocomplete only suggests calorie values for workout entries (no food names or other nutrients)
+  - Visual distinction: workout calories are highlighted in red to differentiate from food intake
 
 ### 📊 Real-time Nutrition Tracking
 
@@ -143,6 +149,31 @@ You can combine both methods in the same document:
 
 The nutrition total will automatically update as you add food entries using any method.
 
+### Logging Workouts
+
+Deduct workout calories from your daily totals in two ways:
+
+- Use the dedicated workout tag (default: `#workout`):
+
+  ```
+  #workout Morning run 230kcal
+  #workout Strength training 180kcal
+  ```
+
+  When you type `#workout` followed by a description and start typing numbers, autocomplete will suggest only calorie values (e.g., `300kcal`). Food names and other nutrition keywords are not available with the workout tag.
+
+  **Important:** Workout tags only accept positive calorie values. Negative values (e.g., `#workout running -200kcal`) are invalid and will be ignored in calculations and not highlighted. This ensures clear semantics: workout entries always represent calories burned.
+
+- Enter negative calories directly with your food tag for ad-hoc workout tracking:
+
+  ```
+  #food Evening yoga -120kcal
+  ```
+
+In both cases, the plugin subtracts the logged calories (and any other specified nutrients) from your daily totals. Calories logged with the workout tag or as negative values are **highlighted in red** in the editor to visually distinguish calorie burns from calorie intake (which is highlighted in blue).
+
+**Calorie floor:** Your total calorie count is always floored at 0. If your workout calories exceed your food intake, the plugin displays 0 kcal instead of a negative value, ensuring totals never go below zero.
+
 ### Setting Up Nutrition Goals
 
 1. Create a goals file in your vault (e.g., `nutrition-goals.md`)
@@ -179,9 +210,10 @@ Go to Settings > Food Tracker to configure:
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients"). The setting now offers type-ahead folder suggestions.
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
+- **Workout tag**: Customize the tag used for workout entries (default: "workout" for `#workout`)
 - **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md"). The field includes type-ahead file suggestions.
 
-> **Note**: When you change the food tag setting, the plugin will only recognize the new tag. Existing `#food` entries will need to be manually updated to use the new tag if you want them to be included in nutrition calculations.
+> **Note**: When you change the food or workout tag settings, the plugin will only recognize the new tags. Existing entries will need to be updated if you want them included in calculations.
 
 ## Requirements
 

@@ -20,6 +20,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	suggestionCore: FoodSuggestionCore;
 	private settingsService: SettingsService;
 	private currentContext?: "measure" | "nutrition";
+	private currentTagType?: "food" | "workout";
 
 	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super(app);
@@ -34,8 +35,9 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 		if (!trigger) return null;
 
-		// Store the context for use in getSuggestions
+		// Store the context and tag type for use in getSuggestions
 		this.currentContext = trigger.context;
+		this.currentTagType = trigger.tagType;
 
 		return {
 			start: { line: cursor.line, ch: trigger.startOffset },
@@ -45,7 +47,12 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): string[] {
-		return this.suggestionCore.getSuggestions(context.query, this.nutrientCache, this.currentContext);
+		return this.suggestionCore.getSuggestions(
+			context.query,
+			this.nutrientCache,
+			this.currentContext,
+			this.currentTagType
+		);
 	}
 
 	renderSuggestion(nutrient: string, el: HTMLElement): void {

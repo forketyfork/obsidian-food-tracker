@@ -156,6 +156,46 @@ Some other text
 			expectEmojis(result, "🔥 🥑 🥩 🍞 🌾");
 		});
 
+		test("subtracts workout calories using workout tag", () => {
+			const content = `#food Lunch 500kcal\n#workout Running 200kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 300"]')).not.toBeNull();
+		});
+
+		test("subtracts negative calories logged under food tag", () => {
+			const content = `#food Breakfast 400kcal\n#food Recovery -150kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 250"]')).not.toBeNull();
+		});
+
+		test("supports custom workout tag", () => {
+			const content = `#food Dinner 600kcal\n#workout-session Evening ride 275kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content, "food", false, undefined, "workout-session");
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 325"]')).not.toBeNull();
+		});
+
+		test("ignores negative workout calories", () => {
+			const content = `#food Lunch 500kcal\n#workout Running -200kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 500"]')).not.toBeNull();
+		});
+
+		test("accepts only positive workout calories", () => {
+			const content = `#food Breakfast 400kcal\n#workout Cycling 150kcal\n#workout Swimming -100kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 250"]')).not.toBeNull();
+		});
+
 		test("handles missing nutrient data gracefully", () => {
 			mockGetNutritionData.mockReturnValue(null);
 
@@ -368,7 +408,7 @@ Some other text
 			expectEmojis(result, "🔥 🍞");
 		});
 
-		test("returns empty string when no nutrients have values", () => {
+		test("shows 0 calories when all nutrients are 0", () => {
 			mockGetNutritionData.mockReturnValue({
 				calories: 0,
 				fats: 0,
@@ -378,7 +418,8 @@ Some other text
 			const content = "#food [[food]] 100g";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expect(result).toBeNull();
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
 		});
 
 		test("handles partial nutrient data", () => {
@@ -645,7 +686,34 @@ End of day`;
 			const content = "#food Salt water 0kcal 500sodium";
 			const result = nutritionTotal.calculateTotalNutrients(content);
 
-			expectEmojis(result, "🧂");
+			expectEmojis(result, "🔥 🧂");
+		});
+
+		test("floors calories to 0 when workout exceeds food", () => {
+			const content = `#food Snack 200kcal\n#workout Running 300kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+		});
+
+		test("shows 0 calories when food and workout match exactly", () => {
+			const content = `#food Meal 500kcal\n#workout Exercise 500kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+		});
+
+		test("clamps all nutrients to 0 but only shows calories at 0", () => {
+			const content = `#food Light meal 100kcal 5fat 3prot\n#workout Intense workout 200kcal`;
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expect(result).not.toBeNull();
+			// Should show 0 calories
+			expect(result?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+			// Should still show positive nutrients
+			expectEmojis(result, "🔥 🥑 🥩");
 		});
 	});
 });

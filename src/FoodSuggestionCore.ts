@@ -11,6 +11,7 @@ export interface SuggestionTrigger {
 	startOffset: number;
 	endOffset: number;
 	context?: "measure" | "nutrition";
+	tagType?: "food" | "workout";
 }
 
 /**
@@ -51,7 +52,10 @@ export class FoodSuggestionCore {
 	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp", "pc"];
 
 	// Precompiled regex patterns for performance
-	private foodTagRegex: RegExp;
+	private combinedTagRegex: RegExp;
+	private tagDetectionRegex: RegExp;
+	private currentFoodTag: string = "";
+	private currentWorkoutTag: string = "";
 	private nutritionQueryRegex: RegExp; // Matches text ending with number+letters (e.g., "apple 100g")
 	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
 	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
@@ -60,19 +64,19 @@ export class FoodSuggestionCore {
 		this.settingsService = settingsService;
 
 		// Initialize other regex patterns first
-		// Match any text ending with space and number+letters
-		this.nutritionQueryRegex = /.*\s+(\d+[a-z]*)$/;
-		// Validate that text is just number+letters
-		this.nutritionValidationRegex = /^\d+[a-z]*$/;
-		// Match wikilink followed by space and number+letters
-		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(\d+[a-z]*)$/;
+		// Match any text ending with space and number+letters (supports negative numbers)
+		this.nutritionQueryRegex = /.*\s+(-?\d+[a-z]*)$/;
+		// Validate that text is just number+letters (supports negative numbers)
+		this.nutritionValidationRegex = /^-?\d+[a-z]*$/;
+		// Match wikilink followed by space and number+letters (supports negative numbers)
+		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(-?\d+[a-z]*)$/;
 
-		// Initialize with current escaped food tag
-		this.updateFoodTagRegex(this.settingsService.currentEscapedFoodTag);
+		// Initialize with current tags
+		this.updateTagRegexes(this.settingsService.currentFoodTag, this.settingsService.currentWorkoutTag);
 
-		// Subscribe to escaped food tag changes and update regex
-		this.subscription = this.settingsService.escapedFoodTag$.subscribe(escapedFoodTag => {
-			this.updateFoodTagRegex(escapedFoodTag);
+		// Subscribe to tag changes and update regex patterns
+		this.subscription = this.settingsService.settings$.subscribe(settings => {
+			this.updateTagRegexes(settings.foodTag, settings.workoutTag);
 		});
 	}
 
@@ -86,10 +90,15 @@ export class FoodSuggestionCore {
 	}
 
 	/**
-	 * Updates the food tag regex when the escaped tag changes
+	 * Updates tag regex patterns when the tags change
 	 */
-	private updateFoodTagRegex(escapedFoodTag: string): void {
-		this.foodTagRegex = new RegExp(`#${escapedFoodTag}\\s+(.*)$`);
+	private updateTagRegexes(foodTag: string, workoutTag: string): void {
+		this.currentFoodTag = foodTag;
+		this.currentWorkoutTag = workoutTag;
+		const escapedFoodTag = foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		const escapedWorkoutTag = workoutTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		this.combinedTagRegex = new RegExp(`#(?<tag>${escapedFoodTag}|${escapedWorkoutTag})\\s+(?<content>.*)$`);
+		this.tagDetectionRegex = new RegExp(`#(?<tag>${escapedFoodTag}|${escapedWorkoutTag})(?=\\s)`, "gi");
 	}
 
 	/**
@@ -121,15 +130,26 @@ export class FoodSuggestionCore {
 		// Early exit if cursor is at beginning of line
 		if (cursorPosition === 0) return null;
 
-		// Check if line contains food tag using precompiled regex
-		if (!this.foodTagRegex.test(line.substring(0, cursorPosition))) return null;
+		// Check if line contains food or workout tag using precompiled regex
+		if (!this.combinedTagRegex.test(line.substring(0, cursorPosition))) return null;
 
 		// Use substring only when necessary and match with precompiled regex
 		const beforeCursor = line.substring(0, cursorPosition);
-		const foodMatch = this.foodTagRegex.exec(beforeCursor);
-		if (!foodMatch) return null;
+		const tagMatch = this.combinedTagRegex.exec(beforeCursor);
+		const tagGroups = tagMatch?.groups;
+		if (!tagMatch || !tagGroups) return null;
 
-		const query = foodMatch[1] || "";
+		// Determine the tag closest to the cursor by scanning for the last occurrence
+		this.tagDetectionRegex.lastIndex = 0;
+		let lastMatchedTag = "";
+		let detectionMatch: RegExpExecArray | null;
+		while ((detectionMatch = this.tagDetectionRegex.exec(beforeCursor)) !== null) {
+			lastMatchedTag = detectionMatch.groups?.tag?.toLowerCase() ?? "";
+		}
+
+		const matchedTag = lastMatchedTag || tagGroups.tag?.toLowerCase() || "";
+		const query = tagGroups.content ?? "";
+		const tagType: "food" | "workout" = matchedTag === this.currentWorkoutTag.toLowerCase() ? "workout" : "food";
 
 		// Check if we're typing after a food wikilink (measure context)
 		// Example: "#food [[apple]] 100g" - suggests "g", "ml", etc.
@@ -143,6 +163,7 @@ export class FoodSuggestionCore {
 					startOffset: cursorPosition - measureQuery.length,
 					endOffset: cursorPosition,
 					context: "measure",
+					tagType,
 				};
 			}
 		}
@@ -159,15 +180,22 @@ export class FoodSuggestionCore {
 					startOffset: cursorPosition - nutritionQuery.length,
 					endOffset: cursorPosition,
 					context: "nutrition",
+					tagType,
 				};
 			}
 		}
 
-		// Regular food name autocomplete
+		// For workout tags, don't show food name suggestions
+		if (tagType === "workout") {
+			return null;
+		}
+
+		// Regular food name autocomplete (only for food tags)
 		return {
 			query: query,
 			startOffset: cursorPosition - query.length,
 			endOffset: cursorPosition,
+			tagType,
 		};
 	}
 
@@ -177,10 +205,12 @@ export class FoodSuggestionCore {
 	 * This method returns different types of suggestions based on the context:
 	 * - For nutrition/measure context: Returns keyword completions (e.g., "100kcal", "100g")
 	 * - For food name context: Returns matching food names from the nutrient provider
+	 * - For workout tag: Only returns kcal suggestions
 	 *
 	 * @param query - The search query to match against
 	 * @param nutrientProvider - Provider for nutrient data and food names
 	 * @param context - The context type (measure, nutrition, or undefined for food names)
+	 * @param tagType - The tag type (food or workout)
 	 * @returns Array of suggestion strings
 	 *
 	 * @example
@@ -194,22 +224,49 @@ export class FoodSuggestionCore {
 	 * // Returns: ["apple", "apple pie", ...] (matching food names)
 	 * ```
 	 */
-	getSuggestions(query: string, nutrientProvider: NutrientProvider, context?: "measure" | "nutrition"): string[] {
+	getSuggestions(
+		query: string,
+		nutrientProvider: NutrientProvider,
+		context?: "measure" | "nutrition",
+		tagType?: "food" | "workout"
+	): string[] {
 		const lowerQuery = query.toLowerCase();
 
 		// Handle measure/nutrition keyword suggestions (e.g., "100g" -> "100g", "100ml")
 		if (this.nutritionValidationRegex.test(lowerQuery)) {
 			const keywords = context === "measure" ? this.measureKeywords : this.nutritionKeywords;
+
+			// Extract the number part to check if it's negative
+			const numberMatch = LEADING_NUMBER_REGEX.exec(lowerQuery);
+			const numberPart = numberMatch ? numberMatch[0] : "";
+			const isNegative = numberPart.startsWith("-");
+			const numberValue = numberPart ? Number(numberPart) : NaN;
+
+			// Workout tags should never have negative values
+			if (tagType === "workout" && isNegative) {
+				return [];
+			}
+			// Workout tags should only allow positive numbers
+			if (tagType === "workout" && !Number.isNaN(numberValue) && numberValue <= 0) {
+				return [];
+			}
+
 			// Match keywords that start with the letter part of the query
-			const matchingKeywords = keywords.filter(keyword =>
+			let matchingKeywords = keywords.filter(keyword =>
 				keyword.toLowerCase().startsWith(lowerQuery.replace(LEADING_NUMBER_REGEX, ""))
 			);
 
-			if (matchingKeywords.length > 0) {
-				// Extract the number part and prepend it to each keyword
-				const numberMatch = LEADING_NUMBER_REGEX.exec(lowerQuery);
-				const numberPart = numberMatch ? numberMatch[0] : "";
+			// If negative, only allow kcal suggestions
+			if (isNegative) {
+				matchingKeywords = matchingKeywords.filter(keyword => keyword === "kcal");
+			}
 
+			// If workout tag, only allow kcal suggestions
+			if (tagType === "workout") {
+				matchingKeywords = matchingKeywords.filter(keyword => keyword === "kcal");
+			}
+
+			if (matchingKeywords.length > 0) {
 				return matchingKeywords.map(keyword => numberPart + keyword);
 			}
 		}
