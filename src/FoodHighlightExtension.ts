@@ -69,6 +69,16 @@ export default class FoodHighlightExtension extends Component {
 				const calories = data?.calories;
 				return typeof calories === "number" && isFinite(calories) ? calories : null;
 			},
+			getServingSize: (fileName: string) => {
+				const normalized = fileName.trim();
+				if (!normalized) {
+					return null;
+				}
+
+				const data = this.nutrientCache.getNutritionData(normalized);
+				const servingSize = data?.serving_size;
+				return typeof servingSize === "number" && isFinite(servingSize) ? servingSize : null;
+			},
 		};
 
 		class InlineCaloriesWidget extends WidgetType {

@@ -13,6 +13,7 @@ export interface CalorieAnnotation {
 
 export interface CalorieProvider {
 	getCaloriesForFood(fileName: string): number | null;
+	getServingSize(fileName: string): number | null;
 }
 
 export interface HighlightOptions {
@@ -116,7 +117,43 @@ export function extractMultilineHighlightRanges(
 }
 
 /**
- * Extracts inline calorie annotations for food entries measured in grams
+ * Converts various units to a multiplier based on 100g servings
+ */
+function getUnitMultiplier(amount: number, unit: string, servingSize?: number): number {
+	const baseAmount = 100;
+
+	switch (unit.toLowerCase()) {
+		case "g":
+			return amount / baseAmount;
+		case "kg":
+			return (amount * 1000) / baseAmount;
+		case "ml":
+			return amount / baseAmount;
+		case "l":
+			return (amount * 1000) / baseAmount;
+		case "oz":
+			return (amount * 28.35) / baseAmount;
+		case "lb":
+			return (amount * 453.6) / baseAmount;
+		case "cup":
+		case "cups":
+			return (amount * 240) / baseAmount;
+		case "tbsp":
+			return (amount * 15) / baseAmount;
+		case "tsp":
+			return (amount * 5) / baseAmount;
+		case "pc":
+		case "pcs":
+			const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
+			return (amount * effectiveServingSize) / baseAmount;
+		default:
+			return amount / baseAmount;
+	}
+}
+
+/**
+ * Extracts inline calorie annotations for food and workout entries
+ * Supports all unit types (g, kg, lb, cups, tbsp, tsp, ml, oz, l, pcs) and direct kcal entries
  * Returns the document position where the annotation should be inserted and the formatted calorie text
  */
 export function extractInlineCalorieAnnotations(
@@ -127,12 +164,23 @@ export function extractInlineCalorieAnnotations(
 ): CalorieAnnotation[] {
 	const annotations: CalorieAnnotation[] = [];
 
-	const gramsRegex = new RegExp(`#${options.escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(g)`, "gi");
+	const tags = [options.escapedFoodTag, options.escapedWorkoutTag].filter(tag => tag.length > 0);
+	if (tags.length === 0) {
+		return annotations;
+	}
 
-	for (const match of text.matchAll(gramsRegex)) {
+	const tagPattern = tags.join("|");
+
+	const linkedFoodRegex = new RegExp(
+		`#(${tagPattern})\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
+		"gi"
+	);
+
+	for (const match of text.matchAll(linkedFoodRegex)) {
 		const fullMatch = match[0];
-		const rawFileName = match[1];
-		const amountString = match[2];
+		const rawFileName = match[2];
+		const amountString = match[3];
+		const unit = match[4];
 
 		const amount = parseFloat(amountString);
 		if (!isFinite(amount) || amount <= 0) {
@@ -149,7 +197,10 @@ export function extractInlineCalorieAnnotations(
 			continue;
 		}
 
-		const calculatedCalories = (amount / 100) * caloriesPerHundred;
+		const servingSize = calorieProvider.getServingSize(normalizedFileName);
+		const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
+		const calculatedCalories = multiplier * caloriesPerHundred;
+
 		if (!isFinite(calculatedCalories) || calculatedCalories <= 0) {
 			continue;
 		}
@@ -158,6 +209,29 @@ export function extractInlineCalorieAnnotations(
 		if (formattedCalories <= 0) {
 			continue;
 		}
+
+		const position = startOffset + (match.index ?? 0) + fullMatch.length;
+		annotations.push({
+			position,
+			text: `${formattedCalories}kcal`,
+		});
+	}
+
+	const directKcalRegex = new RegExp(
+		`#(${tagPattern})\\s+(?!\\[\\[)[^\\s]+(?:\\s+[^\\s]+)*?\\s+(\\d+(?:\\.\\d+)?)kcal`,
+		"gi"
+	);
+
+	for (const match of text.matchAll(directKcalRegex)) {
+		const fullMatch = match[0];
+		const caloriesString = match[2];
+
+		const calories = parseFloat(caloriesString);
+		if (!isFinite(calories) || calories <= 0) {
+			continue;
+		}
+
+		const formattedCalories = Math.round(calories);
 
 		const position = startOffset + (match.index ?? 0) + fullMatch.length;
 		annotations.push({

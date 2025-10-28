@@ -321,62 +321,250 @@ Regular text line
 		const calorieMap: Record<string, number> = {
 			bread: 290,
 			pasta: 350,
+			rice: 130,
+		};
+
+		const servingSizeMap: Record<string, number> = {
+			cookie: 50,
 		};
 
 		const provider = {
 			getCaloriesForFood: (fileName: string): number | null => {
 				return calorieMap[fileName.toLowerCase()] ?? null;
 			},
+			getServingSize: (fileName: string): number | null => {
+				return servingSizeMap[fileName.toLowerCase()] ?? null;
+			},
 		};
 
-		test("adds annotation for gram-based food entry", () => {
-			const text = "#food [[Bread]] 10g";
-			const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+		describe("linked food entries with various units", () => {
+			test("adds annotation for gram-based food entry", () => {
+				const text = "#food [[Bread]] 10g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
 
-			expect(annotations).toEqual([
-				{
-					position: text.length,
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "29kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for kilogram-based food entry", () => {
+				const text = "#food [[Bread]] 0.2kg";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "580kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for cup-based food entry", () => {
+				const text = "#food [[Rice]] 1cup";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "312kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for tablespoon-based food entry", () => {
+				const text = "#food [[Pasta]] 2tbsp";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "105kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for milliliter-based food entry", () => {
+				const text = "#food [[Bread]] 100ml";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "290kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for ounce-based food entry", () => {
+				const text = "#food [[Rice]] 5oz";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "184kcal",
+					},
+				]);
+			});
+
+			test("normalizes wikilink aliases", () => {
+				const text = "#food [[bread|Slice]] 20g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "58kcal",
+					},
+				]);
+			});
+
+			test("respects start offset", () => {
+				const text = "#food [[Pasta]] 50g";
+				const annotations = extractInlineCalorieAnnotations(text, 100, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length + 100,
+						text: "175kcal",
+					},
+				]);
+			});
+
+			test("skips entries when calorie data is missing", () => {
+				const text = "#food [[Unknown]] 10g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([]);
+			});
+
+			test("handles workout tag entries", () => {
+				const text = "#workout [[Running]] 200g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([]);
+			});
+		});
+
+		describe("direct kcal entries", () => {
+			test("adds annotation for direct kcal food entry", () => {
+				const text = "#food Chicken 300kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "300kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for direct kcal workout entry", () => {
+				const text = "#workout Running 120kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "120kcal",
+					},
+				]);
+			});
+
+			test("adds annotation for multi-word food name with direct kcal", () => {
+				const text = "#food Grilled Chicken 250kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "250kcal",
+					},
+				]);
+			});
+
+			test("handles decimal kcal values", () => {
+				const text = "#food Snack 123.5kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "124kcal",
+					},
+				]);
+			});
+
+			test("skips zero or negative kcal entries", () => {
+				const text1 = "#food Something 0kcal";
+				const text2 = "#food Something -10kcal";
+				const annotations1 = extractInlineCalorieAnnotations(text1, 0, defaultOptions, provider);
+				const annotations2 = extractInlineCalorieAnnotations(text2, 0, defaultOptions, provider);
+
+				expect(annotations1).toEqual([]);
+				expect(annotations2).toEqual([]);
+			});
+		});
+
+		describe("multiple annotations", () => {
+			test("handles multiple entries in one line", () => {
+				const text = "#food [[Bread]] 10g #food Chicken 300kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toHaveLength(2);
+				expect(annotations[0]).toEqual({
+					position: 19,
 					text: "29kcal",
-				},
-			]);
-		});
-
-		test("normalizes wikilink aliases", () => {
-			const text = "#food [[bread|Slice]] 20g";
-			const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
-
-			expect(annotations).toEqual([
-				{
+				});
+				expect(annotations[1]).toEqual({
 					position: text.length,
-					text: "58kcal",
-				},
-			]);
+					text: "300kcal",
+				});
+			});
 		});
 
-		test("respects start offset", () => {
-			const text = "#food [[Pasta]] 50g";
-			const annotations = extractInlineCalorieAnnotations(text, 100, defaultOptions, provider);
+		describe("edge cases", () => {
+			test("works when workout tag is empty", () => {
+				const text = "#food [[Bread]] 10g";
+				const annotations = extractInlineCalorieAnnotations(
+					text,
+					0,
+					{
+						escapedFoodTag: "food",
+						escapedWorkoutTag: "",
+						foodTag: "food",
+						workoutTag: "",
+					},
+					provider
+				);
 
-			expect(annotations).toEqual([
-				{
-					position: text.length + 100,
-					text: "175kcal",
-				},
-			]);
-		});
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "29kcal",
+					},
+				]);
+			});
 
-		test("skips entries when calorie data is missing", () => {
-			const text = "#food [[Unknown]] 10g";
-			const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+			test("returns empty array when all tags are empty", () => {
+				const text = "#food [[Bread]] 10g";
+				const annotations = extractInlineCalorieAnnotations(
+					text,
+					0,
+					{
+						escapedFoodTag: "",
+						escapedWorkoutTag: "",
+						foodTag: "",
+						workoutTag: "",
+					},
+					provider
+				);
 
-			expect(annotations).toEqual([]);
-		});
-
-		test("ignores non-gram units", () => {
-			const text = "#food [[Bread]] 100ml";
-			const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
-
-			expect(annotations).toEqual([]);
+				expect(annotations).toEqual([]);
+			});
 		});
 	});
 });
