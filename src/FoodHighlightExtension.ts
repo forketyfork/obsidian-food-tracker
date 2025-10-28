@@ -133,6 +133,14 @@ export default class FoodHighlightExtension extends Component {
 						return builder.finish();
 					}
 
+					type DecorationItem = {
+						from: number;
+						to: number;
+						decoration: Decoration;
+					};
+
+					const allDecorations: DecorationItem[] = [];
+
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
 
@@ -146,7 +154,7 @@ export default class FoodHighlightExtension extends Component {
 
 						const ranges = extractMultilineHighlightRanges(text, from, options);
 
-						// Convert ranges to CodeMirror decorations
+						// Convert ranges to decoration items
 						for (const range of ranges) {
 							let decoration;
 							if (range.type === "negative-kcal") {
@@ -156,7 +164,11 @@ export default class FoodHighlightExtension extends Component {
 							} else {
 								decoration = foodAmountDecoration;
 							}
-							builder.add(range.start, range.end, decoration);
+							allDecorations.push({
+								from: range.start,
+								to: range.end,
+								decoration,
+							});
 						}
 
 						const calorieAnnotations = extractInlineCalorieAnnotations(text, from, options, calorieProvider);
@@ -166,8 +178,18 @@ export default class FoodHighlightExtension extends Component {
 								widget: new InlineCaloriesWidget(annotation.text),
 								side: 1,
 							});
-							builder.add(annotation.position, annotation.position, widget);
+							allDecorations.push({
+								from: annotation.position,
+								to: annotation.position,
+								decoration: widget,
+							});
 						}
+					}
+
+					allDecorations.sort((a, b) => a.from - b.from || a.to - b.to);
+
+					for (const item of allDecorations) {
+						builder.add(item.from, item.to, item.decoration);
 					}
 
 					return builder.finish();
