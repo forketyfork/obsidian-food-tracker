@@ -1,6 +1,6 @@
 import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
-import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex } from "./constants";
+import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex, getUnitMultiplier } from "./constants";
 import { FOOD_TRACKER_ICON_NAME } from "./icon";
 import { setIcon } from "obsidian";
 
@@ -215,11 +215,11 @@ export default class NutritionTotal {
 	}
 
 	private calculateTotals(entries: FoodEntry[]): NutrientData {
-		const totals: NutrientData = {}; // Start with an empty object
+		const totals: NutrientData = {};
 		for (const entry of entries) {
 			const nutrients = this.getNutrientDataForFile(entry.filename);
 			if (nutrients) {
-				const multiplier = this.getMultiplier(entry.amount, entry.unit, nutrients.serving_size);
+				const multiplier = getUnitMultiplier(entry.amount, entry.unit, nutrients.serving_size);
 				this.addNutrients(totals, nutrients, multiplier);
 			}
 		}
@@ -235,43 +235,6 @@ export default class NutritionTotal {
 				error instanceof Error ? error.message : String(error)
 			);
 			return null;
-		}
-	}
-
-	/**
-	 * Converts various units to a multiplier based on 100g servings
-	 * Handles weight and volume conversions with reasonable approximations
-	 * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
-	 */
-	private getMultiplier(amount: number, unit: string, servingSize?: number): number {
-		const baseAmount = 100;
-
-		switch (unit) {
-			case "g":
-				return amount / baseAmount;
-			case "kg":
-				return (amount * 1000) / baseAmount;
-			case "ml":
-				return amount / baseAmount;
-			case "l":
-				return (amount * 1000) / baseAmount;
-			case "oz":
-				return (amount * 28.35) / baseAmount;
-			case "lb":
-				return (amount * 453.6) / baseAmount;
-			case "cup":
-			case "cups":
-				return (amount * 240) / baseAmount;
-			case "tbsp":
-				return (amount * 15) / baseAmount;
-			case "tsp":
-				return (amount * 5) / baseAmount;
-			case "pc":
-			case "pcs":
-				const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
-				return (amount * effectiveServingSize) / baseAmount;
-			default:
-				return amount / baseAmount;
 		}
 	}
 

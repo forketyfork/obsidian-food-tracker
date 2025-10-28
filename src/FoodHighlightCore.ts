@@ -1,4 +1,4 @@
-import { createNutritionValueRegex, createCombinedFoodHighlightRegex } from "./constants";
+import { createNutritionValueRegex, createCombinedFoodHighlightRegex, getUnitMultiplier } from "./constants";
 
 export interface HighlightRange {
 	start: number;
@@ -114,41 +114,6 @@ export function extractMultilineHighlightRanges(
 	}
 
 	return ranges;
-}
-
-/**
- * Converts various units to a multiplier based on 100g servings
- */
-function getUnitMultiplier(amount: number, unit: string, servingSize?: number): number {
-	const baseAmount = 100;
-
-	switch (unit.toLowerCase()) {
-		case "g":
-			return amount / baseAmount;
-		case "kg":
-			return (amount * 1000) / baseAmount;
-		case "ml":
-			return amount / baseAmount;
-		case "l":
-			return (amount * 1000) / baseAmount;
-		case "oz":
-			return (amount * 28.35) / baseAmount;
-		case "lb":
-			return (amount * 453.6) / baseAmount;
-		case "cup":
-		case "cups":
-			return (amount * 240) / baseAmount;
-		case "tbsp":
-			return (amount * 15) / baseAmount;
-		case "tsp":
-			return (amount * 5) / baseAmount;
-		case "pc":
-		case "pcs":
-			const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
-			return (amount * effectiveServingSize) / baseAmount;
-		default:
-			return amount / baseAmount;
-	}
 }
 
 /**
