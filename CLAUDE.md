@@ -49,6 +49,7 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 ## General guidelines
 
 - IMPORTANT: After finishing your task, make sure to run `just build` (if using Nix/Just) or `yarn build` and fix any introduced issues.
+- IMPORTANT: ALWAYS commit the results of `yarn build` before finalizing a task.
 - IMPORTANT: On finishing your task, make sure the README.md file is up to date with regards to the new features, usage, and development.
 - IMPORTANT: Always try to extract testable logic that can be independent of Obsidian plugins to separate classes or functions and write unit tests for it.
 - IMPORTANT: Do not write useless tests just to increase coverage, make them actually useful for catching issues in the code.

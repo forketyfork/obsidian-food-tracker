@@ -169,5 +169,12 @@ export const createCombinedFoodHighlightRegex = (escapedFoodTag: string, escaped
 	const inlinePattern = createInlineNutritionPattern();
 	const linkedPattern = createLinkedFoodPattern();
 
-	return new RegExp(`#(?<tag>${escapedFoodTag}|${escapedWorkoutTag})\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
+	const tags = [escapedFoodTag, escapedWorkoutTag].filter(tag => tag.length > 0);
+	if (tags.length === 0) {
+		return /(?!.)/;
+	}
+
+	const tagAlternatives = tags.join("|");
+
+	return new RegExp(`#(?<tag>${tagAlternatives})\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
 };

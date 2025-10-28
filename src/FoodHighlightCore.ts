@@ -139,11 +139,7 @@ export function extractInlineCalorieAnnotations(
 			continue;
 		}
 
-		const normalizedFileName = rawFileName
-			.split("|")[0]
-			.split("#")[0]
-			.split("/")
-			.pop()?.trim();
+		const normalizedFileName = rawFileName.split("|")[0].split("#")[0].split("/").pop()?.trim();
 		if (!normalizedFileName) {
 			continue;
 		}
