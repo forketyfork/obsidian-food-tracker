@@ -441,11 +441,23 @@ Regular text line
 				expect(annotations).toEqual([]);
 			});
 
-			test("handles workout tag entries", () => {
+			test("handles workout tag entries without calorie data", () => {
 				const text = "#workout [[Running]] 200g";
 				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
 
 				expect(annotations).toEqual([]);
+			});
+
+			test("adds negative annotation for workout tag entry with calorie data", () => {
+				const text = "#workout [[Bread]] 100g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "-290kcal",
+					},
+				]);
 			});
 		});
 
@@ -462,14 +474,14 @@ Regular text line
 				]);
 			});
 
-			test("adds annotation for direct kcal workout entry", () => {
+			test("adds annotation for direct kcal workout entry with negative value", () => {
 				const text = "#workout Running 120kcal";
 				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
 
 				expect(annotations).toEqual([
 					{
 						position: text.length,
-						text: "120kcal",
+						text: "-120kcal",
 					},
 				]);
 			});
@@ -516,13 +528,62 @@ Regular text line
 
 				expect(annotations).toHaveLength(2);
 				expect(annotations[0]).toEqual({
-					position: 19,
+					position: text.length,
 					text: "29kcal",
 				});
 				expect(annotations[1]).toEqual({
 					position: text.length,
 					text: "300kcal",
 				});
+			});
+
+			test("places annotations at end of each respective line in multiline text", () => {
+				const text = "#food [[Bread]] 10g\n#food [[Pasta]] 50g\nSome other text";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toHaveLength(2);
+				expect(annotations[0]).toEqual({
+					position: 19,
+					text: "29kcal",
+				});
+				expect(annotations[1]).toEqual({
+					position: 39,
+					text: "175kcal",
+				});
+			});
+		});
+
+		describe("positioning edge cases", () => {
+			test("direct kcal entry on second line should not appear on first line", () => {
+				const text = "#food test\n#food test2 300kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toHaveLength(1);
+
+				// Calculate expected positions
+				const firstLineEnd = text.indexOf("\n"); // Should be 10
+				const secondLineEnd = text.length; // Should be 31
+
+				// The annotation should be at the end of line 2, NOT line 1
+				expect(annotations[0].position).toBe(secondLineEnd);
+				expect(annotations[0].position).not.toBe(firstLineEnd);
+				expect(annotations[0].text).toBe("300kcal");
+			});
+
+			test("linked food on second line should not appear on first line", () => {
+				const text = "#food test\n#food [[Bread]] 10g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toHaveLength(1);
+
+				// Calculate expected positions
+				const firstLineEnd = text.indexOf("\n"); // Should be 10
+				const secondLineEnd = text.length; // Should be 27
+
+				// The annotation should be at the end of line 2, NOT line 1
+				expect(annotations[0].position).toBe(secondLineEnd);
+				expect(annotations[0].position).not.toBe(firstLineEnd);
+				expect(annotations[0].text).toBe("29kcal");
 			});
 		});
 

@@ -1,10 +1,10 @@
-import { Extension } from "@codemirror/state";
+import { Extension, Compartment } from "@codemirror/state";
 import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
 import { extractMultilineHighlightRanges, extractInlineCalorieAnnotations, CalorieProvider } from "./FoodHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
-import { Component } from "obsidian";
+import { Component, App, MarkdownView } from "obsidian";
 import NutrientCache from "./NutrientCache";
 
 /**
@@ -18,21 +18,42 @@ export default class FoodHighlightExtension extends Component {
 	private escapedWorkoutTag: string = "";
 	private foodTag: string = "";
 	private workoutTag: string = "";
+	private showCalorieHints: boolean = true;
 	private subscription: Subscription;
 	private nutrientCache: NutrientCache;
+	private compartment: Compartment;
+	private app: App;
 
-	constructor(settingsService: SettingsService, nutrientCache: NutrientCache) {
+	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super();
+		this.app = app;
 		this.settingsService = settingsService;
 		this.nutrientCache = nutrientCache;
+		this.compartment = new Compartment();
 	}
 
 	onload() {
 		this.subscription = this.settingsService.settings$.subscribe(settings => {
 			this.foodTag = settings.foodTag;
 			this.workoutTag = settings.workoutTag;
+			this.showCalorieHints = settings.showCalorieHints;
 			this.escapedFoodTag = this.foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			this.escapedWorkoutTag = this.workoutTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+			this.reconfigureEditors();
+		});
+	}
+
+	private reconfigureEditors(): void {
+		this.app.workspace.iterateAllLeaves(leaf => {
+			if (leaf.view instanceof MarkdownView && leaf.view.editor) {
+				const editorView = (leaf.view.editor as { cm?: EditorView }).cm;
+				if (editorView) {
+					editorView.dispatch({
+						effects: this.compartment.reconfigure(this.buildExtension()),
+					});
+				}
+			}
 		});
 	}
 
@@ -46,6 +67,10 @@ export default class FoodHighlightExtension extends Component {
 	}
 
 	createExtension(): Extension {
+		return this.compartment.of(this.buildExtension());
+	}
+
+	private buildExtension(): Extension {
 		const foodAmountDecoration = Decoration.mark({
 			class: "food-tracker-value",
 		});
@@ -92,7 +117,7 @@ export default class FoodHighlightExtension extends Component {
 			toDOM(): HTMLElement {
 				const span = document.createElement("span");
 				span.classList.add("food-tracker-inline-calories");
-				span.textContent = ` (${this.text})`;
+				span.textContent = ` ${this.text}`;
 				return span;
 			}
 		}
@@ -102,6 +127,7 @@ export default class FoodHighlightExtension extends Component {
 			escapedWorkoutTag: this.escapedWorkoutTag,
 			foodTag: this.foodTag,
 			workoutTag: this.workoutTag,
+			showCalorieHints: this.showCalorieHints,
 		});
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
@@ -126,7 +152,7 @@ export default class FoodHighlightExtension extends Component {
 					const builder = new RangeSetBuilder<Decoration>();
 
 					// Get current escaped tags from plugin instance through closure
-					const { escapedFoodTag, escapedWorkoutTag, foodTag, workoutTag } = getHighlightOptions();
+					const { escapedFoodTag, escapedWorkoutTag, foodTag, workoutTag, showCalorieHints } = getHighlightOptions();
 
 					// Skip if tags are not yet initialized
 					if (!escapedFoodTag || !foodTag) {
@@ -171,18 +197,20 @@ export default class FoodHighlightExtension extends Component {
 							});
 						}
 
-						const calorieAnnotations = extractInlineCalorieAnnotations(text, from, options, calorieProvider);
+						if (showCalorieHints) {
+							const calorieAnnotations = extractInlineCalorieAnnotations(text, from, options, calorieProvider);
 
-						for (const annotation of calorieAnnotations) {
-							const widget = Decoration.widget({
-								widget: new InlineCaloriesWidget(annotation.text),
-								side: 1,
-							});
-							allDecorations.push({
-								from: annotation.position,
-								to: annotation.position,
-								decoration: widget,
-							});
+							for (const annotation of calorieAnnotations) {
+								const widget = Decoration.widget({
+									widget: new InlineCaloriesWidget(annotation.text),
+									side: 1,
+								});
+								allDecorations.push({
+									from: annotation.position,
+									to: annotation.position,
+									decoration: widget,
+								});
+							}
 						}
 					}
 

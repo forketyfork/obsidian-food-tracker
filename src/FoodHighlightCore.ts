@@ -120,6 +120,7 @@ export function extractMultilineHighlightRanges(
  * Extracts inline calorie annotations for food and workout entries
  * Supports all unit types (g, kg, lb, cups, tbsp, tsp, ml, oz, l, pcs) and direct kcal entries
  * Returns the document position where the annotation should be inserted and the formatted calorie text
+ * Annotations are always placed at the end of the line
  */
 export function extractInlineCalorieAnnotations(
 	text: string,
@@ -141,68 +142,81 @@ export function extractInlineCalorieAnnotations(
 		"gi"
 	);
 
-	for (const match of text.matchAll(linkedFoodRegex)) {
-		const fullMatch = match[0];
-		const rawFileName = match[2];
-		const amountString = match[3];
-		const unit = match[4];
-
-		const amount = parseFloat(amountString);
-		if (!isFinite(amount) || amount <= 0) {
-			continue;
-		}
-
-		const normalizedFileName = rawFileName.split("|")[0].split("#")[0].split("/").pop()?.trim();
-		if (!normalizedFileName) {
-			continue;
-		}
-
-		const caloriesPerHundred = calorieProvider.getCaloriesForFood(normalizedFileName);
-		if (caloriesPerHundred === null || caloriesPerHundred === undefined || !isFinite(caloriesPerHundred)) {
-			continue;
-		}
-
-		const servingSize = calorieProvider.getServingSize(normalizedFileName);
-		const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
-		const calculatedCalories = multiplier * caloriesPerHundred;
-
-		if (!isFinite(calculatedCalories) || calculatedCalories <= 0) {
-			continue;
-		}
-
-		const formattedCalories = Math.round(calculatedCalories);
-		if (formattedCalories <= 0) {
-			continue;
-		}
-
-		const position = startOffset + (match.index ?? 0) + fullMatch.length;
-		annotations.push({
-			position,
-			text: `${formattedCalories}kcal`,
-		});
-	}
-
 	const directKcalRegex = new RegExp(
 		`#(${tagPattern})\\s+(?!\\[\\[)[^\\s]+(?:\\s+[^\\s]+)*?\\s+(\\d+(?:\\.\\d+)?)kcal`,
 		"gi"
 	);
 
-	for (const match of text.matchAll(directKcalRegex)) {
-		const fullMatch = match[0];
-		const caloriesString = match[2];
+	const lines = text.split("\n");
+	let lineStartOffset = startOffset;
 
-		const calories = parseFloat(caloriesString);
-		if (!isFinite(calories) || calories <= 0) {
-			continue;
+	for (const line of lines) {
+		const lineEndOffset = lineStartOffset + line.length;
+
+		for (const match of line.matchAll(linkedFoodRegex)) {
+			const matchedTag = match[1].toLowerCase();
+			const rawFileName = match[2];
+			const amountString = match[3];
+			const unit = match[4];
+
+			const amount = parseFloat(amountString);
+			if (!isFinite(amount) || amount <= 0) {
+				continue;
+			}
+
+			const normalizedFileName = rawFileName.split("|")[0].split("#")[0].split("/").pop()?.trim();
+			if (!normalizedFileName) {
+				continue;
+			}
+
+			const caloriesPerHundred = calorieProvider.getCaloriesForFood(normalizedFileName);
+			if (caloriesPerHundred === null || caloriesPerHundred === undefined || !isFinite(caloriesPerHundred)) {
+				continue;
+			}
+
+			const servingSize = calorieProvider.getServingSize(normalizedFileName);
+			const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
+			const calculatedCalories = multiplier * caloriesPerHundred;
+
+			if (!isFinite(calculatedCalories) || calculatedCalories <= 0) {
+				continue;
+			}
+
+			const formattedCalories = Math.round(calculatedCalories);
+			if (formattedCalories <= 0) {
+				continue;
+			}
+
+			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
+			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+
+			annotations.push({
+				position: lineEndOffset,
+				text: `${displayCalories}kcal`,
+			});
 		}
 
-		const formattedCalories = Math.round(calories);
+		for (const match of line.matchAll(directKcalRegex)) {
+			const matchedTag = match[1].toLowerCase();
+			const caloriesString = match[2];
 
-		const position = startOffset + (match.index ?? 0) + fullMatch.length;
-		annotations.push({
-			position,
-			text: `${formattedCalories}kcal`,
-		});
+			const calories = parseFloat(caloriesString);
+			if (!isFinite(calories) || calories <= 0) {
+				continue;
+			}
+
+			const formattedCalories = Math.round(calories);
+
+			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
+			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+
+			annotations.push({
+				position: lineEndOffset,
+				text: `${displayCalories}kcal`,
+			});
+		}
+
+		lineStartOffset = lineEndOffset + 1;
 	}
 
 	return annotations;
