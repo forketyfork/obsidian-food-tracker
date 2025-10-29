@@ -169,5 +169,65 @@ export const createCombinedFoodHighlightRegex = (escapedFoodTag: string, escaped
 	const inlinePattern = createInlineNutritionPattern();
 	const linkedPattern = createLinkedFoodPattern();
 
-	return new RegExp(`#(?<tag>${escapedFoodTag}|${escapedWorkoutTag})\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
+	const tags = [escapedFoodTag, escapedWorkoutTag].filter(tag => tag.length > 0);
+	if (tags.length === 0) {
+		return /(?!.)/;
+	}
+
+	const tagAlternatives = tags.join("|");
+
+	return new RegExp(`#(?<tag>${tagAlternatives})\\s+(?:${inlinePattern}|${linkedPattern})`, "i");
 };
+
+// ================================
+// Unit conversion utilities
+// ================================
+
+/**
+ * Converts various units to a multiplier based on 100g servings
+ * Handles weight and volume conversions with reasonable approximations
+ * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
+ *
+ * @param amount - The amount of the unit
+ * @param unit - The unit to convert (g, kg, lb, cups, tbsp, tsp, ml, oz, l, pcs)
+ * @param servingSize - Optional serving size in grams for piece-based units
+ * @returns The multiplier to apply to nutrition values (based on 100g)
+ *
+ * @example
+ * ```typescript
+ * const multiplier = getUnitMultiplier(200, "g"); // Returns 2
+ * const multiplier = getUnitMultiplier(1, "cup"); // Returns 2.4
+ * const multiplier = getUnitMultiplier(2, "pcs", 50); // Returns 1 (2 pieces * 50g / 100)
+ * ```
+ */
+export function getUnitMultiplier(amount: number, unit: string, servingSize?: number): number {
+	const baseAmount = 100;
+
+	switch (unit.toLowerCase()) {
+		case "g":
+			return amount / baseAmount;
+		case "kg":
+			return (amount * 1000) / baseAmount;
+		case "ml":
+			return amount / baseAmount;
+		case "l":
+			return (amount * 1000) / baseAmount;
+		case "oz":
+			return (amount * 28.35) / baseAmount;
+		case "lb":
+			return (amount * 453.6) / baseAmount;
+		case "cup":
+		case "cups":
+			return (amount * 240) / baseAmount;
+		case "tbsp":
+			return (amount * 15) / baseAmount;
+		case "tsp":
+			return (amount * 5) / baseAmount;
+		case "pc":
+		case "pcs":
+			const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
+			return (amount * effectiveServingSize) / baseAmount;
+		default:
+			return amount / baseAmount;
+	}
+}

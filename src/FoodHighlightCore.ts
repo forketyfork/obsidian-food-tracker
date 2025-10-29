@@ -1,9 +1,19 @@
-import { createNutritionValueRegex, createCombinedFoodHighlightRegex } from "./constants";
+import { createNutritionValueRegex, createCombinedFoodHighlightRegex, getUnitMultiplier } from "./constants";
 
 export interface HighlightRange {
 	start: number;
 	end: number;
 	type: "nutrition" | "amount" | "negative-kcal";
+}
+
+export interface CalorieAnnotation {
+	position: number;
+	text: string;
+}
+
+export interface CalorieProvider {
+	getCaloriesForFood(fileName: string): number | null;
+	getServingSize(fileName: string): number | null;
 }
 
 export interface HighlightOptions {
@@ -104,4 +114,115 @@ export function extractMultilineHighlightRanges(
 	}
 
 	return ranges;
+}
+
+/**
+ * Extracts inline calorie annotations for food and workout entries
+ * Supports all unit types (g, kg, lb, cups, tbsp, tsp, ml, oz, l, pcs) and direct kcal entries
+ * Returns the document position where the annotation should be inserted and the formatted calorie text
+ * Annotations are always placed at the end of the line
+ */
+export function extractInlineCalorieAnnotations(
+	text: string,
+	startOffset: number,
+	options: HighlightOptions,
+	calorieProvider: CalorieProvider
+): CalorieAnnotation[] {
+	const annotations: CalorieAnnotation[] = [];
+
+	const tags = [options.escapedFoodTag, options.escapedWorkoutTag].filter(tag => tag.length > 0);
+	if (tags.length === 0) {
+		return annotations;
+	}
+
+	const tagPattern = tags.join("|");
+
+	const linkedFoodRegex = new RegExp(
+		`#(${tagPattern})\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
+		"gi"
+	);
+
+	const directKcalRegex = new RegExp(
+		`#(${tagPattern})\\s+(?!\\[\\[)[^\\s]+(?:\\s+[^\\s]+)*?\\s+(\\d+(?:\\.\\d+)?)kcal`,
+		"gi"
+	);
+
+	const lines = text.split("\n");
+	let lineStartOffset = startOffset;
+
+	for (const line of lines) {
+		const lineEndOffset = lineStartOffset + line.length;
+
+		for (const match of line.matchAll(linkedFoodRegex)) {
+			const matchedTag = match[1].toLowerCase();
+			const rawFileName = match[2];
+			const amountString = match[3];
+			const unit = match[4];
+
+			const amount = parseFloat(amountString);
+			if (!isFinite(amount) || amount <= 0) {
+				continue;
+			}
+
+			const normalizedFileName = rawFileName.split("|")[0].split("#")[0].split("/").pop()?.trim();
+			if (!normalizedFileName) {
+				continue;
+			}
+
+			const caloriesPerHundred = calorieProvider.getCaloriesForFood(normalizedFileName);
+			if (caloriesPerHundred === null || caloriesPerHundred === undefined || !isFinite(caloriesPerHundred)) {
+				continue;
+			}
+
+			const servingSize = calorieProvider.getServingSize(normalizedFileName);
+			const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
+			const calculatedCalories = multiplier * caloriesPerHundred;
+
+			if (!Number.isFinite(calculatedCalories) || calculatedCalories < 0) {
+				continue;
+			}
+
+			const formattedCalories = Math.round(calculatedCalories);
+			if (!Number.isFinite(formattedCalories) || formattedCalories < 0) {
+				continue;
+			}
+
+			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
+			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+			const normalizedCalories = displayCalories === 0 ? 0 : displayCalories;
+
+			annotations.push({
+				position: lineEndOffset,
+				text: `${normalizedCalories}kcal`,
+			});
+		}
+
+		for (const match of line.matchAll(directKcalRegex)) {
+			const matchedTag = match[1].toLowerCase();
+			const caloriesString = match[2];
+
+			const calories = parseFloat(caloriesString);
+			if (!Number.isFinite(calories) || calories < 0) {
+				continue;
+			}
+
+			const formattedCalories = Math.round(calories);
+			if (!Number.isFinite(formattedCalories) || formattedCalories < 0) {
+				continue;
+			}
+
+			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
+			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+			const normalizedCalories = displayCalories === 0 ? 0 : displayCalories;
+
+			annotations.push({
+				position: lineEndOffset,
+				text: `${normalizedCalories}kcal`,
+			});
+		}
+
+		lineStartOffset = lineEndOffset + 1;
+	}
+
+	return annotations;
 }

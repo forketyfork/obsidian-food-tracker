@@ -8,6 +8,7 @@ export interface FoodTrackerPluginSettings {
 	foodTag: string;
 	workoutTag: string;
 	goalsFile: string;
+	showCalorieHints: boolean;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
@@ -16,6 +17,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	foodTag: "food",
 	workoutTag: "workout",
 	goalsFile: "nutrition-goals.md",
+	showCalorieHints: true,
 };
 
 /**
@@ -82,6 +84,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the show calorie hints setting
+	 */
+	get showCalorieHints$(): Observable<boolean> {
+		return this.settings$.pipe(map(settings => settings.showCalorieHints));
+	}
+
+	/**
 	 * Get the current settings value synchronously
 	 */
 	get currentSettings(): FoodTrackerPluginSettings {
@@ -138,6 +147,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Get the current show calorie hints value synchronously
+	 */
+	get currentShowCalorieHints(): boolean {
+		return this.currentSettings.showCalorieHints;
+	}
+
+	/**
 	 * Updates all settings and notifies all subscribers
 	 */
 	updateSettings(newSettings: FoodTrackerPluginSettings): void {
@@ -188,6 +204,13 @@ export class SettingsService {
 	 */
 	updateGoalsFile(newFile: string): void {
 		this.updateSetting("goalsFile", newFile);
+	}
+
+	/**
+	 * Updates the show calorie hints setting and notifies all subscribers
+	 */
+	updateShowCalorieHints(show: boolean): void {
+		this.updateSetting("showCalorieHints", show);
 	}
 
 	/**

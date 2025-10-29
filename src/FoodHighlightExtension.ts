@@ -1,10 +1,11 @@
-import { Extension } from "@codemirror/state";
-import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate } from "@codemirror/view";
+import { Extension, Compartment } from "@codemirror/state";
+import { EditorView, ViewPlugin, Decoration, DecorationSet, ViewUpdate, WidgetType } from "@codemirror/view";
 import { RangeSetBuilder } from "@codemirror/state";
-import { extractMultilineHighlightRanges } from "./FoodHighlightCore";
+import { extractMultilineHighlightRanges, extractInlineCalorieAnnotations, CalorieProvider } from "./FoodHighlightCore";
 import { SettingsService } from "./SettingsService";
 import { Subscription } from "rxjs";
-import { Component } from "obsidian";
+import { Component, App, MarkdownView } from "obsidian";
+import NutrientCache from "./NutrientCache";
 
 /**
  * CodeMirror extension that highlights food amounts and nutrition values in the editor
@@ -17,19 +18,47 @@ export default class FoodHighlightExtension extends Component {
 	private escapedWorkoutTag: string = "";
 	private foodTag: string = "";
 	private workoutTag: string = "";
+	private showCalorieHints: boolean = true;
 	private subscription: Subscription;
+	private nutrientCache: NutrientCache;
+	private nutrientCacheUnsubscribe: (() => void) | null = null;
+	private compartment: Compartment;
+	private app: App;
 
-	constructor(settingsService: SettingsService) {
+	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super();
+		this.app = app;
 		this.settingsService = settingsService;
+		this.nutrientCache = nutrientCache;
+		this.compartment = new Compartment();
 	}
 
 	onload() {
 		this.subscription = this.settingsService.settings$.subscribe(settings => {
 			this.foodTag = settings.foodTag;
 			this.workoutTag = settings.workoutTag;
+			this.showCalorieHints = settings.showCalorieHints;
 			this.escapedFoodTag = this.foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			this.escapedWorkoutTag = this.workoutTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+			this.reconfigureEditors();
+		});
+
+		this.nutrientCacheUnsubscribe = this.nutrientCache.onChange(() => {
+			this.reconfigureEditors();
+		});
+	}
+
+	private reconfigureEditors(): void {
+		this.app.workspace.iterateAllLeaves(leaf => {
+			if (leaf.view instanceof MarkdownView && leaf.view.editor) {
+				const editorView = (leaf.view.editor as { cm?: EditorView }).cm;
+				if (editorView) {
+					editorView.dispatch({
+						effects: this.compartment.reconfigure(this.buildExtension()),
+					});
+				}
+			}
 		});
 	}
 
@@ -40,9 +69,18 @@ export default class FoodHighlightExtension extends Component {
 		if (this.subscription) {
 			this.subscription.unsubscribe();
 		}
+
+		if (this.nutrientCacheUnsubscribe) {
+			this.nutrientCacheUnsubscribe();
+			this.nutrientCacheUnsubscribe = null;
+		}
 	}
 
 	createExtension(): Extension {
+		return this.compartment.of(this.buildExtension());
+	}
+
+	private buildExtension(): Extension {
 		const foodAmountDecoration = Decoration.mark({
 			class: "food-tracker-value",
 		});
@@ -55,11 +93,51 @@ export default class FoodHighlightExtension extends Component {
 			class: "food-tracker-negative-kcal",
 		});
 
+		const calorieProvider: CalorieProvider = {
+			getCaloriesForFood: (fileName: string) => {
+				const normalized = fileName.trim();
+				if (!normalized) {
+					return null;
+				}
+
+				const data = this.nutrientCache.getNutritionData(normalized);
+				const calories = data?.calories;
+				return typeof calories === "number" && isFinite(calories) ? calories : null;
+			},
+			getServingSize: (fileName: string) => {
+				const normalized = fileName.trim();
+				if (!normalized) {
+					return null;
+				}
+
+				const data = this.nutrientCache.getNutritionData(normalized);
+				const servingSize = data?.serving_size;
+				return typeof servingSize === "number" && isFinite(servingSize) ? servingSize : null;
+			},
+		};
+
+		class InlineCaloriesWidget extends WidgetType {
+			private text: string;
+
+			constructor(text: string) {
+				super();
+				this.text = text;
+			}
+
+			toDOM(): HTMLElement {
+				const span = document.createElement("span");
+				span.classList.add("food-tracker-inline-calories");
+				span.textContent = ` ${this.text}`;
+				return span;
+			}
+		}
+
 		const getHighlightOptions = () => ({
 			escapedFoodTag: this.escapedFoodTag,
 			escapedWorkoutTag: this.escapedWorkoutTag,
 			foodTag: this.foodTag,
 			workoutTag: this.workoutTag,
+			showCalorieHints: this.showCalorieHints,
 		});
 
 		const foodHighlightPlugin = ViewPlugin.fromClass(
@@ -84,25 +162,35 @@ export default class FoodHighlightExtension extends Component {
 					const builder = new RangeSetBuilder<Decoration>();
 
 					// Get current escaped tags from plugin instance through closure
-					const { escapedFoodTag, escapedWorkoutTag, foodTag, workoutTag } = getHighlightOptions();
+					const { escapedFoodTag, escapedWorkoutTag, foodTag, workoutTag, showCalorieHints } = getHighlightOptions();
 
 					// Skip if tags are not yet initialized
-					if (!escapedFoodTag || !escapedWorkoutTag || !foodTag || !workoutTag) {
+					if (!escapedFoodTag || !foodTag) {
 						return builder.finish();
 					}
+
+					type DecorationItem = {
+						from: number;
+						to: number;
+						decoration: Decoration;
+					};
+
+					const allDecorations: DecorationItem[] = [];
 
 					for (let { from, to } of view.visibleRanges) {
 						const text = view.state.doc.sliceString(from, to);
 
 						// Extract highlight ranges using the pure function
-						const ranges = extractMultilineHighlightRanges(text, from, {
+						const options = {
 							escapedFoodTag,
 							escapedWorkoutTag,
 							foodTag,
 							workoutTag,
-						});
+						};
 
-						// Convert ranges to CodeMirror decorations
+						const ranges = extractMultilineHighlightRanges(text, from, options);
+
+						// Convert ranges to decoration items
 						for (const range of ranges) {
 							let decoration;
 							if (range.type === "negative-kcal") {
@@ -112,8 +200,34 @@ export default class FoodHighlightExtension extends Component {
 							} else {
 								decoration = foodAmountDecoration;
 							}
-							builder.add(range.start, range.end, decoration);
+							allDecorations.push({
+								from: range.start,
+								to: range.end,
+								decoration,
+							});
 						}
+
+						if (showCalorieHints) {
+							const calorieAnnotations = extractInlineCalorieAnnotations(text, from, options, calorieProvider);
+
+							for (const annotation of calorieAnnotations) {
+								const widget = Decoration.widget({
+									widget: new InlineCaloriesWidget(annotation.text),
+									side: 1,
+								});
+								allDecorations.push({
+									from: annotation.position,
+									to: annotation.position,
+									decoration: widget,
+								});
+							}
+						}
+					}
+
+					allDecorations.sort((a, b) => a.from - b.from || a.to - b.to);
+
+					for (const item of allDecorations) {
+						builder.add(item.from, item.to, item.decoration);
 					}
 
 					return builder.finish();

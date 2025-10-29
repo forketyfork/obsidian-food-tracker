@@ -64,6 +64,16 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Show calorie hints")
+			.setDesc("Display calculated calorie values at the end of food and workout entries")
+			.addToggle(toggle =>
+				toggle.setValue(this.plugin.settings.showCalorieHints).onChange(async value => {
+					this.plugin.settings.showCalorieHints = value;
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
 			.setName("Goals file")
 			.setDesc("File containing daily nutrition goals")
 			.addText(text => {

@@ -139,6 +139,16 @@
 	padding: 0 4px;
 }
 
+.food-tracker-inline-calories {
+	background-color: var(--background-modifier-border);
+	color: var(--text-normal);
+	border-radius: 4px;
+	padding: 1px 4px;
+	margin-left: 0.25rem;
+	white-space: nowrap;
+	font-size: 0.85em;
+}
+
 /* Fixed width for search button to prevent resizing */
 .food-tracker-search-button {
 	min-width: 110px;
