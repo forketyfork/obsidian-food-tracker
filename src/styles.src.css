@@ -215,6 +215,13 @@
 	opacity: 1;
 }
 
+/* Multiline tooltip variant with monospace font */
+.food-tracker-tooltip-host.food-tracker-tooltip-multiline::after {
+	white-space: pre;
+	font-family: var(--font-monospace, monospace);
+	text-align: left;
+}
+
 .food-tracker-icon {
 	color: var(--interactive-accent);
 	flex-shrink: 0;
