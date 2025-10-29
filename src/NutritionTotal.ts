@@ -95,7 +95,7 @@ export default class NutritionTotal {
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
 			const clamped = this.clampNutrientsToZero(combined);
-			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag);
+			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag, combined);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return null;
@@ -244,7 +244,8 @@ export default class NutritionTotal {
 		goals?: NutrientGoals,
 		workoutTotals?: NutrientData,
 		foodTag?: string,
-		workoutTag?: string
+		workoutTag?: string,
+		unclampedNutrients?: NutrientData
 	): HTMLElement | null {
 		const formatConfig: {
 			key: keyof Omit<NutrientData, "serving_size">;
@@ -295,9 +296,10 @@ export default class NutritionTotal {
 						config.key === "calories" &&
 						goal !== undefined &&
 						workoutTotals?.calories !== undefined &&
-						workoutTotals.calories > 0
+						workoutTotals.calories > 0 &&
+						unclampedNutrients?.calories !== undefined
 					) {
-						const foodCalories = value + workoutTotals.calories;
+						const foodCalories = unclampedNutrients.calories + workoutTotals.calories;
 						const workoutCalories = workoutTotals.calories;
 						const consumed = value;
 						const remaining = Math.max(0, goal - consumed);
