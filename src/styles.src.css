@@ -220,6 +220,10 @@
 	white-space: pre;
 	font-family: var(--font-monospace, monospace);
 	text-align: left;
+	left: 0;
+	right: auto;
+	transform: none;
+	min-width: max-content;
 }
 
 .food-tracker-icon {

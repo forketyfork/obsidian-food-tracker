@@ -302,7 +302,7 @@ export default class NutritionTotal {
 
 						goalTooltipText = [
 							`  ${originalStr.padStart(maxNumWidth)} ${config.unit}`,
-							`- ${workoutStr.padStart(maxNumWidth)} ${config.unit} (training)`,
+							`- ${workoutStr.padStart(maxNumWidth)} ${config.unit} (workout)`,
 							`  ${"".padStart(maxNumWidth, "-")}`,
 							`  ${netStr.padStart(maxNumWidth)} ${config.unit}`,
 							`  (${actualPercent}% of ${goal} ${config.unit} goal)`,
