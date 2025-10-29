@@ -95,7 +95,7 @@ export default class NutritionTotal {
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
 			const clamped = this.clampNutrientsToZero(combined);
-			return this.formatTotal(clamped, goals, workoutTotals);
+			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return null;
@@ -242,7 +242,9 @@ export default class NutritionTotal {
 	private formatTotal(
 		nutrients: NutrientData,
 		goals?: NutrientGoals,
-		workoutTotals?: NutrientData
+		workoutTotals?: NutrientData,
+		foodTag?: string,
+		workoutTag?: string
 	): HTMLElement | null {
 		const formatConfig: {
 			key: keyof Omit<NutrientData, "serving_size">;
@@ -289,25 +291,51 @@ export default class NutritionTotal {
 								: "food-tracker-progress-yellow";
 
 					let goalTooltipText: string;
-					if (config.key === "calories" && workoutTotals?.calories !== undefined && workoutTotals.calories > 0) {
-						const originalCalories = value + workoutTotals.calories;
+					if (
+						config.key === "calories" &&
+						goal !== undefined &&
+						workoutTotals?.calories !== undefined &&
+						workoutTotals.calories > 0
+					) {
+						const foodCalories = value + workoutTotals.calories;
 						const workoutCalories = workoutTotals.calories;
-						const netCalories = value;
+						const consumed = value;
+						const remaining = Math.max(0, goal - consumed);
+						const percentConsumed = actualPercent;
+						const percentRemaining = Math.round((remaining / goal) * 100);
 
-						const originalStr = `${Math.round(originalCalories)}`;
+						const foodStr = `${Math.round(foodCalories)}`;
 						const workoutStr = `${Math.round(workoutCalories)}`;
-						const netStr = `${Math.round(netCalories)}`;
+						const consumedStr = `${Math.round(consumed)}`;
+						const goalStr = `${Math.round(goal)}`;
+						const remainingStr = `${Math.round(remaining)}`;
 
-						const maxNumWidth = Math.max(originalStr.length, workoutStr.length, netStr.length);
+						const maxNumWidth = Math.max(
+							foodStr.length,
+							workoutStr.length,
+							consumedStr.length,
+							goalStr.length,
+							remainingStr.length
+						);
+
+						const displayFoodTag = foodTag ? `(#${foodTag})` : "(#food)";
+						const displayWorkoutTag = workoutTag ? `(#${workoutTag})` : "(#workout)";
 
 						goalTooltipText = [
-							`  ${originalStr.padStart(maxNumWidth)} ${config.unit}`,
-							`- ${workoutStr.padStart(maxNumWidth)} ${config.unit} (workout)`,
-							`  ${"".padStart(maxNumWidth, "-")}`,
-							`  ${netStr.padStart(maxNumWidth)} ${config.unit}`,
-							`  (${actualPercent}% of ${goal} ${config.unit} goal)`,
+							`   ${foodStr.padStart(maxNumWidth)} ${config.unit} ${displayFoodTag}`,
+							`-  ${workoutStr.padStart(maxNumWidth)} ${config.unit} ${displayWorkoutTag}`,
+							`   ${"".padStart(maxNumWidth, "-")}`,
+							`   ${consumedStr.padStart(maxNumWidth)} ${config.unit} (${percentConsumed}% consumed)`,
+							` `,
+							` `,
+							`   ${goalStr.padStart(maxNumWidth)} ${config.unit} (goal)`,
+							`-  ${consumedStr.padStart(maxNumWidth)} ${config.unit} (consumed)`,
+							`   ${"".padStart(maxNumWidth, "-")}`,
+							`   ${remainingStr.padStart(maxNumWidth)} ${config.unit} (${percentRemaining}% remaining)`,
 						].join("\n");
 						span.addClass("food-tracker-tooltip-multiline");
+					} else if (config.key === "calories" && goal !== undefined) {
+						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					} else {
 						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					}
