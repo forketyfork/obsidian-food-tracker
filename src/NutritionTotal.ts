@@ -292,15 +292,9 @@ export default class NutritionTotal {
 								: "food-tracker-progress-yellow";
 
 					let goalTooltipText: string;
-					if (
-						config.key === "calories" &&
-						goal !== undefined &&
-						workoutTotals?.calories !== undefined &&
-						workoutTotals.calories > 0 &&
-						unclampedNutrients?.calories !== undefined
-					) {
-						const foodCalories = unclampedNutrients.calories + workoutTotals.calories;
-						const workoutCalories = workoutTotals.calories;
+					if (config.key === "calories" && goal !== undefined && unclampedNutrients?.calories !== undefined) {
+						const workoutCalories = workoutTotals?.calories ?? 0;
+						const foodCalories = unclampedNutrients.calories + workoutCalories;
 						const consumed = value;
 						const remaining = Math.max(0, goal - consumed);
 						const percentConsumed = actualPercent;
@@ -336,8 +330,6 @@ export default class NutritionTotal {
 							`   ${remainingStr.padStart(maxNumWidth)} ${config.unit} (${percentRemaining}% remaining)`,
 						].join("\n");
 						span.addClass("food-tracker-tooltip-multiline");
-					} else if (config.key === "calories" && goal !== undefined) {
-						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					} else {
 						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
 					}
