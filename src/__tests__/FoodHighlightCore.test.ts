@@ -448,6 +448,18 @@ Regular text line
 				expect(annotations).toEqual([]);
 			});
 
+			test("retains annotations when portions round down to zero", () => {
+				const text = "#food [[Bread]] 0.1g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "0kcal",
+					},
+				]);
+			});
+
 			test("adds negative annotation for workout tag entry with calorie data", () => {
 				const text = "#workout [[Bread]] 100g";
 				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
@@ -510,14 +522,31 @@ Regular text line
 				]);
 			});
 
-			test("skips zero or negative kcal entries", () => {
+			test("keeps zero kcal entries but skips negative ones", () => {
 				const text1 = "#food Something 0kcal";
 				const text2 = "#food Something -10kcal";
 				const annotations1 = extractInlineCalorieAnnotations(text1, 0, defaultOptions, provider);
 				const annotations2 = extractInlineCalorieAnnotations(text2, 0, defaultOptions, provider);
 
-				expect(annotations1).toEqual([]);
+				expect(annotations1).toEqual([
+					{
+						position: text1.length,
+						text: "0kcal",
+					},
+				]);
 				expect(annotations2).toEqual([]);
+			});
+
+			test("avoids negative zero for workout annotations", () => {
+				const text = "#workout Run 0kcal";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "0kcal",
+					},
+				]);
 			});
 		});
 

@@ -178,21 +178,22 @@ export function extractInlineCalorieAnnotations(
 			const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
 			const calculatedCalories = multiplier * caloriesPerHundred;
 
-			if (!isFinite(calculatedCalories) || calculatedCalories <= 0) {
+			if (!Number.isFinite(calculatedCalories) || calculatedCalories < 0) {
 				continue;
 			}
 
 			const formattedCalories = Math.round(calculatedCalories);
-			if (formattedCalories <= 0) {
+			if (!Number.isFinite(formattedCalories) || formattedCalories < 0) {
 				continue;
 			}
 
 			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
 			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+			const normalizedCalories = displayCalories === 0 ? 0 : displayCalories;
 
 			annotations.push({
 				position: lineEndOffset,
-				text: `${displayCalories}kcal`,
+				text: `${normalizedCalories}kcal`,
 			});
 		}
 
@@ -201,18 +202,22 @@ export function extractInlineCalorieAnnotations(
 			const caloriesString = match[2];
 
 			const calories = parseFloat(caloriesString);
-			if (!isFinite(calories) || calories <= 0) {
+			if (!Number.isFinite(calories) || calories < 0) {
 				continue;
 			}
 
 			const formattedCalories = Math.round(calories);
+			if (!Number.isFinite(formattedCalories) || formattedCalories < 0) {
+				continue;
+			}
 
 			const isWorkout = options.workoutTag.length > 0 && matchedTag === options.workoutTag.toLowerCase();
 			const displayCalories = isWorkout ? -formattedCalories : formattedCalories;
+			const normalizedCalories = displayCalories === 0 ? 0 : displayCalories;
 
 			annotations.push({
 				position: lineEndOffset,
-				text: `${displayCalories}kcal`,
+				text: `${normalizedCalories}kcal`,
 			});
 		}
 

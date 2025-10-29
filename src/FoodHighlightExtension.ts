@@ -21,6 +21,7 @@ export default class FoodHighlightExtension extends Component {
 	private showCalorieHints: boolean = true;
 	private subscription: Subscription;
 	private nutrientCache: NutrientCache;
+	private nutrientCacheUnsubscribe: (() => void) | null = null;
 	private compartment: Compartment;
 	private app: App;
 
@@ -40,6 +41,10 @@ export default class FoodHighlightExtension extends Component {
 			this.escapedFoodTag = this.foodTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 			this.escapedWorkoutTag = this.workoutTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+			this.reconfigureEditors();
+		});
+
+		this.nutrientCacheUnsubscribe = this.nutrientCache.onChange(() => {
 			this.reconfigureEditors();
 		});
 	}
@@ -63,6 +68,11 @@ export default class FoodHighlightExtension extends Component {
 	onunload(): void {
 		if (this.subscription) {
 			this.subscription.unsubscribe();
+		}
+
+		if (this.nutrientCacheUnsubscribe) {
+			this.nutrientCacheUnsubscribe();
+			this.nutrientCacheUnsubscribe = null;
 		}
 	}
 

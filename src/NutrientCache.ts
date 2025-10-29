@@ -40,10 +40,28 @@ export default class NutrientCache implements NutrientProvider {
 	private nutrientDirectory: string;
 	private nutrientDataCache: Map<string, { name: string; data: NutrientData }> = new Map(); // file path -> { name, data }
 	private nameToPathMap: Map<string, string> = new Map(); // nutrient name -> file path
+	private changeListeners: Set<() => void> = new Set();
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
 		this.nutrientDirectory = nutrientDirectory;
+	}
+
+	onChange(listener: () => void): () => void {
+		this.changeListeners.add(listener);
+		return () => {
+			this.changeListeners.delete(listener);
+		};
+	}
+
+	private notifyChange(): void {
+		for (const listener of Array.from(this.changeListeners)) {
+			try {
+				listener();
+			} catch (error) {
+				console.error("Error notifying nutrient cache listener:", error);
+			}
+		}
 	}
 
 	/**
@@ -64,6 +82,8 @@ export default class NutrientCache implements NutrientProvider {
 			for (const file of nutrientFiles) {
 				this.processNutrientFile(file);
 			}
+
+			this.notifyChange();
 		} catch (error) {
 			console.error("Error initializing nutrient cache:", error);
 		}
@@ -129,10 +149,12 @@ export default class NutrientCache implements NutrientProvider {
 		try {
 			if (action === "delete") {
 				this.removeFileFromCache(file.path);
+				this.notifyChange();
 				return;
 			}
 
 			this.processNutrientFile(file);
+			this.notifyChange();
 		} catch (error) {
 			console.error("Error updating nutrient cache:", error);
 			this.refresh();
@@ -142,6 +164,7 @@ export default class NutrientCache implements NutrientProvider {
 	handleMetadataChange(file: TFile): void {
 		if (this.isNutrientFile(file)) {
 			this.processNutrientFile(file);
+			this.notifyChange();
 		}
 	}
 
@@ -159,6 +182,8 @@ export default class NutrientCache implements NutrientProvider {
 		if (this.isNutrientFile(file)) {
 			this.processNutrientFile(file);
 		}
+
+		this.notifyChange();
 	}
 
 	private extractNutrientName(file: TFile): string | null {
