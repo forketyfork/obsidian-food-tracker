@@ -5,6 +5,7 @@ import NutrientCache from "./NutrientCache";
 import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
 import FoodHighlightExtension from "./FoodHighlightExtension";
+import FoodHighlightPostProcessor from "./FoodHighlightPostProcessor";
 import GoalsHighlightExtension from "./GoalsHighlightExtension";
 import DocumentTotalManager from "./DocumentTotalManager";
 import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
@@ -24,6 +25,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	goalsService: GoalsService;
 	private statsService: StatsService;
 	private foodHighlightExtension: FoodHighlightExtension;
+	private foodHighlightPostProcessor: FoodHighlightPostProcessor;
 	private goalsHighlightExtension: GoalsHighlightExtension;
 
 	async onload() {
@@ -34,6 +36,7 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.initializeCore();
 		this.setupEventListeners();
 		this.registerCodeMirrorExtensions();
+		this.registerMarkdownPostProcessors();
 	}
 
 	/**
@@ -216,6 +219,22 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 		this.addChild(this.goalsHighlightExtension);
 		this.registerEditorExtension(this.goalsHighlightExtension.createExtension());
+	}
+
+	/**
+	 * Register markdown post-processors for view mode highlighting
+	 */
+	private registerMarkdownPostProcessors(): void {
+		this.foodHighlightPostProcessor = new FoodHighlightPostProcessor(
+			this.app,
+			this.settingsService,
+			this.nutrientCache
+		);
+		this.addChild(this.foodHighlightPostProcessor);
+
+		this.registerMarkdownPostProcessor((el, ctx) => {
+			this.foodHighlightPostProcessor.process(el, ctx);
+		});
 	}
 
 	onunload() {
