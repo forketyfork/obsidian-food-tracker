@@ -25,7 +25,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 
 - **Add nutrients**: Create nutrient entries with detailed nutritional information through a convenient modal interface
 - **OpenFoodFacts integration**: Search and import nutritional data from the OpenFoodFacts database
-- **Complete nutrition tracking**: Track calories, fats, carbohydrates, sugar, fiber, protein, and sodium
+- **Complete nutrition tracking**: Track calories, fats, saturated fats, carbohydrates, sugar, fiber, protein, and sodium
 - **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis
 - **Configurable storage**: Set a custom directory for storing nutrient files
 
@@ -51,7 +51,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Compact visual display**: Clean nutrition bar with emoji indicators and progress bars
 - **Interactive tooltips**: Hover over nutrition indicators to see detailed values and goal progress
 - **Flexible display modes**: Show nutrition total in status bar or directly in the document
-- **Comprehensive metrics**: Track calories, fats, protein, carbohydrates, fiber, sugar, and sodium
+- **Comprehensive metrics**: Track calories, fats, saturated fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
 
 ### 🎯 Nutrition Goals & Progress Tracking
@@ -61,7 +61,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Color-coded feedback**: Green (within 10% of goal), yellow (below 90%), red (exceeding goal)
 - **Compact nutrition bar**: Bordered container with emoji progress indicators separated by vertical lines
 - **Enhanced tooltips**: Detailed hover information shows values and goal completion percentages
-- **Flexible goal setting**: Set goals for calories, fats, protein, carbohydrates, fiber, sugar, and sodium
+- **Flexible goal setting**: Set goals for calories, fats, saturated fats, protein, carbohydrates, fiber, sugar, and sodium
 
 ### 📈 Monthly statistics
 
@@ -131,6 +131,7 @@ For quick tracking without creating database entries, specify nutrition values d
 
 - `kcal` - calories
 - `fat` - fats in grams
+- `satfat` - saturated fats in grams
 - `prot` - protein in grams
 - `carbs` - carbohydrates in grams
 - `sugar` - sugar in grams

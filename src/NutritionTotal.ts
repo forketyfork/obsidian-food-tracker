@@ -62,7 +62,8 @@ export default class NutritionTotal {
 		escaped = false,
 		goals?: NutrientGoals,
 		workoutTag: string = "workout",
-		workoutTagEscaped?: boolean
+		workoutTagEscaped?: boolean,
+		showIcon: boolean = true
 	): HTMLElement | null {
 		try {
 			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
@@ -98,7 +99,7 @@ export default class NutritionTotal {
 			// Combine both totals
 			const combined = this.combineNutrients(totalNutrients, inlineTotals);
 			const clamped = this.clampNutrientsToZero(combined);
-			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag, combined);
+			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag, combined, showIcon);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
 			return null;
@@ -248,7 +249,8 @@ export default class NutritionTotal {
 		workoutTotals?: NutrientData,
 		foodTag?: string,
 		workoutTag?: string,
-		unclampedNutrients?: NutrientData
+		unclampedNutrients?: NutrientData,
+		showIcon: boolean = true
 	): HTMLElement | null {
 		const formatConfig: {
 			key: keyof Omit<NutrientData, "serving_size">;
@@ -352,15 +354,17 @@ export default class NutritionTotal {
 		// Create the main nutrition bar container
 		const container = createEl("div", { cls: "food-tracker-nutrition-bar" });
 
-		// Add the Food Tracker icon using Obsidian's registered icon
-		const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
-		iconContainer.setAttribute("data-food-tracker-tooltip", "Food tracker");
-		iconContainer.setAttribute("aria-label", "Food tracker");
-		setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
-		container.appendChild(iconContainer);
+		// Add the Food Tracker icon if showIcon is true
+		if (showIcon) {
+			const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
+			iconContainer.setAttribute("data-food-tracker-tooltip", "Food tracker");
+			iconContainer.setAttribute("aria-label", "Food tracker");
+			setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
+			container.appendChild(iconContainer);
 
-		// Add separator after icon
-		container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+			// Add separator after icon
+			container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+		}
 
 		// Add nutrient elements with separators between them
 		elements.forEach((element, index) => {
