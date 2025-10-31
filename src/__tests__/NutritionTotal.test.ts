@@ -715,5 +715,40 @@ End of day`;
 			// Should still show positive nutrients
 			expectEmojis(result, "🔥 🥑 🥩");
 		});
+
+		test("calculates total nutrients for inline nutrition with saturated fats", () => {
+			const content = "#food Butter 100kcal 11fat 7satfat";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🧈");
+		});
+
+		test("calculates total nutrients for inline nutrition with all nutrients including saturated fats", () => {
+			const content = "#food Complete meal 400kcal 18fat 8satfat 25prot 35carbs 8sugar 12fiber 450sodium";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🧈 🥩 🍞 🌾 🍯 🧂");
+		});
+
+		test("handles saturated fats in linked food entries", () => {
+			mockGetNutritionData.mockReturnValue({
+				calories: 200,
+				fats: 15,
+				saturated_fats: 7,
+				protein: 10,
+			});
+
+			const content = "#food [[cheese]] 50g";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🧈 🥩");
+		});
+
+		test("handles case insensitivity for saturated fats", () => {
+			const content = "#food Test meal 200kcal 10fat 5SATFAT 15prot";
+			const result = nutritionTotal.calculateTotalNutrients(content);
+
+			expectEmojis(result, "🔥 🥑 🧈 🥩");
+		});
 	});
 });

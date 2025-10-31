@@ -71,7 +71,7 @@ export const convertGermanUmlauts = (text: string): string => {
  *
  * @returns RegExp that matches nutrition values like "300kcal", "25prot", etc.
  */
-export const createNutritionValueRegex = () => /-?\d+(?:\.\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
+export const createNutritionValueRegex = () => /-?\d+(?:\.\d+)?(?:kcal|fat|satfat|prot|carbs|sugar|fiber|sodium)/gi;
 
 // ================================
 // Food entry parsing factory functions
@@ -92,7 +92,7 @@ export const createNutritionValueRegex = () => /-?\d+(?:\.\d+)?(?:kcal|fat|prot|
  */
 export const createInlineNutritionRegex = (escapedFoodTag: string) =>
 	new RegExp(
-		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`,
+		`#${escapedFoodTag}\\s+(?!\\[\\[)([^\\s]+(?:\\s+[^\\s]+)*?)\\s+(-?\\d+(?:\\.\\d+)?(?:kcal|fat|satfat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|satfat|prot|carbs|sugar|fiber|sodium))*)`,
 		"i"
 	);
 
@@ -140,7 +140,7 @@ export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
  * Example: "#food Chicken Breast 300kcal 25prot 5fat"
  */
 const createInlineNutritionPattern = () =>
-	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|prot|carbs|sugar|fiber|sodium))*)`;
+	`(?!\\[\\[)(?<foodName>[^\\s]+(?:\\s+[^\\s]+)*?)\\s+(?<nutritionValues>-?\\d+(?:\\.\\d+)?(?:kcal|fat|satfat|prot|carbs|sugar|fiber|sodium)(?:\\s+-?\\d+(?:\\.\\d+)?(?:kcal|fat|satfat|prot|carbs|sugar|fiber|sodium))*)`;
 
 /**
  * Creates a regex pattern for linked food entries with amounts (internal helper)

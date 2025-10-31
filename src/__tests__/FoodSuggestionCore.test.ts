@@ -269,12 +269,33 @@ describe("FoodSuggestionCore", () => {
 
 		test("should return multiple nutrition keywords", () => {
 			const suggestions = core.getSuggestions("100", provider);
-			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar", "100fiber", "100sodium"]);
+			expect(suggestions).toEqual([
+				"100kcal",
+				"100fat",
+				"100satfat",
+				"100prot",
+				"100carbs",
+				"100sugar",
+				"100fiber",
+				"100sodium",
+			]);
 		});
 
 		test("should return partial nutrition keyword matches", () => {
 			const suggestions = core.getSuggestions("100c", provider);
 			expect(suggestions).toEqual(["100carbs"]);
+		});
+
+		test("should return satfat suggestions for partial query", () => {
+			const suggestions = core.getSuggestions("7sat", provider);
+			expect(suggestions).toEqual(["7satfat"]);
+		});
+
+		test("should return satfat in suggestions list", () => {
+			const suggestions = core.getSuggestions("100s", provider);
+			expect(suggestions).toContain("100satfat");
+			expect(suggestions).toContain("100sugar");
+			expect(suggestions).toContain("100sodium");
 		});
 
 		test("should return empty array for nutrition query with no matches", () => {
@@ -310,7 +331,16 @@ describe("FoodSuggestionCore", () => {
 
 		test("should return nutrition suggestions for number queries in nutrition context", () => {
 			const suggestions = core.getSuggestions("100", provider, "nutrition");
-			expect(suggestions).toEqual(["100kcal", "100fat", "100prot", "100carbs", "100sugar", "100fiber", "100sodium"]);
+			expect(suggestions).toEqual([
+				"100kcal",
+				"100fat",
+				"100satfat",
+				"100prot",
+				"100carbs",
+				"100sugar",
+				"100fiber",
+				"100sodium",
+			]);
 		});
 
 		test("should return only kcal suggestion for negative number queries", () => {
@@ -369,6 +399,7 @@ describe("FoodSuggestionCore", () => {
 		test("should identify nutrition keywords", () => {
 			expect(core.isNutritionKeyword("100kcal")).toBe(true);
 			expect(core.isNutritionKeyword("50fat")).toBe(true);
+			expect(core.isNutritionKeyword("7satfat")).toBe(true);
 			expect(core.isNutritionKeyword("25prot")).toBe(true);
 			expect(core.isNutritionKeyword("30carbs")).toBe(true);
 			expect(core.isNutritionKeyword("15sugar")).toBe(true);

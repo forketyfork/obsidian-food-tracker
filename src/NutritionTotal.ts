@@ -7,6 +7,7 @@ import { setIcon } from "obsidian";
 interface NutrientData {
 	calories?: number;
 	fats?: number;
+	saturated_fats?: number;
 	protein?: number;
 	carbs?: number;
 	fiber?: number;
@@ -24,6 +25,7 @@ interface FoodEntry {
 interface InlineNutrientEntry {
 	calories?: number;
 	fats?: number;
+	saturated_fats?: number;
 	protein?: number;
 	carbs?: number;
 	sugar?: number;
@@ -42,6 +44,7 @@ export default class NutritionTotal {
 	private readonly nutrientKeyMap: Record<string, keyof InlineNutrientEntry> = {
 		kcal: "calories",
 		fat: "fats",
+		satfat: "saturated_fats",
 		prot: "protein",
 		carbs: "carbs",
 		sugar: "sugar",
@@ -151,7 +154,7 @@ export default class NutritionTotal {
 	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
 		const nutrientData: InlineNutrientEntry = {};
 		// This single regex finds all number-unit pairs
-		const nutrientRegex = /(-?\d+(?:\.\d+)?)\s*(kcal|fat|prot|carbs|sugar|fiber|sodium)/gi;
+		const nutrientRegex = /(-?\d+(?:\.\d+)?)\s*(kcal|fat|satfat|prot|carbs|sugar|fiber|sodium)/gi;
 
 		const matches = nutrientString.matchAll(nutrientRegex);
 
@@ -256,6 +259,7 @@ export default class NutritionTotal {
 		}[] = [
 			{ key: "calories", emoji: "🔥", name: "Calories", unit: "kcal", decimals: 0 },
 			{ key: "fats", emoji: "🥑", name: "Fats", unit: "g", decimals: 1 },
+			{ key: "saturated_fats", emoji: "🧈", name: "Saturated fats", unit: "g", decimals: 1 },
 			{ key: "protein", emoji: "🥩", name: "Protein", unit: "g", decimals: 1 },
 			{ key: "carbs", emoji: "🍞", name: "Carbs", unit: "g", decimals: 1 },
 			{ key: "fiber", emoji: "🌾", name: "Fiber", unit: "g", decimals: 1 },

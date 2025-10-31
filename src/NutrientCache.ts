@@ -4,6 +4,7 @@ import { NutrientProvider } from "./FoodSuggestionCore";
 interface NutrientData {
 	calories?: number;
 	fats?: number;
+	saturated_fats?: number;
 	protein?: number;
 	carbs?: number;
 	fiber?: number;
@@ -206,6 +207,7 @@ export default class NutrientCache implements NutrientProvider {
 			const nutrientFields: { key: keyof NutrientData; aliases: string[] }[] = [
 				{ key: "calories", aliases: ["calories"] },
 				{ key: "fats", aliases: ["fats"] },
+				{ key: "saturated_fats", aliases: ["saturated_fats", "saturatedFats"] },
 				{ key: "protein", aliases: ["protein"] },
 				{ key: "carbs", aliases: ["carbs", "carbohydrates"] },
 				{ key: "fiber", aliases: ["fiber"] },
