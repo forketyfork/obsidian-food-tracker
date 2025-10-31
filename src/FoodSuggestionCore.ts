@@ -48,7 +48,7 @@ export interface NutrientProvider {
 export class FoodSuggestionCore {
 	private settingsService: SettingsService;
 	private subscription: Subscription;
-	private nutritionKeywords = ["kcal", "fat", "prot", "carbs", "sugar", "fiber", "sodium"];
+	private nutritionKeywords = ["kcal", "fat", "satfat", "prot", "carbs", "sugar", "fiber", "sodium"];
 	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp", "pc"];
 
 	// Precompiled regex patterns for performance
