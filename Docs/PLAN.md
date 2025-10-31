@@ -352,7 +352,6 @@ interface ExtendedNutrients {
 
 	other: {
 		cholesterol?: number; // mg
-		saturatedFat?: number; // g
 		transFat?: number; // g
 		monounsaturatedFat?: number; // g
 		polyunsaturatedFat?: number; // g

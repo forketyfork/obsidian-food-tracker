@@ -301,6 +301,7 @@ export default class FoodTrackerPlugin extends Plugin {
 				true,
 				this.goalsService.currentGoals,
 				this.settingsService.currentEscapedWorkoutTag,
+				true,
 				true
 			);
 
