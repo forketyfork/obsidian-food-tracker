@@ -3,6 +3,7 @@ import { App, TFile } from "obsidian";
 export interface NutrientGoals {
 	calories?: number;
 	fats?: number;
+	saturated_fats?: number;
 	protein?: number;
 	carbs?: number;
 	fiber?: number;
@@ -58,6 +59,7 @@ export default class GoalsService {
 				switch (key) {
 					case "calories":
 					case "fats":
+					case "saturated_fats":
 					case "protein":
 					case "carbs":
 					case "fiber":

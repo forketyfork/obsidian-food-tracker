@@ -6,6 +6,7 @@ interface NutrientData {
 	name: string;
 	calories: number;
 	fats: number;
+	saturated_fats: number;
 	carbs: number;
 	sugar: number;
 	fiber: number;
@@ -65,6 +66,7 @@ export default class NutrientModal extends Modal {
 			name: "",
 			calories: 0,
 			fats: 0,
+			saturated_fats: 0,
 			carbs: 0,
 			sugar: 0,
 			fiber: 0,
@@ -119,6 +121,7 @@ export default class NutrientModal extends Modal {
 		const nutrientFields: NutrientField[] = [
 			{ key: "calories", name: "🔥 Calories", unit: "" },
 			{ key: "fats", name: "🥑 Fats", unit: "g" },
+			{ key: "saturated_fats", name: "🧈 Saturated fats", unit: "g" },
 			{ key: "carbs", name: "🍞 Carbs", unit: "g" },
 			{ key: "sugar", name: "🍯 Sugar", unit: "g" },
 			{ key: "fiber", name: "🌾 Fiber", unit: "g" },
@@ -193,6 +196,7 @@ export default class NutrientModal extends Modal {
 name: ${this.nutrientData.name}
 calories: ${this.nutrientData.calories}
 fats: ${this.nutrientData.fats}
+saturated_fats: ${this.nutrientData.saturated_fats}
 carbs: ${this.nutrientData.carbs}
 sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
@@ -318,6 +322,7 @@ ${servingSizeLine}---
 		this.nutrientData.name = product.product_name ?? this.nutrientData.name;
 		this.nutrientData.calories = Number(nutriments["energy-kcal_100g"] ?? 0);
 		this.nutrientData.fats = Number(nutriments["fat_100g"] ?? 0);
+		this.nutrientData.saturated_fats = Number(nutriments["saturated-fat_100g"] ?? 0);
 		this.nutrientData.carbs = Number(nutriments["carbohydrates_100g"] ?? 0);
 		this.nutrientData.sugar = Number(nutriments["sugars_100g"] ?? 0);
 		this.nutrientData.fiber = Number(nutriments["fiber_100g"] ?? 0);
