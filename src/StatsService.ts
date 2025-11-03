@@ -52,7 +52,9 @@ export default class StatsService {
 
 			if (file) {
 				try {
-					const content = await (this.app.vault.cachedRead?.(file) ?? this.app.vault.read(file));
+					const content = this.app.vault.cachedRead
+						? await this.app.vault.cachedRead(file)
+						: await this.app.vault.read(file);
 					element = this.nutritionTotal.calculateTotalNutrients(
 						content,
 						this.settingsService.currentEscapedFoodTag,
