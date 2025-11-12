@@ -1063,10 +1063,10 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.17.20.tgz#1ca77361d7363432d29f5e55950d9ec1e1c6ea93"
   integrity sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==
 
-"@types/node@*", "@types/node@^24.10.0":
-  version "24.10.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.10.0.tgz#6b79086b0dfc54e775a34ba8114dcc4e0221f31f"
-  integrity sha512-qzQZRBqkFsYyaSWXuEHc2WR9c0a0CXwiE5FWUvn7ZM+vdy1uZLfCunD38UzhuB7YN/J11ndbDBcTmOdxJo9Q7A==
+"@types/node@*", "@types/node@^24.10.1":
+  version "24.10.1"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-24.10.1.tgz#91e92182c93db8bd6224fca031e2370cef9a8f01"
+  integrity sha512-GNWcUTRBgIRJD5zj+Tq0fKOJ5XZajIiBroOF0yvj2bSU1WvNdYS/dn9UxwsujGW4JX06dnHyjV2y9rRaybH0iQ==
   dependencies:
     undici-types "~7.16.0"
 
@@ -3000,9 +3000,9 @@ nwsapi@^2.2.16:
   integrity sha512-/ieB+mDe4MrrKMT8z+mQL8klXydZWGR5Dowt4RAGKbJ3kIGEx3X4ljUo+6V73IXtUPWgfOlU5B9MlGxFO5T+cA==
 
 obsidian@latest:
-  version "1.10.0"
-  resolved "https://registry.yarnpkg.com/obsidian/-/obsidian-1.10.0.tgz#ef7770d4757e713389c395e026bbeae1f38597c5"
-  integrity sha512-F7hhnmGRQD1TanDPFT//LD3iKNUVd7N8sKL7flCCHRszfTxpDJ39j3T7LHbcGpyid906i6lD5oO+cnfLBzJMKw==
+  version "1.10.3"
+  resolved "https://registry.yarnpkg.com/obsidian/-/obsidian-1.10.3.tgz#7fe0b117ce4afa246d67c71c166382fe3c3cb9e8"
+  integrity sha512-VP+ZSxNMG7y6Z+sU9WqLvJAskCfkFrTz2kFHWmmzis+C+4+ELjk/sazwcTHrHXNZlgCeo8YOlM6SOrAFCynNew==
   dependencies:
     "@types/codemirror" "5.60.8"
     moment "2.29.4"
