@@ -2,7 +2,7 @@ import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
 import { FOOD_TRACKER_ICON_NAME } from "./icon";
 import { setIcon } from "obsidian";
-import { calculateNutritionTotals, NutrientData } from "./NutritionCalculator";
+import { calculateNutritionTotals, NutrientData, NutrientGoalProgress } from "./NutritionCalculator";
 
 /**
  * Calculates total nutrition values from food entries in document content
@@ -32,6 +32,7 @@ export default class NutritionTotal {
 				workoutTag,
 				workoutTagEscaped,
 				getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
+				goals,
 			});
 
 			if (!result) {
@@ -45,7 +46,8 @@ export default class NutritionTotal {
 				foodTag,
 				workoutTag,
 				result.combinedTotals,
-				showIcon
+				showIcon,
+				result.goalProgress
 			);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
@@ -60,7 +62,8 @@ export default class NutritionTotal {
 		foodTag?: string,
 		workoutTag?: string,
 		unclampedNutrients?: NutrientData,
-		showIcon: boolean = true
+		showIcon: boolean = true,
+		goalProgress?: Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>
 	): HTMLElement | null {
 		const formatConfig: {
 			key: keyof Omit<NutrientData, "serving_size">;
@@ -93,11 +96,11 @@ export default class NutritionTotal {
 				});
 				span.setAttribute("data-food-tracker-tooltip", tooltipText);
 
-				if (goals?.[config.key] !== undefined) {
+				if (goals?.[config.key] !== undefined && goalProgress?.[config.key]) {
 					const goal = goals[config.key] as number;
+					const progress = goalProgress[config.key];
 					const ratio = goal > 0 ? value / goal : 0;
 					const percent = Math.min(100, Math.round(ratio * 100));
-					const actualPercent = Math.round(ratio * 100);
 
 					// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
 					const colorClass =
@@ -112,9 +115,9 @@ export default class NutritionTotal {
 						const workoutCalories = workoutTotals?.calories ?? 0;
 						const foodCalories = unclampedNutrients.calories + workoutCalories;
 						const consumed = value;
-						const remaining = goal - consumed;
-						const percentConsumed = actualPercent;
-						const percentRemaining = goal > 0 ? Math.max(0, Math.round((remaining / goal) * 100)) : 0;
+						const remaining = progress.remaining;
+						const percentConsumed = progress.percentConsumed;
+						const percentRemaining = progress.percentRemaining;
 
 						const foodStr = `${Math.round(foodCalories)}`;
 						const workoutStr = `${Math.round(workoutCalories)}`;
@@ -147,7 +150,7 @@ export default class NutritionTotal {
 						].join("\n");
 						span.addClass("food-tracker-tooltip-multiline");
 					} else {
-						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
+						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${progress.percentConsumed}% of ${goal} ${config.unit} goal)`;
 					}
 
 					span.addClass("food-tracker-progress", colorClass);

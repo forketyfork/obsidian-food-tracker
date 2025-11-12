@@ -12,6 +12,23 @@ export interface NutrientData {
 	serving_size?: number;
 }
 
+export interface NutrientGoals {
+	calories?: number;
+	fats?: number;
+	saturated_fats?: number;
+	protein?: number;
+	carbs?: number;
+	fiber?: number;
+	sugar?: number;
+	sodium?: number;
+}
+
+export interface NutrientGoalProgress {
+	remaining: number;
+	percentConsumed: number;
+	percentRemaining: number;
+}
+
 interface FoodEntry {
 	filename: string;
 	amount: number;
@@ -35,6 +52,7 @@ export interface NutritionCalculationResult {
 	workoutTotals: NutrientData;
 	combinedTotals: NutrientData;
 	clampedTotals: NutrientData;
+	goalProgress?: Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
 }
 
 export interface NutritionCalculationParams {
@@ -45,6 +63,7 @@ export interface NutritionCalculationParams {
 	workoutTagEscaped?: boolean;
 	getNutritionData: (filename: string) => NutrientData | null;
 	onReadError?: (filename: string, error: unknown) => void;
+	goals?: NutrientGoals;
 }
 
 export function calculateNutritionTotals(params: NutritionCalculationParams): NutritionCalculationResult | null {
@@ -56,6 +75,7 @@ export function calculateNutritionTotals(params: NutritionCalculationParams): Nu
 		workoutTagEscaped,
 		getNutritionData,
 		onReadError,
+		goals,
 	} = params;
 
 	const safeContent = content ?? "";
@@ -102,12 +122,15 @@ export function calculateNutritionTotals(params: NutritionCalculationParams): Nu
 	const combinedTotals = combineNutrients(linkedTotals, inlineTotals);
 	const clampedTotals = clampNutrientsToZero(combinedTotals);
 
+	const goalProgress = goals ? calculateGoalProgress(clampedTotals, goals) : undefined;
+
 	return {
 		linkedTotals,
 		inlineTotals,
 		workoutTotals,
 		combinedTotals,
 		clampedTotals,
+		goalProgress,
 	};
 }
 
@@ -222,6 +245,43 @@ function clampNutrientsToZero(nutrients: NutrientData): NutrientData {
 		}
 	}
 	return clamped;
+}
+
+function calculateGoalProgress(
+	consumed: NutrientData,
+	goals: NutrientGoals
+): Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress> {
+	const progress = {} as Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
+
+	const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size">> = [
+		"calories",
+		"fats",
+		"saturated_fats",
+		"protein",
+		"carbs",
+		"fiber",
+		"sugar",
+		"sodium",
+	];
+
+	for (const key of nutrientKeys) {
+		const goal = goals[key];
+		const consumedValue = consumed[key] ?? 0;
+
+		if (goal !== undefined) {
+			const remaining = goal - consumedValue;
+			const percentConsumed = goal > 0 ? Math.round((consumedValue / goal) * 100) : 0;
+			const percentRemaining = goal > 0 ? Math.max(0, Math.round((remaining / goal) * 100)) : 0;
+
+			progress[key] = {
+				remaining,
+				percentConsumed,
+				percentRemaining,
+			};
+		}
+	}
+
+	return progress;
 }
 
 function calculateTotals(
