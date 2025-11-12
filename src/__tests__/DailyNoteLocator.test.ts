@@ -47,4 +47,35 @@ describe("DailyNoteLocator", () => {
 		expect(locator.match(createFile("2025-11-12-journal.md"))).not.toBeNull();
 		expect(locator.match(createFile("2025-11-12.md"))).toBeNull();
 	});
+
+	test("matches date-prefixed files for backward compatibility", () => {
+		const locator = new DailyNoteLocator(settings);
+
+		const match = locator.match(createFile("2024-08-01-journal.md"));
+
+		expect(match).not.toBeNull();
+		expect(match?.key).toBe("2024-08-01");
+	});
+
+	test("matches exact date format", () => {
+		const locator = new DailyNoteLocator(settings);
+
+		const match = locator.match(createFile("2024-08-01.md"));
+
+		expect(match).not.toBeNull();
+		expect(match?.key).toBe("2024-08-01");
+	});
+
+	test("prefers exact match over prefix match", () => {
+		settings.updateDailyNoteFormat("YYYY-MM-DD");
+		const locator = new DailyNoteLocator(settings);
+
+		const exactMatch = locator.match(createFile("2024-08-01.md"));
+		const prefixMatch = locator.match(createFile("2024-08-01-notes.md"));
+
+		expect(exactMatch).not.toBeNull();
+		expect(prefixMatch).not.toBeNull();
+		expect(exactMatch?.key).toBe("2024-08-01");
+		expect(prefixMatch?.key).toBe("2024-08-01");
+	});
 });

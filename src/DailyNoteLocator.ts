@@ -29,6 +29,17 @@ export default class DailyNoteLocator {
 					date: parsed.toDate(),
 				};
 			}
+
+			const prefixCandidate = this.extractPrefix(candidate, format);
+			if (prefixCandidate && prefixCandidate !== candidate) {
+				const prefixParsed = obsidianMoment(prefixCandidate, format, true);
+				if (prefixParsed.isValid()) {
+					return {
+						key: prefixParsed.format("YYYY-MM-DD"),
+						date: prefixParsed.toDate(),
+					};
+				}
+			}
 		}
 
 		return null;
@@ -56,6 +67,20 @@ export default class DailyNoteLocator {
 		}
 
 		return Array.from(candidates);
+	}
+
+	private extractPrefix(candidate: string, format: string): string | null {
+		const estimatedLength = this.estimateFormatLength(format);
+		if (estimatedLength === null || estimatedLength >= candidate.length) {
+			return null;
+		}
+		return candidate.substring(0, estimatedLength);
+	}
+
+	private estimateFormatLength(format: string): number | null {
+		const today = new Date();
+		const formatted = obsidianMoment(today).format(format);
+		return formatted.length;
 	}
 
 	private removeExtension(path: string, extension: string | undefined): string {

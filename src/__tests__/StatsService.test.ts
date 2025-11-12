@@ -130,4 +130,27 @@ describe("StatsService", () => {
 		expect(consoleSpy).not.toHaveBeenCalled();
 		consoleSpy.mockRestore();
 	});
+
+	test("maintains backward compatibility with date-prefixed files", async () => {
+		const contents = {
+			"2024-08-01-journal.md": "#food Apple 100kcal",
+			"2024-08-02-notes.md": "#food Banana 150kcal",
+			"2024-08-03.md": "#food Orange 80kcal",
+		};
+		const app = createApp(contents);
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+
+		const day1 = stats.find(s => s.date === "2024-08-01");
+		const day2 = stats.find(s => s.date === "2024-08-02");
+		const day3 = stats.find(s => s.date === "2024-08-03");
+
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 100"]')).not.toBeNull();
+		expect(day2?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 150"]')).not.toBeNull();
+		expect(day3?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 80"]')).not.toBeNull();
+	});
 });
