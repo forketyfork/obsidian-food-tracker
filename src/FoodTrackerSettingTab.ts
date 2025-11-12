@@ -1,7 +1,9 @@
-import { App, PluginSettingTab, Setting, normalizePath } from "obsidian";
+import { App, PluginSettingTab, Setting, moment, normalizePath } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import FolderSuggest from "./FolderSuggest";
 import FileSuggest from "./FileSuggest";
+
+const obsidianMoment = moment as unknown as typeof import("moment");
 /**
  * Settings tab for configuring the Food Tracker plugin
  * Provides options for nutrient directory, display mode, and food tag
@@ -42,6 +44,45 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		const dailyNoteSetting = new Setting(containerEl).setName("Daily note filename format");
+
+		dailyNoteSetting.descEl.empty();
+		dailyNoteSetting.descEl.createSpan({
+			text: "Pattern used to identify daily notes (Moment.js tokens such as YYYY, MM, DD).",
+		});
+
+		const previewEl = dailyNoteSetting.descEl.createDiv({
+			cls: "food-tracker-setting-preview",
+		});
+		const validationEl = dailyNoteSetting.descEl.createDiv({
+			cls: "food-tracker-setting-validation",
+		});
+
+		dailyNoteSetting.addText(text => {
+			const updatePreview = (rawValue: string) => {
+				const value = rawValue?.trim() || "YYYY-MM-DD";
+				const preview = obsidianMoment().format(value);
+				previewEl.setText(`Preview for today: ${preview}`);
+
+				const hasYear = /Y/.test(value);
+				const hasMonth = /M/.test(value);
+				const hasDay = /D/.test(value);
+				const isValid = hasYear && hasMonth && hasDay;
+
+				text.inputEl.toggleClass("food-tracker-input-error", !isValid);
+				validationEl.setText(isValid ? "" : "Format should include year (Y), month (M), and day (D) tokens.");
+			};
+
+			text.setValue(this.plugin.settings.dailyNoteFormat).onChange(async value => {
+				const formatValue = value?.trim() || "YYYY-MM-DD";
+				this.plugin.settings.dailyNoteFormat = formatValue;
+				updatePreview(formatValue);
+				await this.plugin.saveSettings();
+			});
+
+			updatePreview(this.plugin.settings.dailyNoteFormat);
+		});
 
 		new Setting(containerEl)
 			.setName("Food tag")

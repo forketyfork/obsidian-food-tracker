@@ -67,7 +67,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 
 - **Quick access**: Ribbon button opens a window with a month picker and daily macronutrient table
 - **Daily breakdown**: Each row shows the same compact nutrition bar used in the status bar
-- **Date format requirement**: Daily notes must be named starting with `YYYY-MM-DD` format (e.g., `2024-08-01.md`)
+- **Flexible matching**: Daily notes are detected using a configurable filename format (default `YYYY-MM-DD`)
 
 ## Installation
 
@@ -212,6 +212,11 @@ Go to Settings > Food Tracker to configure:
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
 - **Workout tag**: Customize the tag used for workout entries (default: "workout" for `#workout`)
+- **Daily note filename format**: Specify the Moment.js-style pattern used to find daily notes (default: `YYYY-MM-DD`). Supports tokens like `dddd` or literal text (e.g., `YYYY-MM-DD-[journal]`). The preview shows how today's note would be named.
+- **Daily note format examples**:
+  - `YYYY.MM.DD` → `2025.11.12`
+  - `YYYY-MM-DD-[journal]` → `2025-11-12-journal`
+  - `dddd YYYY-MM-DD` → `Wednesday 2025-11-12`
 - **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md"). The field includes type-ahead file suggestions.
 
 > **Note**: When you change the food or workout tag settings, the plugin will only recognize the new tags. Existing entries will need to be updated if you want them included in calculations.

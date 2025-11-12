@@ -2,6 +2,7 @@ import { App, TFile } from "obsidian";
 import NutritionTotal from "./NutritionTotal";
 import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
+import DailyNoteLocator from "./DailyNoteLocator";
 
 export interface DailyStat {
 	date: string;
@@ -16,30 +17,32 @@ export default class StatsService {
 	private nutritionTotal: NutritionTotal;
 	private settingsService: SettingsService;
 	private goalsService: GoalsService;
+	private dailyNoteLocator: DailyNoteLocator;
 
 	constructor(app: App, nutritionTotal: NutritionTotal, settingsService: SettingsService, goalsService: GoalsService) {
 		this.app = app;
 		this.nutritionTotal = nutritionTotal;
 		this.settingsService = settingsService;
 		this.goalsService = goalsService;
+		this.dailyNoteLocator = new DailyNoteLocator(settingsService);
 	}
 
 	async getMonthlyStats(year: number, month: number): Promise<DailyStat[]> {
 		const files = this.app.vault.getMarkdownFiles();
-		const dateRegex = /^(\d{4})-(\d{2})-(\d{2})/;
-		const filesByDay = new Map<number, TFile>();
+		const filesByDay = new Map<string, TFile[]>();
 
 		for (const file of files) {
-			const filename = file.basename ?? file.name ?? file.path;
-			const match = dateRegex.exec(filename);
-			if (match) {
-				const fileYear = Number(match[1]);
-				const fileMonth = Number(match[2]);
-				const fileDay = Number(match[3]);
-				if (fileYear === year && fileMonth === month) {
-					filesByDay.set(fileDay, file);
-				}
+			const match = this.dailyNoteLocator.match(file);
+			if (!match) continue;
+
+			const fileDate = match.date;
+			if (fileDate.getFullYear() !== year || fileDate.getMonth() + 1 !== month) {
+				continue;
 			}
+
+			const existing = filesByDay.get(match.key) ?? [];
+			existing.push(file);
+			filesByDay.set(match.key, existing);
 		}
 
 		const daysInMonth = new Date(year, month, 0).getDate();
@@ -47,16 +50,23 @@ export default class StatsService {
 		const statsPromises = Array.from({ length: daysInMonth }, async (_, index) => {
 			const day = index + 1;
 			const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-			const file = filesByDay.get(day);
+			const matchingFiles = filesByDay.get(dateStr);
 			let element: HTMLElement | null = null;
 
-			if (file) {
-				try {
-					const content = this.app.vault.cachedRead
-						? await this.app.vault.cachedRead(file)
-						: await this.app.vault.read(file);
+			if (matchingFiles?.length) {
+				const contents: string[] = [];
+				for (const file of matchingFiles) {
+					try {
+						const content = await this.readVaultFile(file);
+						contents.push(content);
+					} catch (error) {
+						console.error(`Error reading ${file.path} while calculating nutrition stats for ${dateStr}:`, error);
+					}
+				}
+
+				if (contents.length > 0) {
 					element = this.nutritionTotal.calculateTotalNutrients(
-						content,
+						contents.join("\n"),
 						this.settingsService.currentEscapedFoodTag,
 						true,
 						this.goalsService.currentGoals,
@@ -64,15 +74,19 @@ export default class StatsService {
 						true,
 						false
 					);
-				} catch (error) {
-					console.error(`Error calculating nutrition stats for ${file.path} on ${dateStr}:`, error);
 				}
 			}
 
 			return { date: dateStr, element };
 		});
 
-		const stats = await Promise.all(statsPromises);
-		return stats;
+		return Promise.all(statsPromises);
+	}
+
+	private async readVaultFile(file: TFile): Promise<string> {
+		if (typeof this.app.vault.cachedRead === "function") {
+			return this.app.vault.cachedRead(file);
+		}
+		return this.app.vault.read(file);
 	}
 }

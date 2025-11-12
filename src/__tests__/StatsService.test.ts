@@ -41,8 +41,8 @@ function createApp(contents: Record<string, string>): App {
 	const app = new App();
 	const files: TFile[] = Object.keys(contents).map(path => ({
 		path,
-		name: path,
-		basename: path.replace(/\.md$/, ""),
+		name: path.split("/").pop() ?? path,
+		basename: (path.split("/").pop() ?? path).replace(/\.md$/, ""),
 		extension: "md",
 	})) as unknown as TFile[];
 	const vault = app.vault as unknown as {
@@ -76,5 +76,81 @@ describe("StatsService", () => {
 
 		const missingDay = stats.find(s => s.date === "2024-08-02");
 		expect(missingDay?.element).toBeNull();
+	});
+
+	test("supports custom filename formats", async () => {
+		const contents = {
+			"2024.08.01.md": "#food Apple 120kcal",
+		};
+		const app = createApp(contents);
+		const settings = new SettingsService();
+		settings.initialize({
+			...DEFAULT_SETTINGS,
+			dailyNoteFormat: "YYYY.MM.DD",
+		});
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 120"]')).not.toBeNull();
+	});
+
+	test("combines multiple files for the same day", async () => {
+		const contents = {
+			"journal/2024-08-01.md": "#food Breakfast 100kcal",
+			"archive/2024-08-01.md": "#food Dinner 120kcal",
+		};
+		const app = createApp(contents);
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 220"]')).not.toBeNull();
+	});
+
+	test("ignores non-matching files without logging warnings", async () => {
+		const contents = {
+			"YouTrack/RDO-3716.md": "#food something 100kcal",
+			"2024-08-05.md": "#food Meal 90kcal",
+		};
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+
+		const app = createApp(contents);
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService);
+
+		await service.getMonthlyStats(2024, 8);
+
+		expect(consoleSpy).not.toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
+	test("maintains backward compatibility with date-prefixed files", async () => {
+		const contents = {
+			"2024-08-01-journal.md": "#food Apple 100kcal",
+			"2024-08-02-notes.md": "#food Banana 150kcal",
+			"2024-08-03.md": "#food Orange 80kcal",
+		};
+		const app = createApp(contents);
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+
+		const day1 = stats.find(s => s.date === "2024-08-01");
+		const day2 = stats.find(s => s.date === "2024-08-02");
+		const day3 = stats.find(s => s.date === "2024-08-03");
+
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 100"]')).not.toBeNull();
+		expect(day2?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 150"]')).not.toBeNull();
+		expect(day3?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 80"]')).not.toBeNull();
 	});
 });
