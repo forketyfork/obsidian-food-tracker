@@ -1,37 +1,8 @@
 import NutrientCache from "./NutrientCache";
 import type { NutrientGoals } from "./GoalsService";
-import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex, getUnitMultiplier } from "./constants";
 import { FOOD_TRACKER_ICON_NAME } from "./icon";
 import { setIcon } from "obsidian";
-
-interface NutrientData {
-	calories?: number;
-	fats?: number;
-	saturated_fats?: number;
-	protein?: number;
-	carbs?: number;
-	fiber?: number;
-	sugar?: number;
-	sodium?: number;
-	serving_size?: number;
-}
-
-interface FoodEntry {
-	filename: string;
-	amount: number;
-	unit: string;
-}
-
-interface InlineNutrientEntry {
-	calories?: number;
-	fats?: number;
-	saturated_fats?: number;
-	protein?: number;
-	carbs?: number;
-	sugar?: number;
-	fiber?: number;
-	sodium?: number;
-}
+import { calculateNutritionTotals, NutrientData, NutrientGoalProgress } from "./NutritionCalculator";
 
 /**
  * Calculates total nutrition values from food entries in document content
@@ -39,18 +10,6 @@ interface InlineNutrientEntry {
  */
 export default class NutritionTotal {
 	private nutrientCache: NutrientCache;
-
-	// Define mapping from nutrient units to property names
-	private readonly nutrientKeyMap: Record<string, keyof InlineNutrientEntry> = {
-		kcal: "calories",
-		fat: "fats",
-		satfat: "saturated_fats",
-		prot: "protein",
-		carbs: "carbs",
-		sugar: "sugar",
-		fiber: "fiber",
-		sodium: "sodium",
-	};
 
 	constructor(nutrientCache: NutrientCache) {
 		this.nutrientCache = nutrientCache;
@@ -66,179 +25,32 @@ export default class NutritionTotal {
 		showIcon: boolean = true
 	): HTMLElement | null {
 		try {
-			const tag = escaped ? foodTag : foodTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
-			const hasWorkoutTag = workoutTag.trim().length > 0;
-			const workoutEscaped = workoutTagEscaped ?? escaped;
-			const normalizedWorkoutTag = hasWorkoutTag
-				? workoutEscaped
-					? workoutTag
-					: workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&")
-				: null;
-			const foodEntries = this.parseFoodEntries(content, tag);
-			const inlineEntries = this.parseInlineNutrientEntries(content, tag);
-			const workoutEntries = normalizedWorkoutTag ? this.parseInlineNutrientEntries(content, normalizedWorkoutTag) : [];
+			const result = calculateNutritionTotals({
+				content,
+				foodTag,
+				escapedFoodTag: escaped,
+				workoutTag,
+				workoutTagEscaped,
+				getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
+				goals,
+			});
 
-			if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
+			if (!result) {
 				return null;
 			}
 
-			const totalNutrients = this.calculateTotals(foodEntries);
-			const inlineTotals = this.calculateInlineTotals(inlineEntries);
-
-			let workoutTotals: NutrientData = {};
-			if (workoutEntries.length > 0) {
-				const validWorkoutEntries = this.filterValidWorkoutEntries(workoutEntries);
-				if (validWorkoutEntries.length > 0) {
-					workoutTotals = this.calculateInlineTotals(validWorkoutEntries);
-					if (Object.keys(workoutTotals).length > 0) {
-						this.addNutrients(inlineTotals, workoutTotals, -1);
-					}
-				}
-			}
-
-			// Combine both totals
-			const combined = this.combineNutrients(totalNutrients, inlineTotals);
-			const clamped = this.clampNutrientsToZero(combined);
-			return this.formatTotal(clamped, goals, workoutTotals, foodTag, workoutTag, combined, showIcon);
+			return this.formatTotal(
+				result.clampedTotals,
+				goals,
+				result.workoutTotals,
+				foodTag,
+				workoutTag,
+				result.combinedTotals,
+				showIcon,
+				result.goalProgress
+			);
 		} catch (error) {
 			console.error("Error calculating nutrition total:", error);
-			return null;
-		}
-	}
-
-	private parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] {
-		const entries: FoodEntry[] = [];
-		const lines = content.split("\n");
-		const entryRegex = createLinkedFoodRegex(escapedFoodTag);
-
-		for (const line of lines) {
-			const match = entryRegex.exec(line);
-			if (match) {
-				const filename = match[1];
-				const amount = parseFloat(match[2]);
-				const unit = match[3].toLowerCase();
-
-				entries.push({
-					filename,
-					amount,
-					unit,
-				});
-			}
-		}
-
-		return entries;
-	}
-
-	private parseInlineNutrientEntries(content: string, escapedFoodTag: string): InlineNutrientEntry[] {
-		const entries: InlineNutrientEntry[] = [];
-		const lines = content.split("\n");
-		const inlineRegex = createInlineNutritionRegex(escapedFoodTag);
-
-		for (const line of lines) {
-			const foodMatch = inlineRegex.exec(line);
-			if (foodMatch) {
-				const nutrientString = foodMatch[2];
-				const nutrientData = this.parseNutrientString(nutrientString);
-				if (Object.keys(nutrientData).length > 0) {
-					entries.push(nutrientData);
-				}
-			}
-		}
-
-		return entries;
-	}
-
-	/**
-	 * Parses inline nutrition strings like "300kcal 20fat 10prot 30carbs 3sugar"
-	 * Uses a single regex with matchAll for better performance
-	 */
-	private parseNutrientString(nutrientString: string): InlineNutrientEntry {
-		const nutrientData: InlineNutrientEntry = {};
-		// This single regex finds all number-unit pairs
-		const nutrientRegex = /(-?\d+(?:\.\d+)?)\s*(kcal|fat|satfat|prot|carbs|sugar|fiber|sodium)/gi;
-
-		const matches = nutrientString.matchAll(nutrientRegex);
-
-		for (const match of matches) {
-			const value = parseFloat(match[1]);
-			const unit = match[2].toLowerCase();
-			const key = this.nutrientKeyMap[unit];
-			if (key) {
-				nutrientData[key] = (nutrientData[key] ?? 0) + value; // Sum if unit appears twice
-			}
-		}
-		return nutrientData;
-	}
-
-	/**
-	 * Helper method to add nutrients from source to target with optional multiplier
-	 * Eliminates duplication in nutrient calculation methods
-	 */
-	private addNutrients(target: NutrientData, source: NutrientData, multiplier: number = 1): void {
-		// Get all keys from the source object
-		const keys = Object.keys(source) as Array<keyof NutrientData>;
-		for (const key of keys) {
-			// Ensure both target and source have the property before adding
-			if (source[key] !== undefined) {
-				target[key] = (target[key] ?? 0) + source[key] * multiplier;
-			}
-		}
-	}
-
-	private calculateInlineTotals(entries: InlineNutrientEntry[]): NutrientData {
-		const totals: NutrientData = {}; // Start with an empty object
-		for (const entry of entries) {
-			this.addNutrients(totals, entry);
-		}
-		return totals;
-	}
-
-	private filterValidWorkoutEntries(entries: InlineNutrientEntry[]): InlineNutrientEntry[] {
-		return entries.filter(entry => {
-			const hasPositiveValues = Object.values(entry).some(value => value !== undefined && value > 0);
-			const hasNoNegativeCalories = entry.calories === undefined || entry.calories >= 0;
-			return hasPositiveValues && hasNoNegativeCalories;
-		});
-	}
-
-	private combineNutrients(nutrients1: NutrientData, nutrients2: NutrientData): NutrientData {
-		const combined: NutrientData = { ...nutrients1 };
-		this.addNutrients(combined, nutrients2);
-		return combined;
-	}
-
-	private clampNutrientsToZero(nutrients: NutrientData): NutrientData {
-		const clamped: NutrientData = {};
-		const keys = Object.keys(nutrients) as Array<keyof NutrientData>;
-		for (const key of keys) {
-			const value = nutrients[key];
-			if (value !== undefined) {
-				clamped[key] = Math.max(0, value);
-			}
-		}
-		return clamped;
-	}
-
-	private calculateTotals(entries: FoodEntry[]): NutrientData {
-		const totals: NutrientData = {};
-		for (const entry of entries) {
-			const nutrients = this.getNutrientDataForFile(entry.filename);
-			if (nutrients) {
-				const multiplier = getUnitMultiplier(entry.amount, entry.unit, nutrients.serving_size);
-				this.addNutrients(totals, nutrients, multiplier);
-			}
-		}
-		return totals;
-	}
-
-	private getNutrientDataForFile(filename: string): NutrientData | null {
-		try {
-			return this.nutrientCache.getNutritionData(filename);
-		} catch (error) {
-			console.error(
-				`Error reading nutrient data for ${filename}:`,
-				error instanceof Error ? error.message : String(error)
-			);
 			return null;
 		}
 	}
@@ -250,7 +62,8 @@ export default class NutritionTotal {
 		foodTag?: string,
 		workoutTag?: string,
 		unclampedNutrients?: NutrientData,
-		showIcon: boolean = true
+		showIcon: boolean = true,
+		goalProgress?: Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>
 	): HTMLElement | null {
 		const formatConfig: {
 			key: keyof Omit<NutrientData, "serving_size">;
@@ -283,11 +96,11 @@ export default class NutritionTotal {
 				});
 				span.setAttribute("data-food-tracker-tooltip", tooltipText);
 
-				if (goals?.[config.key] !== undefined) {
+				if (goals?.[config.key] !== undefined && goalProgress?.[config.key]) {
 					const goal = goals[config.key] as number;
+					const progress = goalProgress[config.key];
 					const ratio = goal > 0 ? value / goal : 0;
 					const percent = Math.min(100, Math.round(ratio * 100));
-					const actualPercent = Math.round(ratio * 100);
 
 					// Green if within 10% of goal (0.9 to 1.1), red if over, yellow if under
 					const colorClass =
@@ -302,9 +115,9 @@ export default class NutritionTotal {
 						const workoutCalories = workoutTotals?.calories ?? 0;
 						const foodCalories = unclampedNutrients.calories + workoutCalories;
 						const consumed = value;
-						const remaining = Math.max(0, goal - consumed);
-						const percentConsumed = actualPercent;
-						const percentRemaining = Math.round((remaining / goal) * 100);
+						const remaining = progress.remaining;
+						const percentConsumed = progress.percentConsumed;
+						const percentRemaining = progress.percentRemaining;
 
 						const foodStr = `${Math.round(foodCalories)}`;
 						const workoutStr = `${Math.round(workoutCalories)}`;
@@ -337,7 +150,7 @@ export default class NutritionTotal {
 						].join("\n");
 						span.addClass("food-tracker-tooltip-multiline");
 					} else {
-						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${actualPercent}% of ${goal} ${config.unit} goal)`;
+						goalTooltipText = `${config.name}: ${formattedValue} ${config.unit} (${progress.percentConsumed}% of ${goal} ${config.unit} goal)`;
 					}
 
 					span.addClass("food-tracker-progress", colorClass);
