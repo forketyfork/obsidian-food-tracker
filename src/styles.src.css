@@ -149,6 +149,20 @@
 	font-size: 0.85em;
 }
 
+.food-tracker-setting-preview {
+	margin-top: 4px;
+	color: var(--text-muted);
+}
+
+.food-tracker-setting-validation {
+	margin-top: 4px;
+	color: rgb(var(--color-red-rgb));
+}
+
+.food-tracker-input-error {
+	border-color: rgb(var(--color-red-rgb));
+}
+
 /* Fixed width for search button to prevent resizing */
 .food-tracker-search-button {
 	min-width: 110px;

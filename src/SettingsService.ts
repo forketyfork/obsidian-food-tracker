@@ -9,6 +9,7 @@ export interface FoodTrackerPluginSettings {
 	workoutTag: string;
 	goalsFile: string;
 	showCalorieHints: boolean;
+	dailyNoteFormat: string;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
@@ -18,6 +19,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	workoutTag: "workout",
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
+	dailyNoteFormat: "YYYY-MM-DD",
 };
 
 /**
@@ -74,6 +76,13 @@ export class SettingsService {
 	 */
 	get goalsFile$(): Observable<string> {
 		return this.settings$.pipe(map(settings => settings.goalsFile));
+	}
+
+	/**
+	 * Observable stream of the daily note filename format
+	 */
+	get dailyNoteFormat$(): Observable<string> {
+		return this.settings$.pipe(map(settings => settings.dailyNoteFormat));
 	}
 
 	/**
@@ -137,6 +146,13 @@ export class SettingsService {
 	 */
 	get currentGoalsFile(): string {
 		return this.currentSettings.goalsFile;
+	}
+
+	/**
+	 * Get the current daily note filename format synchronously
+	 */
+	get currentDailyNoteFormat(): string {
+		return this.currentSettings.dailyNoteFormat;
 	}
 
 	/**
@@ -204,6 +220,13 @@ export class SettingsService {
 	 */
 	updateGoalsFile(newFile: string): void {
 		this.updateSetting("goalsFile", newFile);
+	}
+
+	/**
+	 * Updates the daily note filename format and notifies all subscribers
+	 */
+	updateDailyNoteFormat(format: string): void {
+		this.updateSetting("dailyNoteFormat", format);
 	}
 
 	/**
