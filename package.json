@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-food-tracker",
-	"version": "0.12.0",
+	"version": "0.12.1",
 	"description": "A plugin to track your food intake (calories, macronutrients) and nutritional information in Obsidian.",
 	"main": "main.js",
 	"scripts": {
