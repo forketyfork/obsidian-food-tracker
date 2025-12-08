@@ -180,6 +180,32 @@ export const createCombinedFoodHighlightRegex = (escapedFoodTag: string, escaped
 };
 
 // ================================
+// Barcode detection utilities
+// ================================
+
+/** Regex to match barcode formats (EAN-8, UPC-A, EAN-13, ITF-14) */
+export const BARCODE_REGEX = /^\d{8,14}$/;
+
+/**
+ * Checks if input looks like a barcode (8-14 digits)
+ * Supports EAN-8, UPC-A (12), EAN-13, and ITF-14 formats
+ *
+ * @param input - The string to check
+ * @returns true if the input matches barcode format
+ *
+ * @example
+ * ```typescript
+ * isBarcode("3017624010701") // true (EAN-13)
+ * isBarcode("12345678") // true (EAN-8)
+ * isBarcode("Nutella") // false
+ * isBarcode("123") // false (too short)
+ * ```
+ */
+export function isBarcode(input: string): boolean {
+	return BARCODE_REGEX.test(input.trim());
+}
+
+// ================================
 // Unit conversion utilities
 // ================================
 

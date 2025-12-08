@@ -24,7 +24,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 ### 🍎 Food Database Management
 
 - **Add nutrients**: Create nutrient entries with detailed nutritional information through a convenient modal interface
-- **OpenFoodFacts integration**: Search and import nutritional data from the OpenFoodFacts database
+- **OpenFoodFacts integration**: Search and import nutritional data from the OpenFoodFacts database by product name or barcode
 - **Complete nutrition tracking**: Track calories, fats, saturated fats, carbohydrates, sugar, fiber, protein, and sodium
 - **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis
 - **Configurable storage**: Set a custom directory for storing nutrient files
@@ -93,8 +93,10 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 1. Open the command palette (Ctrl/Cmd + P)
 2. Search for "Add nutrient" and select the command
 3. Fill in the nutrient information in the modal:
-   - **Name** (required)
+   - **Name or barcode** (required)
    - **🔍 Search**: Use the search button to find foods in OpenFoodFacts database
+     - Enter a product name to search by text
+     - Enter a barcode (8-14 digits) to look up by barcode (EAN-8, UPC-A, EAN-13, ITF-14)
    - **Nutritional values per 100g**:
      - Calories
      - Fats (in grams)
