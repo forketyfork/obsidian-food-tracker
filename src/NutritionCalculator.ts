@@ -142,7 +142,11 @@ function parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] 
 	for (const line of lines) {
 		const match = entryRegex.exec(line);
 		if (match) {
-			const filename = match[1];
+			const rawFilename = match[1];
+			const filename = normalizeFilename(rawFilename);
+			if (!filename) {
+				continue;
+			}
 			const amount = parseFloat(match[2]);
 			const unit = match[3].toLowerCase();
 
@@ -155,6 +159,10 @@ function parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] 
 	}
 
 	return entries;
+}
+
+export function normalizeFilename(raw: string): string | undefined {
+	return raw.split("|")[0].split("#")[0].split("/").pop()?.trim();
 }
 
 function parseInlineNutrientEntries(content: string, escapedFoodTag: string): InlineNutrientEntry[] {

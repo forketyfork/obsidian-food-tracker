@@ -1,4 +1,5 @@
 import { createNutritionValueRegex, createCombinedFoodHighlightRegex, getUnitMultiplier } from "./constants";
+import { normalizeFilename } from "./NutritionCalculator";
 
 export interface HighlightRange {
 	start: number;
@@ -164,7 +165,7 @@ export function extractInlineCalorieAnnotations(
 				continue;
 			}
 
-			const normalizedFileName = rawFileName.split("|")[0].split("#")[0].split("/").pop()?.trim();
+			const normalizedFileName = normalizeFilename(rawFileName);
 			if (!normalizedFileName) {
 				continue;
 			}
