@@ -1,6 +1,6 @@
 import { App, Modal, Setting, Notice, normalizePath, requestUrl } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
-import { INVALID_FILENAME_CHARS_REGEX, convertGermanUmlauts } from "./constants";
+import { INVALID_FILENAME_CHARS_REGEX, convertGermanUmlauts, isBarcode } from "./constants";
 
 interface NutrientData {
 	name: string;
@@ -42,6 +42,13 @@ interface OpenFoodFactsProduct {
 interface OpenFoodFactsSearchResponse {
 	products?: OpenFoodFactsProduct[];
 	[key: string]: unknown;
+}
+
+interface OpenFoodFactsBarcodeResponse {
+	code: string;
+	product?: OpenFoodFactsProduct;
+	status: number;
+	status_verbose: string;
 }
 
 /**
@@ -93,7 +100,7 @@ export default class NutrientModal extends Modal {
 		this.searchResultsEl.hide();
 
 		new Setting(this.formContainer)
-			.setName("📝 Name")
+			.setName("📝 Name or barcode")
 			.addText(text => {
 				this.nameInput = text.inputEl;
 				text.setValue(this.nutrientData.name).onChange(value => {
@@ -217,37 +224,22 @@ ${servingSizeLine}---
 
 	/**
 	 * Searches the OpenFoodFacts database for nutrition information
-	 * Handles API response variations and error cases gracefully
+	 * Routes to barcode lookup or text search based on input format
 	 */
 	async searchOpenFoodFacts() {
-		if (!this.nutrientData.name.trim() || this.isSearching) {
+		const searchInput = this.nutrientData.name.trim();
+		if (!searchInput || this.isSearching) {
 			return;
 		}
 
 		this.setSearchingState(true);
 
 		try {
-			const searchTerm = encodeURIComponent(this.nutrientData.name.trim());
-			const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5`;
-
-			const response = await requestUrl({ url });
-
-			if (response.status !== 200) {
-				throw new Error(`HTTP error: ${response.status}`);
-			}
-
-			const data = response.json as OpenFoodFactsSearchResponse;
-
-			// Handle different response formats and limit to 5 results
-			if (data.products && Array.isArray(data.products)) {
-				this.searchResults = data.products.slice(0, 5);
-			} else if (Array.isArray(data)) {
-				this.searchResults = (data as OpenFoodFactsProduct[]).slice(0, 5);
+			if (isBarcode(searchInput)) {
+				await this.searchByBarcode(searchInput);
 			} else {
-				console.error("Unexpected response format from OpenFoodFacts API");
-				this.searchResults = [];
+				await this.searchByName(searchInput);
 			}
-
 			this.displaySearchResults();
 		} catch (error) {
 			console.error("Error searching OpenFoodFacts:", error);
@@ -261,6 +253,57 @@ ${servingSizeLine}---
 			}
 		} finally {
 			this.setSearchingState(false);
+		}
+	}
+
+	/**
+	 * Searches OpenFoodFacts by barcode using the v2 API
+	 * Returns empty results for unknown barcodes (404 or status 0)
+	 */
+	private async searchByBarcode(barcode: string) {
+		const url = `https://world.openfoodfacts.org/api/v2/product/${barcode}`;
+		const response = await requestUrl({ url, throw: false });
+
+		if (response.status === 404) {
+			this.searchResults = [];
+			return;
+		}
+
+		if (response.status !== 200) {
+			throw new Error(`HTTP error: ${response.status}`);
+		}
+
+		const data = response.json as OpenFoodFactsBarcodeResponse;
+
+		if (data.status === 1 && data.product) {
+			this.searchResults = [data.product];
+		} else {
+			this.searchResults = [];
+		}
+	}
+
+	/**
+	 * Searches OpenFoodFacts by product name using text search
+	 */
+	private async searchByName(name: string) {
+		const searchTerm = encodeURIComponent(name);
+		const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${searchTerm}&search_simple=1&action=process&json=1&page_size=5`;
+
+		const response = await requestUrl({ url });
+
+		if (response.status !== 200) {
+			throw new Error(`HTTP error: ${response.status}`);
+		}
+
+		const data = response.json as OpenFoodFactsSearchResponse;
+
+		if (data.products && Array.isArray(data.products)) {
+			this.searchResults = data.products.slice(0, 5);
+		} else if (Array.isArray(data)) {
+			this.searchResults = (data as OpenFoodFactsProduct[]).slice(0, 5);
+		} else {
+			console.error("Unexpected response format from OpenFoodFacts API");
+			this.searchResults = [];
 		}
 	}
 

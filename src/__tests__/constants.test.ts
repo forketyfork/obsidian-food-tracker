@@ -1,4 +1,4 @@
-import { convertGermanUmlauts, INVALID_FILENAME_CHARS_REGEX } from "../constants";
+import { convertGermanUmlauts, INVALID_FILENAME_CHARS_REGEX, isBarcode } from "../constants";
 
 describe("convertGermanUmlauts", () => {
 	test("converts lowercase umlauts correctly", () => {
@@ -66,5 +66,58 @@ describe("filename handling integration", () => {
 		const foodName = "Müsli mit Früchten & Nüssen!";
 		const converted = convertGermanUmlauts(foodName).replace(INVALID_FILENAME_CHARS_REGEX, "_");
 		expect(converted).toBe("Muesli_mit_Fruechten___Nuessen_");
+	});
+});
+
+describe("isBarcode", () => {
+	test("recognizes valid EAN-8 barcodes (8 digits)", () => {
+		expect(isBarcode("12345678")).toBe(true);
+		expect(isBarcode("00000000")).toBe(true);
+	});
+
+	test("recognizes valid UPC-A barcodes (12 digits)", () => {
+		expect(isBarcode("012345678901")).toBe(true);
+		expect(isBarcode("123456789012")).toBe(true);
+	});
+
+	test("recognizes valid EAN-13 barcodes (13 digits)", () => {
+		expect(isBarcode("3017624010701")).toBe(true); // Nutella
+		expect(isBarcode("5000159484695")).toBe(true);
+	});
+
+	test("recognizes valid ITF-14 barcodes (14 digits)", () => {
+		expect(isBarcode("12345678901234")).toBe(true);
+		expect(isBarcode("00000000000000")).toBe(true);
+	});
+
+	test("rejects strings that are too short", () => {
+		expect(isBarcode("1234567")).toBe(false); // 7 digits
+		expect(isBarcode("123")).toBe(false);
+		expect(isBarcode("1")).toBe(false);
+		expect(isBarcode("")).toBe(false);
+	});
+
+	test("rejects strings that are too long", () => {
+		expect(isBarcode("123456789012345")).toBe(false); // 15 digits
+		expect(isBarcode("1234567890123456789")).toBe(false);
+	});
+
+	test("rejects non-numeric strings", () => {
+		expect(isBarcode("Nutella")).toBe(false);
+		expect(isBarcode("chicken breast")).toBe(false);
+		expect(isBarcode("12345678a")).toBe(false);
+		expect(isBarcode("1234-5678")).toBe(false);
+		expect(isBarcode("1234.5678")).toBe(false);
+	});
+
+	test("handles whitespace correctly", () => {
+		expect(isBarcode("  3017624010701  ")).toBe(true);
+		expect(isBarcode("3017624010701 ")).toBe(true);
+		expect(isBarcode(" 3017624010701")).toBe(true);
+	});
+
+	test("rejects strings with internal spaces", () => {
+		expect(isBarcode("301 762 401")).toBe(false);
+		expect(isBarcode("3017 6240 10701")).toBe(false);
 	});
 });
