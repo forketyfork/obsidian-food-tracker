@@ -13,16 +13,20 @@ interface NutrientData {
 	protein: number;
 	sodium: number;
 	serving_size: number;
+	barcode: string;
+	brand: string;
+	url: string;
 }
 
 type NutrientField = {
-	key: keyof Omit<NutrientData, "name">;
+	key: keyof Omit<NutrientData, "name" | "barcode" | "brand" | "url">;
 	name: string;
 	unit: string;
 };
 
 interface OpenFoodFactsProduct {
 	id: string;
+	code?: string;
 	product_name: string;
 	brands?: string;
 	categories?: string;
@@ -80,6 +84,9 @@ export default class NutrientModal extends Modal {
 			protein: 0,
 			sodium: 0,
 			serving_size: 100,
+			barcode: "",
+			brand: "",
+			url: "",
 		};
 	}
 
@@ -209,7 +216,10 @@ sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
 protein: ${this.nutrientData.protein}
 sodium: ${this.nutrientData.sodium}
-${servingSizeLine}---
+${servingSizeLine}barcode: "${this.nutrientData.barcode}"
+brand: "${this.nutrientData.brand}"
+url: "${this.nutrientData.url}"
+---
 
 `;
 
@@ -371,6 +381,11 @@ ${servingSizeLine}---
 		this.nutrientData.fiber = Number(nutriments["fiber_100g"] ?? 0);
 		this.nutrientData.protein = Number(nutriments["proteins_100g"] ?? 0);
 		this.nutrientData.sodium = Number(nutriments["sodium_100g"] ?? 0) * 1000; // Convert from g to mg
+
+		const barcode = product.code ?? product.id ?? "";
+		this.nutrientData.barcode = barcode;
+		this.nutrientData.brand = product.brands ?? "";
+		this.nutrientData.url = barcode ? `https://world.openfoodfacts.org/product/${barcode}` : "";
 
 		// Collapse modal back to initial state
 		this.showSearchResults(false);
