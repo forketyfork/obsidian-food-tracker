@@ -40,6 +40,42 @@ describe("calculateNutritionTotals", () => {
 		expect(result?.clampedTotals.calories).toBeCloseTo(190);
 	});
 
+	test("normalizes wikilink aliases (custom display names) to extract actual filename", () => {
+		const getNutritionData = jest
+			.fn()
+			.mockReturnValueOnce({ calories: 100, protein: 10 })
+			.mockReturnValueOnce({ calories: 80, carbs: 20 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[apple|Green Apple]] 150g\n#food [[banana|Ripe Banana]] 50g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenNthCalledWith(1, "apple");
+		expect(getNutritionData).toHaveBeenNthCalledWith(2, "banana");
+		expect(result).not.toBeNull();
+		expect(result?.linkedTotals.calories).toBeCloseTo(190);
+		expect(result?.linkedTotals.protein).toBeCloseTo(15);
+		expect(result?.linkedTotals.carbs).toBeCloseTo(10);
+	});
+
+	test("normalizes wikilink with heading and folder path", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 200 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[folder/subfolder/apple#Nutrition|Custom Name]] 100g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("apple");
+		expect(result).not.toBeNull();
+		expect(result?.linkedTotals.calories).toBeCloseTo(200);
+	});
+
 	test("includes inline nutrition, subtracts workout calories, and preserves workout totals", () => {
 		const getNutritionData = jest.fn().mockReturnValue({ calories: 50, fats: 5 });
 
