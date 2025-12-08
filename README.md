@@ -26,7 +26,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Add nutrients**: Create nutrient entries with detailed nutritional information through a convenient modal interface
 - **OpenFoodFacts integration**: Search and import nutritional data from the OpenFoodFacts database by product name or barcode
 - **Complete nutrition tracking**: Track calories, fats, saturated fats, carbohydrates, sugar, fiber, protein, and sodium
-- **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis
+- **Metadata format**: Stores nutritional data in YAML frontmatter for easy querying and analysis, including barcode, brand, and URL for products imported from OpenFoodFacts
 - **Configurable storage**: Set a custom directory for storing nutrient files
 
 ### 📝 Smart Food Entry
