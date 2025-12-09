@@ -90,6 +90,9 @@ export default class FrontmatterTotalsService {
 	}
 
 	isDailyNote(file: TFile): boolean {
+		if (file.extension.toLowerCase() !== "md") {
+			return false;
+		}
 		return this.dailyNoteLocator.match(file) !== null;
 	}
 
