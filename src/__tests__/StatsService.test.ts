@@ -276,4 +276,39 @@ describe("StatsService", () => {
 		const dayStat = stats.find(s => s.date === "2024-08-01");
 		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 300"]')).not.toBeNull();
 	});
+
+	test("shows zero calories for workout-only days that net to zero", async () => {
+		const frontmatterMap = {
+			"2024-08-01.md": { "ft.calories": 0 },
+		};
+		const app = createApp({ frontmatterMap });
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element).not.toBeNull();
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+	});
+
+	test("backfills workout-only day with zero calories", async () => {
+		const frontmatterMap: Record<string, FrontmatterData | null> = {
+			"2024-08-01.md": null,
+		};
+		const contentMap = {
+			"2024-08-01.md": "#food Lunch 300kcal\n#workout Running 300kcal",
+		};
+		const app = createApp({ frontmatterMap, contentMap });
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element).not.toBeNull();
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+	});
 });

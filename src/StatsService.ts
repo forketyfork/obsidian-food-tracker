@@ -174,7 +174,7 @@ export default class StatsService {
 
 				for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
 					const value = formattedTotals[key as keyof FrontmatterTotals];
-					if (value !== undefined && value > 0) {
+					if (value !== undefined && (value > 0 || key === "calories")) {
 						frontmatter[frontmatterKey] = value;
 					} else {
 						delete frontmatter[frontmatterKey];
