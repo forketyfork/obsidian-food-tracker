@@ -3,10 +3,25 @@ import NutritionTotal from "./NutritionTotal";
 import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
+import { extractFrontmatterTotals, FRONTMATTER_KEYS, FrontmatterTotals } from "./FrontmatterTotalsService";
+import { NutrientData } from "./NutritionCalculator";
 
 export interface DailyStat {
 	date: string;
 	element: HTMLElement | null;
+}
+
+function frontmatterTotalsToNutrientData(totals: FrontmatterTotals): NutrientData {
+	const data: NutrientData = {};
+	if (totals.calories !== undefined) data.calories = totals.calories;
+	if (totals.fats !== undefined) data.fats = totals.fats;
+	if (totals.saturated_fats !== undefined) data.saturated_fats = totals.saturated_fats;
+	if (totals.protein !== undefined) data.protein = totals.protein;
+	if (totals.carbs !== undefined) data.carbs = totals.carbs;
+	if (totals.fiber !== undefined) data.fiber = totals.fiber;
+	if (totals.sugar !== undefined) data.sugar = totals.sugar;
+	if (totals.sodium !== undefined) data.sodium = totals.sodium;
+	return data;
 }
 
 /**
@@ -27,7 +42,7 @@ export default class StatsService {
 		this.dailyNoteLocator = new DailyNoteLocator(settingsService);
 	}
 
-	async getMonthlyStats(year: number, month: number): Promise<DailyStat[]> {
+	getMonthlyStats(year: number, month: number): DailyStat[] {
 		const files = this.app.vault.getMarkdownFiles();
 		const filesByDay = new Map<string, TFile[]>();
 
@@ -47,46 +62,44 @@ export default class StatsService {
 
 		const daysInMonth = new Date(year, month, 0).getDate();
 
-		const statsPromises = Array.from({ length: daysInMonth }, async (_, index) => {
+		return Array.from({ length: daysInMonth }, (_, index) => {
 			const day = index + 1;
 			const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 			const matchingFiles = filesByDay.get(dateStr);
 			let element: HTMLElement | null = null;
 
 			if (matchingFiles?.length) {
-				const contents: string[] = [];
-				for (const file of matchingFiles) {
-					try {
-						const content = await this.readVaultFile(file);
-						contents.push(content);
-					} catch (error) {
-						console.error(`Error reading ${file.path} while calculating nutrition stats for ${dateStr}:`, error);
-					}
-				}
+				const aggregatedTotals = this.aggregateFrontmatterTotals(matchingFiles);
 
-				if (contents.length > 0) {
-					element = this.nutritionTotal.calculateTotalNutrients(
-						contents.join("\n"),
-						this.settingsService.currentEscapedFoodTag,
-						true,
-						this.goalsService.currentGoals,
-						this.settingsService.currentEscapedWorkoutTag,
-						true,
-						false
-					);
+				if (aggregatedTotals) {
+					const nutrientData = frontmatterTotalsToNutrientData(aggregatedTotals);
+					element = this.nutritionTotal.formatNutrientData(nutrientData, this.goalsService.currentGoals, false);
 				}
 			}
 
 			return { date: dateStr, element };
 		});
-
-		return Promise.all(statsPromises);
 	}
 
-	private async readVaultFile(file: TFile): Promise<string> {
-		if (typeof this.app.vault.cachedRead === "function") {
-			return this.app.vault.cachedRead(file);
+	private aggregateFrontmatterTotals(files: TFile[]): FrontmatterTotals | null {
+		const aggregated: FrontmatterTotals = {};
+		let hasAnyData = false;
+
+		for (const file of files) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			if (!cache?.frontmatter) continue;
+
+			const totals = extractFrontmatterTotals(cache.frontmatter);
+			if (!totals) continue;
+
+			hasAnyData = true;
+			for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+				if (totals[key] !== undefined) {
+					aggregated[key] = (aggregated[key] ?? 0) + totals[key];
+				}
+			}
 		}
-		return this.app.vault.read(file);
+
+		return hasAnyData ? aggregated : null;
 	}
 }

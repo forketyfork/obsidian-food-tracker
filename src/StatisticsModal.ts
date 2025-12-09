@@ -27,21 +27,15 @@ export default class StatisticsModal extends Modal {
 
 		const tableContainer = contentEl.createDiv();
 
-		const render = async () => {
+		const render = () => {
 			tableContainer.empty();
-
-			tableContainer.createDiv({
-				cls: "food-tracker-loading",
-				text: "Loading statistics...",
-			});
 
 			try {
 				const [yearStr, monthStr] = this.monthInput!.value.split("-");
 				const year = Number(yearStr);
 				const month = Number(monthStr);
-				const stats = await this.statsService.getMonthlyStats(year, month);
+				const stats = this.statsService.getMonthlyStats(year, month);
 
-				tableContainer.empty();
 				const table = tableContainer.createEl("table", { cls: "food-tracker-stats-table" });
 				for (const stat of stats) {
 					const row = table.createEl("tr", { cls: "food-tracker-stats-row" });
@@ -69,13 +63,11 @@ export default class StatisticsModal extends Modal {
 			}
 		};
 
-		this.changeHandler = () => {
-			void render();
-		};
+		this.changeHandler = render;
 
 		this.monthInput.addEventListener("change", this.changeHandler);
 
-		void render();
+		render();
 	}
 
 	onClose() {
