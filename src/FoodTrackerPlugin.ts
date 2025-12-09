@@ -179,7 +179,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Register metadata cache events to handle frontmatter changes
 		this.registerEvent(
 			this.app.metadataCache.on("changed", file => {
-				this.nutrientCache.handleMetadataChange(file);
+				if (this.nutrientCache.isNutrientFile(file)) {
+					this.nutrientCache.handleMetadataChange(file);
+					this.frontmatterTotalsService.updateNotesReferencingNutrient(file.basename);
+				}
 			})
 		);
 

@@ -157,4 +157,23 @@ export default class FrontmatterTotalsService {
 		}
 		this.pendingUpdates.clear();
 	}
+
+	updateNotesReferencingNutrient(nutrientBasename: string): void {
+		const files = this.app.vault.getMarkdownFiles();
+		const dailyNotes = files.filter(file => this.isDailyNote(file));
+
+		for (const file of dailyNotes) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			if (!cache?.links) continue;
+
+			const referencesNutrient = cache.links.some(link => {
+				const linkBasename = link.link.split("/").pop()?.split("#")[0]?.split("|")[0];
+				return linkBasename?.toLowerCase() === nutrientBasename.toLowerCase();
+			});
+
+			if (referencesNutrient) {
+				this.updateFrontmatterTotals(file);
+			}
+		}
+	}
 }
