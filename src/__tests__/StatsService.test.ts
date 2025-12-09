@@ -35,14 +35,14 @@ const goalsService = { currentGoals: {} } as unknown as GoalsService;
 const dummyCache = { getNutritionData: () => null } as unknown as NutrientCache;
 
 interface FrontmatterData {
-	"ft.calories"?: number;
-	"ft.fats"?: number;
-	"ft.protein"?: number;
-	"ft.carbs"?: number;
-	"ft.fiber"?: number;
-	"ft.sugar"?: number;
-	"ft.sodium"?: number;
-	"ft.saturated_fats"?: number;
+	"ft-calories"?: number;
+	"ft-fats"?: number;
+	"ft-protein"?: number;
+	"ft-carbs"?: number;
+	"ft-fiber"?: number;
+	"ft-sugar"?: number;
+	"ft-sodium"?: number;
+	"ft-saturated_fats"?: number;
 }
 
 interface AppTestConfig {
@@ -91,8 +91,8 @@ function createApp(config: AppTestConfig): App {
 describe("StatsService", () => {
 	test("aggregates daily totals from frontmatter for a month", async () => {
 		const frontmatterMap = {
-			"2024-08-01.md": { "ft.calories": 100, "ft.protein": 10 },
-			"2024-08-03.md": { "ft.calories": 200, "ft.protein": 20 },
+			"2024-08-01.md": { "ft-calories": 100, "ft-protein": 10 },
+			"2024-08-03.md": { "ft-calories": 200, "ft-protein": 20 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();
@@ -115,7 +115,7 @@ describe("StatsService", () => {
 
 	test("supports custom filename formats", async () => {
 		const frontmatterMap = {
-			"2024.08.01.md": { "ft.calories": 120 },
+			"2024.08.01.md": { "ft-calories": 120 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();
@@ -133,8 +133,8 @@ describe("StatsService", () => {
 
 	test("combines frontmatter totals from multiple files for the same day", async () => {
 		const frontmatterMap = {
-			"journal/2024-08-01.md": { "ft.calories": 100 },
-			"archive/2024-08-01.md": { "ft.calories": 120 },
+			"journal/2024-08-01.md": { "ft-calories": 100 },
+			"archive/2024-08-01.md": { "ft-calories": 120 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();
@@ -193,8 +193,8 @@ describe("StatsService", () => {
 
 	test("ignores non-matching files without logging warnings", async () => {
 		const frontmatterMap = {
-			"YouTrack/RDO-3716.md": { "ft.calories": 100 },
-			"2024-08-05.md": { "ft.calories": 90 },
+			"YouTrack/RDO-3716.md": { "ft-calories": 100 },
+			"2024-08-05.md": { "ft-calories": 90 },
 		};
 		const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
@@ -212,9 +212,9 @@ describe("StatsService", () => {
 
 	test("maintains backward compatibility with date-prefixed files", async () => {
 		const frontmatterMap = {
-			"2024-08-01-journal.md": { "ft.calories": 100 },
-			"2024-08-02-notes.md": { "ft.calories": 150 },
-			"2024-08-03.md": { "ft.calories": 80 },
+			"2024-08-01-journal.md": { "ft-calories": 100 },
+			"2024-08-02-notes.md": { "ft-calories": 150 },
+			"2024-08-03.md": { "ft-calories": 80 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();
@@ -236,10 +236,10 @@ describe("StatsService", () => {
 	test("aggregates multiple nutrients correctly", async () => {
 		const frontmatterMap = {
 			"2024-08-01.md": {
-				"ft.calories": 500,
-				"ft.fats": 20.5,
-				"ft.protein": 30,
-				"ft.carbs": 60,
+				"ft-calories": 500,
+				"ft-fats": 20.5,
+				"ft-protein": 30,
+				"ft-carbs": 60,
 			},
 		};
 		const app = createApp({ frontmatterMap });
@@ -259,7 +259,7 @@ describe("StatsService", () => {
 
 	test("combines frontmatter and backfilled data for same day", async () => {
 		const frontmatterMap: Record<string, FrontmatterData | null> = {
-			"journal/2024-08-01.md": { "ft.calories": 100 },
+			"journal/2024-08-01.md": { "ft-calories": 100 },
 			"archive/2024-08-01.md": null,
 		};
 		const contentMap = {
@@ -279,7 +279,7 @@ describe("StatsService", () => {
 
 	test("shows zero calories for workout-only days that net to zero", async () => {
 		const frontmatterMap = {
-			"2024-08-01.md": { "ft.calories": 0 },
+			"2024-08-01.md": { "ft-calories": 0 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();
@@ -314,8 +314,8 @@ describe("StatsService", () => {
 
 	test("aggregates workout deduction from separate file correctly", async () => {
 		const frontmatterMap = {
-			"journal/2024-08-01.md": { "ft.calories": 200, "ft.protein": 10 },
-			"workout/2024-08-01.md": { "ft.calories": -300 },
+			"journal/2024-08-01.md": { "ft-calories": 200, "ft-protein": 10 },
+			"workout/2024-08-01.md": { "ft-calories": -300 },
 		};
 		const app = createApp({ frontmatterMap });
 		const settings = new SettingsService();

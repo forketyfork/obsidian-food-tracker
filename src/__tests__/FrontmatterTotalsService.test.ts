@@ -8,21 +8,21 @@ import { NutrientData } from "../NutritionCalculator";
 
 describe("FrontmatterTotalsService", () => {
 	describe("FRONTMATTER_PREFIX", () => {
-		test("should be 'ft.'", () => {
-			expect(FRONTMATTER_PREFIX).toBe("ft.");
+		test("should be 'ft-'", () => {
+			expect(FRONTMATTER_PREFIX).toBe("ft-");
 		});
 	});
 
 	describe("FRONTMATTER_KEYS", () => {
 		test("should have correct prefixed keys for all nutrients", () => {
-			expect(FRONTMATTER_KEYS.calories).toBe("ft.calories");
-			expect(FRONTMATTER_KEYS.fats).toBe("ft.fats");
-			expect(FRONTMATTER_KEYS.saturated_fats).toBe("ft.saturated_fats");
-			expect(FRONTMATTER_KEYS.protein).toBe("ft.protein");
-			expect(FRONTMATTER_KEYS.carbs).toBe("ft.carbs");
-			expect(FRONTMATTER_KEYS.fiber).toBe("ft.fiber");
-			expect(FRONTMATTER_KEYS.sugar).toBe("ft.sugar");
-			expect(FRONTMATTER_KEYS.sodium).toBe("ft.sodium");
+			expect(FRONTMATTER_KEYS.calories).toBe("ft-calories");
+			expect(FRONTMATTER_KEYS.fats).toBe("ft-fats");
+			expect(FRONTMATTER_KEYS.saturated_fats).toBe("ft-saturated_fats");
+			expect(FRONTMATTER_KEYS.protein).toBe("ft-protein");
+			expect(FRONTMATTER_KEYS.carbs).toBe("ft-carbs");
+			expect(FRONTMATTER_KEYS.fiber).toBe("ft-fiber");
+			expect(FRONTMATTER_KEYS.sugar).toBe("ft-sugar");
+			expect(FRONTMATTER_KEYS.sodium).toBe("ft-sodium");
 		});
 	});
 
@@ -38,14 +38,14 @@ describe("FrontmatterTotalsService", () => {
 
 		test("extracts all nutrition values from frontmatter", () => {
 			const frontmatter = {
-				"ft.calories": 1500,
-				"ft.fats": 65.5,
-				"ft.saturated_fats": 20.3,
-				"ft.protein": 120.7,
-				"ft.carbs": 180.2,
-				"ft.fiber": 25.1,
-				"ft.sugar": 45.8,
-				"ft.sodium": 2100.5,
+				"ft-calories": 1500,
+				"ft-fats": 65.5,
+				"ft-saturated_fats": 20.3,
+				"ft-protein": 120.7,
+				"ft-carbs": 180.2,
+				"ft-fiber": 25.1,
+				"ft-sugar": 45.8,
+				"ft-sodium": 2100.5,
 			};
 
 			const result = extractFrontmatterTotals(frontmatter);
@@ -64,8 +64,8 @@ describe("FrontmatterTotalsService", () => {
 
 		test("extracts partial nutrition values", () => {
 			const frontmatter = {
-				"ft.calories": 800,
-				"ft.protein": 50,
+				"ft-calories": 800,
+				"ft-protein": 50,
 				title: "Lunch",
 			};
 
@@ -79,8 +79,8 @@ describe("FrontmatterTotalsService", () => {
 
 		test("handles string values by parsing them as numbers", () => {
 			const frontmatter = {
-				"ft.calories": "1200",
-				"ft.fats": "45.5",
+				"ft-calories": "1200",
+				"ft-fats": "45.5",
 			};
 
 			const result = extractFrontmatterTotals(frontmatter);
@@ -93,10 +93,10 @@ describe("FrontmatterTotalsService", () => {
 
 		test("ignores invalid non-numeric values", () => {
 			const frontmatter = {
-				"ft.calories": 500,
-				"ft.fats": "invalid",
-				"ft.protein": null,
-				"ft.carbs": undefined,
+				"ft-calories": 500,
+				"ft-fats": "invalid",
+				"ft-protein": null,
+				"ft-carbs": undefined,
 			};
 
 			const result = extractFrontmatterTotals(frontmatter);
@@ -108,8 +108,8 @@ describe("FrontmatterTotalsService", () => {
 
 		test("handles zero values", () => {
 			const frontmatter = {
-				"ft.calories": 0,
-				"ft.protein": 0,
+				"ft-calories": 0,
+				"ft-protein": 0,
 			};
 
 			const result = extractFrontmatterTotals(frontmatter);
@@ -122,7 +122,7 @@ describe("FrontmatterTotalsService", () => {
 
 		test("handles negative values from workout-only files", () => {
 			const frontmatter = {
-				"ft.calories": -300,
+				"ft-calories": -300,
 			};
 
 			const result = extractFrontmatterTotals(frontmatter);

@@ -5,7 +5,7 @@ import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
 
-export const FRONTMATTER_PREFIX = "ft.";
+export const FRONTMATTER_PREFIX = "ft-";
 
 export const FRONTMATTER_KEYS = {
 	calories: `${FRONTMATTER_PREFIX}calories`,

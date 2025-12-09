@@ -53,7 +53,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Flexible display modes**: Show nutrition total in status bar or directly in the document
 - **Comprehensive metrics**: Track calories, fats, saturated fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
-- **Frontmatter totals**: Nutrition totals are automatically saved to file properties (e.g., `ft.calories`, `ft.protein`) for fast statistics loading and external querying
+- **Frontmatter totals**: Nutrition totals are automatically saved to file properties (e.g., `ft-calories`, `ft-protein`) for fast statistics loading and external querying
 
 ### 🎯 Nutrition Goals & Progress Tracking
 
