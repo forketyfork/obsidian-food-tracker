@@ -94,7 +94,13 @@ export default class FoodTrackerPlugin extends Plugin {
 		);
 
 		// Initialize stats service
-		this.statsService = new StatsService(this.app, this.nutritionTotal, this.settingsService, this.goalsService);
+		this.statsService = new StatsService(
+			this.app,
+			this.nutritionTotal,
+			this.settingsService,
+			this.goalsService,
+			this.nutrientCache
+		);
 
 		// Add ribbon button for statistics
 		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "Open nutrition statistics", () => {

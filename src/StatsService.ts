@@ -3,8 +3,14 @@ import NutritionTotal from "./NutritionTotal";
 import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
-import { extractFrontmatterTotals, FRONTMATTER_KEYS, FrontmatterTotals } from "./FrontmatterTotalsService";
-import { NutrientData } from "./NutritionCalculator";
+import {
+	extractFrontmatterTotals,
+	FRONTMATTER_KEYS,
+	FrontmatterTotals,
+	nutrientDataToFrontmatterTotals,
+} from "./FrontmatterTotalsService";
+import { NutrientData, calculateNutritionTotals } from "./NutritionCalculator";
+import NutrientCache from "./NutrientCache";
 
 export interface DailyStat {
 	date: string;
@@ -33,16 +39,24 @@ export default class StatsService {
 	private settingsService: SettingsService;
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
+	private nutrientCache: NutrientCache;
 
-	constructor(app: App, nutritionTotal: NutritionTotal, settingsService: SettingsService, goalsService: GoalsService) {
+	constructor(
+		app: App,
+		nutritionTotal: NutritionTotal,
+		settingsService: SettingsService,
+		goalsService: GoalsService,
+		nutrientCache: NutrientCache
+	) {
 		this.app = app;
 		this.nutritionTotal = nutritionTotal;
 		this.settingsService = settingsService;
 		this.goalsService = goalsService;
 		this.dailyNoteLocator = new DailyNoteLocator(settingsService);
+		this.nutrientCache = nutrientCache;
 	}
 
-	getMonthlyStats(year: number, month: number): DailyStat[] {
+	async getMonthlyStats(year: number, month: number): Promise<DailyStat[]> {
 		const files = this.app.vault.getMarkdownFiles();
 		const filesByDay = new Map<string, TFile[]>();
 
@@ -62,37 +76,52 @@ export default class StatsService {
 
 		const daysInMonth = new Date(year, month, 0).getDate();
 
-		return Array.from({ length: daysInMonth }, (_, index) => {
+		const statsPromises = Array.from({ length: daysInMonth }, async (_, index) => {
 			const day = index + 1;
 			const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 			const matchingFiles = filesByDay.get(dateStr);
 			let element: HTMLElement | null = null;
 
 			if (matchingFiles?.length) {
-				const aggregatedTotals = this.aggregateFrontmatterTotals(matchingFiles);
+				const { totals, filesToBackfill } = this.aggregateFrontmatterTotals(matchingFiles);
 
-				if (aggregatedTotals) {
-					const nutrientData = frontmatterTotalsToNutrientData(aggregatedTotals);
+				if (filesToBackfill.length > 0) {
+					const backfilledTotals = await this.backfillFiles(filesToBackfill);
+					for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+						if (backfilledTotals[key] !== undefined) {
+							totals[key] = (totals[key] ?? 0) + backfilledTotals[key];
+						}
+					}
+				}
+
+				if (Object.keys(totals).length > 0) {
+					const nutrientData = frontmatterTotalsToNutrientData(totals);
 					element = this.nutritionTotal.formatNutrientData(nutrientData, this.goalsService.currentGoals, false);
 				}
 			}
 
 			return { date: dateStr, element };
 		});
+
+		return Promise.all(statsPromises);
 	}
 
-	private aggregateFrontmatterTotals(files: TFile[]): FrontmatterTotals | null {
+	private aggregateFrontmatterTotals(files: TFile[]): {
+		totals: FrontmatterTotals;
+		filesToBackfill: TFile[];
+	} {
 		const aggregated: FrontmatterTotals = {};
-		let hasAnyData = false;
+		const filesToBackfill: TFile[] = [];
 
 		for (const file of files) {
 			const cache = this.app.metadataCache.getFileCache(file);
-			if (!cache?.frontmatter) continue;
+			const totals = cache?.frontmatter ? extractFrontmatterTotals(cache.frontmatter) : null;
 
-			const totals = extractFrontmatterTotals(cache.frontmatter);
-			if (!totals) continue;
+			if (!totals) {
+				filesToBackfill.push(file);
+				continue;
+			}
 
-			hasAnyData = true;
 			for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
 				if (totals[key] !== undefined) {
 					aggregated[key] = (aggregated[key] ?? 0) + totals[key];
@@ -100,6 +129,60 @@ export default class StatsService {
 			}
 		}
 
-		return hasAnyData ? aggregated : null;
+		return { totals: aggregated, filesToBackfill };
+	}
+
+	private async backfillFiles(files: TFile[]): Promise<FrontmatterTotals> {
+		const aggregated: FrontmatterTotals = {};
+
+		for (const file of files) {
+			try {
+				const content = await this.app.vault.cachedRead(file);
+				const result = calculateNutritionTotals({
+					content,
+					foodTag: this.settingsService.currentEscapedFoodTag,
+					escapedFoodTag: true,
+					workoutTag: this.settingsService.currentEscapedWorkoutTag,
+					workoutTagEscaped: true,
+					getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
+					goals: this.goalsService.currentGoals,
+				});
+
+				if (result?.clampedTotals) {
+					const totals = nutrientDataToFrontmatterTotals(result.clampedTotals);
+
+					for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+						if (totals[key] !== undefined) {
+							aggregated[key] = (aggregated[key] ?? 0) + totals[key];
+						}
+					}
+
+					void this.writeFrontmatterTotals(file, result.clampedTotals);
+				}
+			} catch (error) {
+				console.error(`Error backfilling ${file.path}:`, error);
+			}
+		}
+
+		return aggregated;
+	}
+
+	private async writeFrontmatterTotals(file: TFile, totals: NutrientData): Promise<void> {
+		try {
+			await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
+				const formattedTotals = nutrientDataToFrontmatterTotals(totals);
+
+				for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
+					const value = formattedTotals[key as keyof FrontmatterTotals];
+					if (value !== undefined && value > 0) {
+						frontmatter[frontmatterKey] = value;
+					} else {
+						delete frontmatter[frontmatterKey];
+					}
+				}
+			});
+		} catch (error) {
+			console.error(`Error writing frontmatter totals for ${file.path}:`, error);
+		}
 	}
 }
