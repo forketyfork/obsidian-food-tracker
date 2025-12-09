@@ -78,6 +78,7 @@ export default class FrontmatterTotalsService {
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
 	private pendingUpdates: Map<string, NodeJS.Timeout> = new Map();
+	private filesBeingWritten: Set<string> = new Set();
 	private debounceMs = 500;
 
 	constructor(app: App, nutrientCache: NutrientCache, settingsService: SettingsService, goalsService: GoalsService) {
@@ -94,6 +95,10 @@ export default class FrontmatterTotalsService {
 
 	updateFrontmatterTotals(file: TFile): void {
 		if (!this.isDailyNote(file)) {
+			return;
+		}
+
+		if (this.filesBeingWritten.has(file.path)) {
 			return;
 		}
 
@@ -123,9 +128,14 @@ export default class FrontmatterTotalsService {
 				goals: this.goalsService.currentGoals,
 			});
 
-			await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-				this.updateFrontmatterValues(frontmatter, result?.clampedTotals ?? null);
-			});
+			this.filesBeingWritten.add(file.path);
+			try {
+				await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
+					this.updateFrontmatterValues(frontmatter, result?.clampedTotals ?? null);
+				});
+			} finally {
+				this.filesBeingWritten.delete(file.path);
+			}
 		} catch (error) {
 			console.error(`Error updating frontmatter totals for ${file.path}:`, error);
 		}
@@ -161,14 +171,21 @@ export default class FrontmatterTotalsService {
 	updateNotesReferencingNutrient(nutrientBasename: string): void {
 		const files = this.app.vault.getMarkdownFiles();
 		const dailyNotes = files.filter(file => this.isDailyNote(file));
+		const normalizedNutrient = nutrientBasename.toLowerCase().replace(/\.md$/, "");
 
 		for (const file of dailyNotes) {
 			const cache = this.app.metadataCache.getFileCache(file);
 			if (!cache?.links) continue;
 
 			const referencesNutrient = cache.links.some(link => {
-				const linkBasename = link.link.split("/").pop()?.split("#")[0]?.split("|")[0];
-				return linkBasename?.toLowerCase() === nutrientBasename.toLowerCase();
+				const linkBasename = link.link
+					.split("/")
+					.pop()
+					?.split("#")[0]
+					?.split("|")[0]
+					?.toLowerCase()
+					.replace(/\.md$/, "");
+				return linkBasename === normalizedNutrient;
 			});
 
 			if (referencesNutrient) {
