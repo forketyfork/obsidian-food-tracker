@@ -131,7 +131,7 @@ export default class FrontmatterTotalsService {
 			this.filesBeingWritten.add(file.path);
 			try {
 				await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-					this.updateFrontmatterValues(frontmatter, result?.clampedTotals ?? null);
+					this.updateFrontmatterValues(frontmatter, result?.combinedTotals ?? null);
 				});
 			} finally {
 				this.filesBeingWritten.delete(file.path);
@@ -153,7 +153,7 @@ export default class FrontmatterTotalsService {
 
 		for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
 			const value = formattedTotals[key as FrontmatterKey];
-			if (value !== undefined && (value > 0 || key === "calories")) {
+			if (value !== undefined && (value !== 0 || key === "calories")) {
 				frontmatter[frontmatterKey] = value;
 			} else {
 				delete frontmatter[frontmatterKey];

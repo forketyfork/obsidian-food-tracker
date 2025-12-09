@@ -311,4 +311,42 @@ describe("StatsService", () => {
 		expect(dayStat?.element).not.toBeNull();
 		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
 	});
+
+	test("aggregates workout deduction from separate file correctly", async () => {
+		const frontmatterMap = {
+			"journal/2024-08-01.md": { "ft.calories": 200, "ft.protein": 10 },
+			"workout/2024-08-01.md": { "ft.calories": -300 },
+		};
+		const app = createApp({ frontmatterMap });
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Protein: 10"]')).not.toBeNull();
+	});
+
+	test("backfills multi-file day with workout in separate file", async () => {
+		const frontmatterMap: Record<string, FrontmatterData | null> = {
+			"journal/2024-08-01.md": null,
+			"workout/2024-08-01.md": null,
+		};
+		const contentMap = {
+			"journal/2024-08-01.md": "#food Breakfast 200kcal 10prot",
+			"workout/2024-08-01.md": "#workout Running 300kcal",
+		};
+		const app = createApp({ frontmatterMap, contentMap });
+		const settings = new SettingsService();
+		settings.initialize(DEFAULT_SETTINGS);
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const dayStat = stats.find(s => s.date === "2024-08-01");
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
+		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Protein: 10"]')).not.toBeNull();
+	});
 });

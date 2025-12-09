@@ -30,6 +30,17 @@ function frontmatterTotalsToNutrientData(totals: FrontmatterTotals): NutrientDat
 	return data;
 }
 
+function clampFrontmatterTotals(totals: FrontmatterTotals): FrontmatterTotals {
+	const clamped: FrontmatterTotals = {};
+	for (const key of Object.keys(totals) as Array<keyof FrontmatterTotals>) {
+		const value = totals[key];
+		if (value !== undefined) {
+			clamped[key] = Math.max(0, value);
+		}
+	}
+	return clamped;
+}
+
 /**
  * Provides aggregated nutrition statistics for daily notes.
  */
@@ -95,7 +106,8 @@ export default class StatsService {
 				}
 
 				if (Object.keys(totals).length > 0) {
-					const nutrientData = frontmatterTotalsToNutrientData(totals);
+					const clampedTotals = clampFrontmatterTotals(totals);
+					const nutrientData = frontmatterTotalsToNutrientData(clampedTotals);
 					element = this.nutritionTotal.formatNutrientData(nutrientData, this.goalsService.currentGoals, false);
 				}
 			}
@@ -148,8 +160,8 @@ export default class StatsService {
 					goals: this.goalsService.currentGoals,
 				});
 
-				if (result?.clampedTotals) {
-					const totals = nutrientDataToFrontmatterTotals(result.clampedTotals);
+				if (result?.combinedTotals) {
+					const totals = nutrientDataToFrontmatterTotals(result.combinedTotals);
 
 					for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
 						if (totals[key] !== undefined) {
@@ -157,7 +169,7 @@ export default class StatsService {
 						}
 					}
 
-					void this.writeFrontmatterTotals(file, result.clampedTotals);
+					void this.writeFrontmatterTotals(file, result.combinedTotals);
 				}
 			} catch (error) {
 				console.error(`Error backfilling ${file.path}:`, error);
@@ -174,7 +186,7 @@ export default class StatsService {
 
 				for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
 					const value = formattedTotals[key as keyof FrontmatterTotals];
-					if (value !== undefined && (value > 0 || key === "calories")) {
+					if (value !== undefined && (value !== 0 || key === "calories")) {
 						frontmatter[frontmatterKey] = value;
 					} else {
 						delete frontmatter[frontmatterKey];

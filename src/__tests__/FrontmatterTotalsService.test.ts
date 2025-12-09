@@ -119,6 +119,18 @@ describe("FrontmatterTotalsService", () => {
 				protein: 0,
 			});
 		});
+
+		test("handles negative values from workout-only files", () => {
+			const frontmatter = {
+				"ft.calories": -300,
+			};
+
+			const result = extractFrontmatterTotals(frontmatter);
+
+			expect(result).toEqual({
+				calories: -300,
+			});
+		});
 	});
 
 	describe("nutrientDataToFrontmatterTotals", () => {
