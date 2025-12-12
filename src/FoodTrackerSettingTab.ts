@@ -105,6 +105,16 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Exercise tag")
+			.setDesc("Tag name for structured exercise entries (without #)")
+			.addText(text =>
+				text.setValue(this.plugin.settings.exerciseTag).onChange(async value => {
+					this.plugin.settings.exerciseTag = value || "exercise";
+					await this.plugin.saveSettings();
+				})
+			);
+
+		new Setting(containerEl)
 			.setName("Show calorie hints")
 			.setDesc("Display calculated calorie values at the end of food and workout entries")
 			.addToggle(toggle =>
