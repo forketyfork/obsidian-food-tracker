@@ -13,6 +13,7 @@ import GoalsService from "./GoalsService";
 import { FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT } from "./icon";
 import StatisticsModal from "./StatisticsModal";
 import StatsService from "./StatsService";
+import FrontmatterTotalsService from "./FrontmatterTotalsService";
 
 export default class FoodTrackerPlugin extends Plugin {
 	settings: FoodTrackerPluginSettings;
@@ -24,6 +25,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	settingsService: SettingsService;
 	goalsService: GoalsService;
 	private statsService: StatsService;
+	private frontmatterTotalsService: FrontmatterTotalsService;
 	private foodHighlightExtension: FoodHighlightExtension;
 	private foodHighlightPostProcessor: FoodHighlightPostProcessor;
 	private goalsHighlightExtension: GoalsHighlightExtension;
@@ -83,8 +85,22 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize document total manager
 		this.documentTotalManager = new DocumentTotalManager();
 
+		// Initialize frontmatter totals service
+		this.frontmatterTotalsService = new FrontmatterTotalsService(
+			this.app,
+			this.nutrientCache,
+			this.settingsService,
+			this.goalsService
+		);
+
 		// Initialize stats service
-		this.statsService = new StatsService(this.app, this.nutritionTotal, this.settingsService, this.goalsService);
+		this.statsService = new StatsService(
+			this.app,
+			this.nutritionTotal,
+			this.settingsService,
+			this.goalsService,
+			this.nutrientCache
+		);
 
 		// Add ribbon button for statistics
 		this.addRibbonIcon(FOOD_TRACKER_ICON_NAME, "Open nutrition statistics", () => {
@@ -163,7 +179,10 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Register metadata cache events to handle frontmatter changes
 		this.registerEvent(
 			this.app.metadataCache.on("changed", file => {
-				this.nutrientCache.handleMetadataChange(file);
+				if (this.nutrientCache.isNutrientFile(file)) {
+					this.nutrientCache.handleMetadataChange(file);
+					this.frontmatterTotalsService.updateNotesReferencingNutrient(file.basename);
+				}
 			})
 		);
 
@@ -179,10 +198,13 @@ export default class FoodTrackerPlugin extends Plugin {
 	 * Setup event listeners for nutrition total updates
 	 */
 	private setupNutritionUpdateEventListeners(): void {
-		// Update nutrition total when files change
+		// Update nutrition total and frontmatter when files change
 		this.registerEvent(
-			this.app.vault.on("modify", () => {
+			this.app.vault.on("modify", file => {
 				void this.updateNutritionTotal();
+				if (file instanceof TFile) {
+					this.frontmatterTotalsService.updateFrontmatterTotals(file);
+				}
 			})
 		);
 
@@ -240,6 +262,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	onunload() {
 		this.documentTotalManager.remove();
 		this.foodSuggest?.suggestionCore?.destroy();
+		this.frontmatterTotalsService?.cancelPendingUpdates();
 	}
 
 	async loadSettings() {

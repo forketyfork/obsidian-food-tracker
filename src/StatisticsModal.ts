@@ -29,7 +29,6 @@ export default class StatisticsModal extends Modal {
 
 		const render = async () => {
 			tableContainer.empty();
-
 			tableContainer.createDiv({
 				cls: "food-tracker-loading",
 				text: "Loading statistics...",

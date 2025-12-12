@@ -15,6 +15,51 @@ export default class NutritionTotal {
 		this.nutrientCache = nutrientCache;
 	}
 
+	formatNutrientData(nutrients: NutrientData, goals?: NutrientGoals, showIcon: boolean = true): HTMLElement | null {
+		if (!nutrients || Object.keys(nutrients).length === 0) {
+			return null;
+		}
+		const goalProgress = goals ? this.calculateGoalProgress(nutrients, goals) : undefined;
+		return this.formatTotal(nutrients, goals, undefined, undefined, undefined, undefined, showIcon, goalProgress);
+	}
+
+	private calculateGoalProgress(
+		consumed: NutrientData,
+		goals: NutrientGoals
+	): Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress> {
+		const progress = {} as Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
+
+		const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size">> = [
+			"calories",
+			"fats",
+			"saturated_fats",
+			"protein",
+			"carbs",
+			"fiber",
+			"sugar",
+			"sodium",
+		];
+
+		for (const key of nutrientKeys) {
+			const goal = goals[key];
+			const consumedValue = consumed[key] ?? 0;
+
+			if (goal !== undefined) {
+				const remaining = goal - consumedValue;
+				const percentConsumed = goal > 0 ? Math.round((consumedValue / goal) * 100) : 0;
+				const percentRemaining = goal > 0 ? Math.max(0, Math.round((remaining / goal) * 100)) : 0;
+
+				progress[key] = {
+					remaining,
+					percentConsumed,
+					percentRemaining,
+				};
+			}
+		}
+
+		return progress;
+	}
+
 	calculateTotalNutrients(
 		content: string,
 		foodTag: string = "food",

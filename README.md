@@ -53,6 +53,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 - **Flexible display modes**: Show nutrition total in status bar or directly in the document
 - **Comprehensive metrics**: Track calories, fats, saturated fats, protein, carbohydrates, fiber, sugar, and sodium
 - **Smart parsing**: Automatically detects and calculates nutrition from food entries throughout your notes
+- **Frontmatter totals**: Nutrition totals are automatically saved to file properties (e.g., `ft-calories`, `ft-protein`) for fast statistics loading and external querying
 
 ### 🎯 Nutrition Goals & Progress Tracking
 
@@ -67,6 +68,7 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
 
 - **Quick access**: Ribbon button opens a window with a month picker and daily macronutrient table
 - **Daily breakdown**: Each row shows the same compact nutrition bar used in the status bar
+- **Fast loading**: Statistics are read from frontmatter properties instead of re-parsing entire files
 - **Flexible matching**: Daily notes are detected using a configurable filename format (default `YYYY-MM-DD`)
 
 ## Installation

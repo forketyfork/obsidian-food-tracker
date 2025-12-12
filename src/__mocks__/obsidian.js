@@ -264,6 +264,9 @@ module.exports = {
 					}
 				},
 			};
+			this.fileManager = {
+				processFrontMatter: () => Promise.resolve(),
+			};
 		}
 	},
 	TextComponent: class TextComponent {
