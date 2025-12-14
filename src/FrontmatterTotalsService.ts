@@ -4,6 +4,7 @@ import NutrientCache from "./NutrientCache";
 import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
+import ExerciseMetadataService from "./ExerciseMetadataService";
 
 export const FRONTMATTER_PREFIX = "ft-";
 
@@ -77,16 +78,24 @@ export default class FrontmatterTotalsService {
 	private settingsService: SettingsService;
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
+	private exerciseMetadataService: ExerciseMetadataService;
 	private pendingUpdates: Map<string, NodeJS.Timeout> = new Map();
 	private filesBeingWritten: Set<string> = new Set();
 	private debounceMs = 500;
 
-	constructor(app: App, nutrientCache: NutrientCache, settingsService: SettingsService, goalsService: GoalsService) {
+	constructor(
+		app: App,
+		nutrientCache: NutrientCache,
+		settingsService: SettingsService,
+		goalsService: GoalsService,
+		exerciseMetadataService: ExerciseMetadataService
+	) {
 		this.app = app;
 		this.nutrientCache = nutrientCache;
 		this.settingsService = settingsService;
 		this.goalsService = goalsService;
 		this.dailyNoteLocator = new DailyNoteLocator(settingsService);
+		this.exerciseMetadataService = exerciseMetadataService;
 	}
 
 	isDailyNote(file: TFile): boolean {
@@ -127,6 +136,8 @@ export default class FrontmatterTotalsService {
 				escapedFoodTag: true,
 				workoutTag: this.settingsService.currentEscapedWorkoutTag,
 				workoutTagEscaped: true,
+				getExerciseCaloriesPerRep: exerciseName =>
+					this.exerciseMetadataService.getCaloriesPerRep(exerciseName, file.path),
 				getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
 				goals: this.goalsService.currentGoals,
 			});

@@ -1,4 +1,5 @@
 import { SPECIAL_CHARS_REGEX, createInlineNutritionRegex, createLinkedFoodRegex, getUnitMultiplier } from "./constants";
+import ExerciseEntryParser, { ExerciseEntry } from "./ExerciseEntryParser";
 
 export interface NutrientData {
 	calories?: number;
@@ -61,6 +62,7 @@ export interface NutritionCalculationParams {
 	escapedFoodTag?: boolean;
 	workoutTag?: string;
 	workoutTagEscaped?: boolean;
+	getExerciseCaloriesPerRep?: (exerciseName: string) => number | null;
 	getNutritionData: (filename: string) => NutrientData | null;
 	onReadError?: (filename: string, error: unknown) => void;
 	goals?: NutrientGoals;
@@ -73,6 +75,7 @@ export function calculateNutritionTotals(params: NutritionCalculationParams): Nu
 		escapedFoodTag = false,
 		workoutTag = "workout",
 		workoutTagEscaped,
+		getExerciseCaloriesPerRep,
 		getNutritionData,
 		onReadError,
 		goals,
@@ -99,9 +102,16 @@ export function calculateNutritionTotals(params: NutritionCalculationParams): Nu
 
 	const foodEntries = parseFoodEntries(safeContent, escapedFood);
 	const inlineEntries = parseInlineNutrientEntries(safeContent, escapedFood);
+	const exerciseEntries =
+		hasWorkoutTag && escapedWorkout ? new ExerciseEntryParser(trimmedWorkoutTag).parse(safeContent) : [];
+	const workoutSets =
+		exerciseEntries.length > 0
+			? convertExerciseEntriesToWorkoutEntries(exerciseEntries, getExerciseCaloriesPerRep)
+			: [];
 	const workoutEntries = escapedWorkout ? parseInlineNutrientEntries(safeContent, escapedWorkout) : [];
+	const combinedWorkoutEntries = [...workoutEntries, ...workoutSets];
 
-	if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
+	if (foodEntries.length === 0 && inlineEntries.length === 0 && combinedWorkoutEntries.length === 0) {
 		return null;
 	}
 
@@ -109,8 +119,8 @@ export function calculateNutritionTotals(params: NutritionCalculationParams): Nu
 	const inlineTotals = calculateInlineTotals(inlineEntries);
 
 	let workoutTotals: NutrientData = {};
-	if (workoutEntries.length > 0) {
-		const validWorkoutEntries = filterValidWorkoutEntries(workoutEntries);
+	if (combinedWorkoutEntries.length > 0) {
+		const validWorkoutEntries = filterValidWorkoutEntries(combinedWorkoutEntries);
 		if (validWorkoutEntries.length > 0) {
 			workoutTotals = calculateInlineTotals(validWorkoutEntries);
 			if (Object.keys(workoutTotals).length > 0) {
@@ -182,6 +192,61 @@ function parseInlineNutrientEntries(content: string, escapedFoodTag: string): In
 	}
 
 	return entries;
+}
+
+function convertExerciseEntriesToWorkoutEntries(
+	exerciseEntries: ExerciseEntry[],
+	resolveCaloriesPerRep?: (exerciseName: string) => number | null
+): InlineNutrientEntry[] {
+	if (!resolveCaloriesPerRep) {
+		return [];
+	}
+
+	const cache = new Map<string, number | null>();
+	const entries: InlineNutrientEntry[] = [];
+
+	for (const entry of exerciseEntries) {
+		const totalReps = entry.sets.reduce((sum, reps) => sum + reps, 0);
+		if (totalReps <= 0) {
+			continue;
+		}
+
+		const normalizedName = entry.name.trim();
+		if (normalizedName.length === 0) {
+			continue;
+		}
+
+		let caloriesPerRep = cache.get(normalizedName);
+		if (caloriesPerRep === undefined) {
+			caloriesPerRep = safeResolveCaloriesPerRep(resolveCaloriesPerRep, normalizedName);
+			cache.set(normalizedName, caloriesPerRep ?? null);
+		}
+
+		if (caloriesPerRep === null || caloriesPerRep === undefined) {
+			continue;
+		}
+
+		const totalCalories = caloriesPerRep * totalReps;
+		if (!Number.isFinite(totalCalories) || totalCalories <= 0) {
+			continue;
+		}
+
+		entries.push({ calories: totalCalories });
+	}
+
+	return entries;
+}
+
+function safeResolveCaloriesPerRep(
+	resolveCaloriesPerRep: (exerciseName: string) => number | null,
+	exerciseName: string
+): number | null {
+	try {
+		return resolveCaloriesPerRep(exerciseName);
+	} catch (error) {
+		console.error(`Error calculating calories for exercise ${exerciseName}:`, error);
+		return null;
+	}
 }
 
 function parseNutrientString(nutrientString: string): InlineNutrientEntry {

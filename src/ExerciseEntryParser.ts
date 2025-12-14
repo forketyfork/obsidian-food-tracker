@@ -14,25 +14,25 @@ export interface ExerciseEntry {
 /**
  * Lightweight parser for exercise entries in daily notes.
  *
- * Expected format: #exercise [[Exercise Name]] 40kg 15-15-15
+ * Expected format: #workout [[Exercise Name]] 40kg 15-15-15
  */
 export default class ExerciseEntryParser {
-	private exerciseTag: string;
+	private workoutTag: string;
 
-	constructor(exerciseTag: string) {
-		this.exerciseTag = exerciseTag.trim();
+	constructor(workoutTag: string) {
+		this.workoutTag = workoutTag.trim();
 	}
 
-	updateExerciseTag(newTag: string): void {
-		this.exerciseTag = newTag.trim();
+	updateWorkoutTag(newTag: string): void {
+		this.workoutTag = newTag.trim();
 	}
 
 	parse(content: string): ExerciseEntry[] {
-		if (this.exerciseTag.length === 0) {
+		if (this.workoutTag.length === 0) {
 			return [];
 		}
 
-		const escapedTag = this.exerciseTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+		const escapedTag = this.workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
 		const regex = new RegExp(
 			`^#${escapedTag}\\s+(?<name>\\[\\[[^\\]]+\\]\\]|[^\\d\\r\\n]+?)\\s+(?:(?<weight>\\d+(?:\\.\\d+)?)(?<unit>kg|kgs?|lb|lbs?)?\\s+)?(?<sets>\\d+(?:-\\d+)*)(?=\\s*$|\\s+[^\\s])`,
 			"i"

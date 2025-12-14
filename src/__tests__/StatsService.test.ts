@@ -4,6 +4,7 @@ import { App, TFile, CachedMetadata } from "obsidian";
 import { SettingsService, DEFAULT_SETTINGS } from "../SettingsService";
 import GoalsService from "../GoalsService";
 import NutrientCache from "../NutrientCache";
+import ExerciseMetadataService from "../ExerciseMetadataService";
 
 function createEl<T extends keyof HTMLElementTagNameMap>(
 	tag: T,
@@ -33,6 +34,7 @@ g.document.createElementNS = jest
 const goalsService = { currentGoals: {} } as unknown as GoalsService;
 
 const dummyCache = { getNutritionData: () => null } as unknown as NutrientCache;
+const exerciseMetadataService = { getCaloriesPerRep: () => null } as unknown as ExerciseMetadataService;
 
 interface FrontmatterData {
 	"ft-calories"?: number;
@@ -98,7 +100,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		expect(stats.length).toBe(31);
@@ -124,7 +126,7 @@ describe("StatsService", () => {
 			dailyNoteFormat: "YYYY.MM.DD",
 		});
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -140,7 +142,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -158,7 +160,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 
@@ -180,7 +182,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 
@@ -202,7 +204,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		await service.getMonthlyStats(2024, 8);
 
@@ -220,7 +222,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 
@@ -246,7 +248,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -270,7 +272,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -285,7 +287,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -304,7 +306,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -321,7 +323,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");
@@ -342,7 +344,7 @@ describe("StatsService", () => {
 		const settings = new SettingsService();
 		settings.initialize(DEFAULT_SETTINGS);
 		const nutritionTotal = new NutritionTotal(dummyCache);
-		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache, exerciseMetadataService);
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const dayStat = stats.find(s => s.date === "2024-08-01");

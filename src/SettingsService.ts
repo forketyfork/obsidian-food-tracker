@@ -3,22 +3,20 @@ import { map } from "rxjs/operators";
 import { SPECIAL_CHARS_REGEX } from "./constants";
 
 export interface FoodTrackerPluginSettings {
-	nutrientDirectory: string;
-	totalDisplayMode: "status-bar" | "document";
 	foodTag: string;
 	workoutTag: string;
-	exerciseTag: string;
+	nutrientDirectory: string;
+	totalDisplayMode: "status-bar" | "document";
 	goalsFile: string;
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
-	nutrientDirectory: "nutrients",
-	totalDisplayMode: "status-bar",
 	foodTag: "food",
 	workoutTag: "workout",
-	exerciseTag: "exercise",
+	nutrientDirectory: "nutrients",
+	totalDisplayMode: "status-bar",
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
@@ -53,13 +51,6 @@ export class SettingsService {
 	}
 
 	/**
-	 * Observable stream of the exercise tag
-	 */
-	get exerciseTag$(): Observable<string> {
-		return this.settings$.pipe(map(settings => settings.exerciseTag));
-	}
-
-	/**
 	 * Observable stream of the escaped food tag (for regex usage)
 	 */
 	get escapedFoodTag$(): Observable<string> {
@@ -71,13 +62,6 @@ export class SettingsService {
 	 */
 	get escapedWorkoutTag$(): Observable<string> {
 		return this.workoutTag$.pipe(map(workoutTag => workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&")));
-	}
-
-	/**
-	 * Observable stream of the escaped exercise tag (for regex usage)
-	 */
-	get escapedExerciseTag$(): Observable<string> {
-		return this.exerciseTag$.pipe(map(exerciseTag => exerciseTag.replace(SPECIAL_CHARS_REGEX, "\\$&")));
 	}
 
 	/**
@@ -137,13 +121,6 @@ export class SettingsService {
 	}
 
 	/**
-	 * Get the current exercise tag value synchronously
-	 */
-	get currentExerciseTag(): string {
-		return this.currentSettings.exerciseTag;
-	}
-
-	/**
 	 * Get the current escaped food tag value synchronously
 	 */
 	get currentEscapedFoodTag(): string {
@@ -158,45 +135,10 @@ export class SettingsService {
 	}
 
 	/**
-	 * Get the current escaped exercise tag value synchronously
-	 */
-	get currentEscapedExerciseTag(): string {
-		return this.currentExerciseTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
-	}
-
-	/**
-	 * Get the current nutrient directory value synchronously
-	 */
-	get currentNutrientDirectory(): string {
-		return this.currentSettings.nutrientDirectory;
-	}
-
-	/**
-	 * Get the current goals file path synchronously
-	 */
-	get currentGoalsFile(): string {
-		return this.currentSettings.goalsFile;
-	}
-
-	/**
-	 * Get the current daily note filename format synchronously
+	 * Get the current daily note format synchronously
 	 */
 	get currentDailyNoteFormat(): string {
 		return this.currentSettings.dailyNoteFormat;
-	}
-
-	/**
-	 * Get the current total display mode value synchronously
-	 */
-	get currentTotalDisplayMode(): "status-bar" | "document" {
-		return this.currentSettings.totalDisplayMode;
-	}
-
-	/**
-	 * Get the current show calorie hints value synchronously
-	 */
-	get currentShowCalorieHints(): boolean {
-		return this.currentSettings.showCalorieHints;
 	}
 
 	/**
@@ -229,13 +171,6 @@ export class SettingsService {
 	 */
 	updateWorkoutTag(newWorkoutTag: string): void {
 		this.updateSetting("workoutTag", newWorkoutTag);
-	}
-
-	/**
-	 * Updates the exercise tag and notifies all subscribers
-	 */
-	updateExerciseTag(newExerciseTag: string): void {
-		this.updateSetting("exerciseTag", newExerciseTag);
 	}
 
 	/**

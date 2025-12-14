@@ -3,6 +3,7 @@ import NutritionTotal from "./NutritionTotal";
 import { SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
+import ExerciseMetadataService from "./ExerciseMetadataService";
 import {
 	extractFrontmatterTotals,
 	FRONTMATTER_KEYS,
@@ -51,13 +52,15 @@ export default class StatsService {
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
 	private nutrientCache: NutrientCache;
+	private exerciseMetadataService: ExerciseMetadataService;
 
 	constructor(
 		app: App,
 		nutritionTotal: NutritionTotal,
 		settingsService: SettingsService,
 		goalsService: GoalsService,
-		nutrientCache: NutrientCache
+		nutrientCache: NutrientCache,
+		exerciseMetadataService: ExerciseMetadataService
 	) {
 		this.app = app;
 		this.nutritionTotal = nutritionTotal;
@@ -65,6 +68,7 @@ export default class StatsService {
 		this.goalsService = goalsService;
 		this.dailyNoteLocator = new DailyNoteLocator(settingsService);
 		this.nutrientCache = nutrientCache;
+		this.exerciseMetadataService = exerciseMetadataService;
 	}
 
 	async getMonthlyStats(year: number, month: number): Promise<DailyStat[]> {
@@ -156,6 +160,8 @@ export default class StatsService {
 					escapedFoodTag: true,
 					workoutTag: this.settingsService.currentEscapedWorkoutTag,
 					workoutTagEscaped: true,
+					getExerciseCaloriesPerRep: exerciseName =>
+						this.exerciseMetadataService.getCaloriesPerRep(exerciseName, file.path),
 					getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
 					goals: this.goalsService.currentGoals,
 				});
