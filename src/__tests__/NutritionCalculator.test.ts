@@ -295,7 +295,7 @@ describe("calculateNutritionTotals", () => {
 		);
 
 		expect(result).not.toBeNull();
-		expect(result?.workoutTotals.calories).toBeCloseTo(120); // 40 reps * 3 kcal
+		expect(result?.workoutTotals.calories).toBeCloseTo(120); // (15+15+10) reps * 3 kcal
 		expect(result?.inlineTotals.calories).toBeCloseTo(180); // 300 - 120
 	});
 

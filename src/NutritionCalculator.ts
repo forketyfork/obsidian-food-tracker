@@ -222,7 +222,7 @@ function convertExerciseEntriesToWorkoutEntries(
 			cache.set(normalizedName, caloriesPerRep ?? null);
 		}
 
-		if (caloriesPerRep === null || caloriesPerRep === undefined) {
+		if (caloriesPerRep === null) {
 			continue;
 		}
 

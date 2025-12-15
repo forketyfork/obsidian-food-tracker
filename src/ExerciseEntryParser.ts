@@ -33,6 +33,24 @@ export default class ExerciseEntryParser {
 		}
 
 		const escapedTag = this.workoutTag.replace(SPECIAL_CHARS_REGEX, "\\$&");
+		/**
+		 * Regex breakdown:
+		 *   ^#${escapedTag}         - Match the workout tag at the start of the line
+		 *   \s+                    - One or more spaces
+		 *   (?<name>               - Capture group "name":
+		 *     \[\[[^\]]+\]\]       -   Either a [[wikilink]]
+		 *     |                    -   or
+		 *     [^\d\r\n]+?          -   any non-digit, non-newline text (exercise name)
+		 *   )
+		 *   \s+                    - One or more spaces
+		 *   (?:
+		 *     (?<weight>\d+(?:\.\d+)?)   - Optional capture group "weight": integer or decimal number
+		 *     (?<unit>kg|kgs?|lb|lbs?)?  - Optional capture group "unit": kg, kgs, lb, lbs
+		 *     \s+                        - One or more spaces
+		 *   )?
+		 *   (?<sets>\d+(?:-\d+)*)   - Capture group "sets": numbers separated by dashes (e.g., 10-10-8)
+		 *   (?=\s*$|\s+[^\s])       - Lookahead: end of line or more non-space text
+		 */
 		const regex = new RegExp(
 			`^#${escapedTag}\\s+(?<name>\\[\\[[^\\]]+\\]\\]|[^\\d\\r\\n]+?)\\s+(?:(?<weight>\\d+(?:\\.\\d+)?)(?<unit>kg|kgs?|lb|lbs?)?\\s+)?(?<sets>\\d+(?:-\\d+)*)(?=\\s*$|\\s+[^\\s])`,
 			"i"
@@ -93,10 +111,10 @@ export default class ExerciseEntryParser {
 			return null;
 		}
 
-		const normalizedUnit = unit?.toLowerCase() ?? "";
+		const lowercaseUnit = unit?.toLowerCase() ?? "";
 		return {
 			value,
-			unit: normalizedUnit.length > 0 ? normalizedUnit : "kg",
+			unit: lowercaseUnit.length > 0 ? lowercaseUnit : "kg",
 		};
 	}
 }
