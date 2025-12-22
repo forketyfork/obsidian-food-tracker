@@ -107,10 +107,14 @@ private updateFrontmatterValues(frontmatter: Record<string, unknown>, totals: Nu
    - When `totals` is null or empty, sets all ft-\* properties to 0 (instead of deleting them)
    - When `totals` has values, applies the formatted values and sets missing properties to 0
 
-2. **Updated private `updateFrontmatterValues` method**:
+2. **Updated private `updateFrontmatterValues` method** in `FrontmatterTotalsService.ts`:
    - Now delegates to the new `applyNutrientTotalsToFrontmatter` function
 
-3. **Added regression tests** in `FrontmatterTotalsService.test.ts`:
+3. **Updated `writeFrontmatterTotals` method** in `StatsService.ts`:
+   - Now reuses `applyNutrientTotalsToFrontmatter` for consistency
+   - Ensures frontmatter properties are set to 0 instead of deleted
+
+4. **Added regression tests** in `FrontmatterTotalsService.test.ts`:
    - Test: sets all values to 0 when totals is null
    - Test: sets all values to 0 when totals is empty object
    - Test: applies calculated totals to frontmatter
