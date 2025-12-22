@@ -1,6 +1,7 @@
 import {
 	extractFrontmatterTotals,
 	nutrientDataToFrontmatterTotals,
+	applyNutrientTotalsToFrontmatter,
 	FRONTMATTER_KEYS,
 	FRONTMATTER_PREFIX,
 } from "../FrontmatterTotalsService";
@@ -208,6 +209,92 @@ describe("FrontmatterTotalsService", () => {
 				calories: 100,
 			});
 			expect("serving_size" in result).toBe(false);
+		});
+	});
+
+	describe("applyNutrientTotalsToFrontmatter", () => {
+		test("sets all values to 0 when totals is null", () => {
+			const frontmatter: Record<string, unknown> = {
+				title: "My Note",
+				"ft-calories": 500,
+				"ft-protein": 25,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, null);
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-fats"]).toBe(0);
+			expect(frontmatter["ft-saturated_fats"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBe(0);
+			expect(frontmatter["ft-carbs"]).toBe(0);
+			expect(frontmatter["ft-fiber"]).toBe(0);
+			expect(frontmatter["ft-sugar"]).toBe(0);
+			expect(frontmatter["ft-sodium"]).toBe(0);
+			expect(frontmatter.title).toBe("My Note");
+		});
+
+		test("sets all values to 0 when totals is empty object", () => {
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 1000,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {});
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBe(0);
+		});
+
+		test("applies calculated totals to frontmatter", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 1500,
+				protein: 75.5,
+				fats: 60.3,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(1500);
+			expect(frontmatter["ft-protein"]).toBe(75.5);
+			expect(frontmatter["ft-fats"]).toBe(60.3);
+			expect(frontmatter["ft-carbs"]).toBe(0);
+			expect(frontmatter["ft-fiber"]).toBe(0);
+		});
+
+		test("preserves non-ft properties in frontmatter", () => {
+			const frontmatter: Record<string, unknown> = {
+				title: "Daily Note",
+				date: "2024-01-15",
+				tags: ["daily"],
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, null);
+
+			expect(frontmatter.title).toBe("Daily Note");
+			expect(frontmatter.date).toBe("2024-01-15");
+			expect(frontmatter.tags).toEqual(["daily"]);
+		});
+
+		test("rounds values according to nutrientDataToFrontmatterTotals", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 1523.7,
+				protein: 75.55,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(1524);
+			expect(frontmatter["ft-protein"]).toBe(75.6);
+		});
+
+		test("handles negative calories from workout-only notes", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: -300,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(-300);
+			expect(frontmatter["ft-protein"]).toBe(0);
 		});
 	});
 });

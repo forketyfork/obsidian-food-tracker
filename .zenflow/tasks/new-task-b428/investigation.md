@@ -3,6 +3,7 @@
 ## Bug Summary
 
 When a daily note has no `#food` entries, the FoodTracker plugin automatically deletes all frontmatter properties (`ft-calories`, `ft-protein`, etc.) instead of setting them to 0. This prevents users from:
+
 - Having these metadata fields in their daily note templates
 - Keeping consistency with notes that have no food entries
 - Refactoring old notes to include this metadata
@@ -15,7 +16,7 @@ The issue originates from two locations in the codebase:
 
 ```typescript
 if (foodEntries.length === 0 && inlineEntries.length === 0 && workoutEntries.length === 0) {
-    return null;
+	return null;
 }
 ```
 
@@ -40,11 +41,12 @@ When `totals` is `null` (no entries found), all frontmatter properties are delet
 ### 3. StatsService.ts (lines 182-199)
 
 Similar deletion logic exists in `writeFrontmatterTotals()`:
+
 ```typescript
 if (value !== undefined && (value !== 0 || key === "calories")) {
-    frontmatter[frontmatterKey] = value;
+	frontmatter[frontmatterKey] = value;
 } else {
-    delete frontmatter[frontmatterKey];
+	delete frontmatter[frontmatterKey];
 }
 ```
 
@@ -91,7 +93,31 @@ private updateFrontmatterValues(frontmatter: Record<string, unknown>, totals: Nu
 
 ## Test Cases Needed
 
-1. When a daily note has no #food entries, all ft-* properties should be set to 0
-2. When a daily note has entries that sum to 0, all ft-* properties should be set to 0
-3. When a daily note has entries, ft-* properties should reflect calculated values
+1. When a daily note has no #food entries, all ft-\* properties should be set to 0
+2. When a daily note has entries that sum to 0, all ft-\* properties should be set to 0
+3. When a daily note has entries, ft-\* properties should reflect calculated values
 4. Non-daily notes should not be affected (no frontmatter changes)
+
+## Implementation Notes
+
+### Changes Made
+
+1. **Created new exported function `applyNutrientTotalsToFrontmatter`** in `FrontmatterTotalsService.ts`:
+   - Extracted the frontmatter update logic into a testable exported function
+   - When `totals` is null or empty, sets all ft-\* properties to 0 (instead of deleting them)
+   - When `totals` has values, applies the formatted values and sets missing properties to 0
+
+2. **Updated private `updateFrontmatterValues` method**:
+   - Now delegates to the new `applyNutrientTotalsToFrontmatter` function
+
+3. **Added regression tests** in `FrontmatterTotalsService.test.ts`:
+   - Test: sets all values to 0 when totals is null
+   - Test: sets all values to 0 when totals is empty object
+   - Test: applies calculated totals to frontmatter
+   - Test: preserves non-ft properties in frontmatter
+   - Test: rounds values according to nutrientDataToFrontmatterTotals
+   - Test: handles negative calories from workout-only notes
+
+### Test Results
+
+All 258 tests pass, including 6 new tests for the `applyNutrientTotalsToFrontmatter` function.
