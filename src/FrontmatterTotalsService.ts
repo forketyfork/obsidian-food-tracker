@@ -77,7 +77,9 @@ export function applyNutrientTotalsToFrontmatter(
 ): void {
 	if (!totals || Object.keys(totals).length === 0) {
 		for (const frontmatterKey of Object.values(FRONTMATTER_KEYS)) {
-			frontmatter[frontmatterKey] = 0;
+			if (frontmatterKey in frontmatter) {
+				frontmatter[frontmatterKey] = 0;
+			}
 		}
 		return;
 	}
@@ -87,8 +89,12 @@ export function applyNutrientTotalsToFrontmatter(
 	for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
 		const value = formattedTotals[key as FrontmatterKey];
 		if (value !== undefined) {
-			frontmatter[frontmatterKey] = value;
-		} else {
+			if (value !== 0) {
+				frontmatter[frontmatterKey] = value;
+			} else if (frontmatterKey in frontmatter) {
+				frontmatter[frontmatterKey] = 0;
+			}
+		} else if (frontmatterKey in frontmatter) {
 			frontmatter[frontmatterKey] = 0;
 		}
 	}
