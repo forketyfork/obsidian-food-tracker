@@ -1,7 +1,7 @@
 import StatsService from "../StatsService";
 import NutritionTotal from "../NutritionTotal";
 import { App, TFile, CachedMetadata } from "obsidian";
-import { SettingsService, DEFAULT_SETTINGS } from "../SettingsService";
+import { SettingsService, DEFAULT_SETTINGS, DEFAULT_FRONTMATTER_FIELD_NAMES } from "../SettingsService";
 import GoalsService from "../GoalsService";
 import NutrientCache from "../NutrientCache";
 
@@ -34,16 +34,7 @@ const goalsService = { currentGoals: {} } as unknown as GoalsService;
 
 const dummyCache = { getNutritionData: () => null } as unknown as NutrientCache;
 
-interface FrontmatterData {
-	"ft-calories"?: number;
-	"ft-fats"?: number;
-	"ft-protein"?: number;
-	"ft-carbs"?: number;
-	"ft-fiber"?: number;
-	"ft-sugar"?: number;
-	"ft-sodium"?: number;
-	"ft-saturated_fats"?: number;
-}
+type FrontmatterData = Record<string, number | undefined>;
 
 interface AppTestConfig {
 	frontmatterMap: Record<string, FrontmatterData | null>;
@@ -348,5 +339,58 @@ describe("StatsService", () => {
 		const dayStat = stats.find(s => s.date === "2024-08-01");
 		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 0"]')).not.toBeNull();
 		expect(dayStat?.element?.querySelector('[data-food-tracker-tooltip*="Protein: 10"]')).not.toBeNull();
+	});
+
+	test("aggregates using custom frontmatter field names", async () => {
+		const frontmatterMap = {
+			"2024-08-01.md": { calories: 400, protein: 40 },
+			"2024-08-02.md": { calories: 250 },
+		};
+		const app = createApp({ frontmatterMap });
+		const settings = new SettingsService();
+		settings.initialize({
+			...DEFAULT_SETTINGS,
+			frontmatterFieldNames: {
+				...DEFAULT_FRONTMATTER_FIELD_NAMES,
+				calories: "calories",
+				protein: "protein",
+			},
+		});
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const day1 = stats.find(s => s.date === "2024-08-01");
+		const day2 = stats.find(s => s.date === "2024-08-02");
+
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 400"]')).not.toBeNull();
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Protein: 40"]')).not.toBeNull();
+		expect(day2?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 250"]')).not.toBeNull();
+	});
+
+	test("backfills content when using custom field names", async () => {
+		const frontmatterMap: Record<string, FrontmatterData | null> = {
+			"2024-08-01.md": null,
+		};
+		const contentMap = {
+			"2024-08-01.md": "#food Breakfast 300kcal 25prot",
+		};
+		const app = createApp({ frontmatterMap, contentMap });
+		const settings = new SettingsService();
+		settings.initialize({
+			...DEFAULT_SETTINGS,
+			frontmatterFieldNames: {
+				...DEFAULT_FRONTMATTER_FIELD_NAMES,
+				calories: "calories",
+				protein: "protein",
+			},
+		});
+		const nutritionTotal = new NutritionTotal(dummyCache);
+		const service = new StatsService(app, nutritionTotal, settings, goalsService, dummyCache);
+
+		const stats = await service.getMonthlyStats(2024, 8);
+		const day1 = stats.find(s => s.date === "2024-08-01");
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*=\"Calories: 300\"]')).not.toBeNull();
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*=\"Protein: 25\"]')).not.toBeNull();
 	});
 });

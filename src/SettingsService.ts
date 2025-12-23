@@ -13,7 +13,18 @@ export interface FrontmatterFieldNames {
 	sodium: string;
 }
 
-export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = {
+const FRONTMATTER_KEYS_ORDER: Array<keyof FrontmatterFieldNames> = [
+	"calories",
+	"fats",
+	"saturated_fats",
+	"protein",
+	"carbs",
+	"fiber",
+	"sugar",
+	"sodium",
+];
+
+export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = Object.freeze({
 	calories: "ft-calories",
 	fats: "ft-fats",
 	saturated_fats: "ft-saturated_fats",
@@ -22,7 +33,47 @@ export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = {
 	fiber: "ft-fiber",
 	sugar: "ft-sugar",
 	sodium: "ft-sodium",
-};
+});
+
+export function cloneFrontmatterFieldNames(names: FrontmatterFieldNames): FrontmatterFieldNames {
+	return { ...names };
+}
+
+function sanitizeFrontmatterFieldNames(
+	fieldNames: Partial<FrontmatterFieldNames>,
+	base: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
+): FrontmatterFieldNames {
+	const merged: FrontmatterFieldNames = {
+		...base,
+		...fieldNames,
+	};
+
+	const sanitized: FrontmatterFieldNames = { ...merged } as FrontmatterFieldNames;
+	const seen = new Set<string>();
+
+	for (const key of FRONTMATTER_KEYS_ORDER) {
+		const rawValue = merged[key];
+		const trimmed = (rawValue ?? "").trim();
+		const value = trimmed || base[key];
+
+		if (seen.has(value)) {
+			sanitized[key] = base[key];
+			continue;
+		}
+
+		sanitized[key] = value;
+		seen.add(value);
+	}
+
+	return sanitized;
+}
+
+export function sanitizeSettings(settings: FoodTrackerPluginSettings): FoodTrackerPluginSettings {
+	return {
+		...settings,
+		frontmatterFieldNames: sanitizeFrontmatterFieldNames(settings.frontmatterFieldNames),
+	};
+}
 
 export interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
@@ -43,7 +94,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
-	frontmatterFieldNames: DEFAULT_FRONTMATTER_FIELD_NAMES,
+	frontmatterFieldNames: cloneFrontmatterFieldNames(DEFAULT_FRONTMATTER_FIELD_NAMES),
 };
 
 /**
@@ -204,14 +255,15 @@ export class SettingsService {
 	 * Get the current frontmatter field names synchronously
 	 */
 	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
-		return this.currentSettings.frontmatterFieldNames;
+		return cloneFrontmatterFieldNames(this.currentSettings.frontmatterFieldNames);
 	}
 
 	/**
 	 * Updates all settings and notifies all subscribers
 	 */
 	updateSettings(newSettings: FoodTrackerPluginSettings): void {
-		this.settingsSubject.next(newSettings);
+		const sanitized = sanitizeSettings(newSettings);
+		this.settingsSubject.next(sanitized);
 	}
 
 	/**
@@ -278,11 +330,8 @@ export class SettingsService {
 	 * Updates frontmatter field names (partial update supported)
 	 */
 	updateFrontmatterFieldNames(fieldNames: Partial<FrontmatterFieldNames>): void {
-		const currentFieldNames = this.currentFrontmatterFieldNames;
-		this.updateSetting("frontmatterFieldNames", {
-			...currentFieldNames,
-			...fieldNames,
-		});
+		const sanitized = sanitizeFrontmatterFieldNames(fieldNames, this.currentFrontmatterFieldNames);
+		this.updateSetting("frontmatterFieldNames", sanitized);
 	}
 
 	/**

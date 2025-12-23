@@ -8,7 +8,7 @@ import FoodHighlightExtension from "./FoodHighlightExtension";
 import FoodHighlightPostProcessor from "./FoodHighlightPostProcessor";
 import GoalsHighlightExtension from "./GoalsHighlightExtension";
 import DocumentTotalManager from "./DocumentTotalManager";
-import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS } from "./SettingsService";
+import { SettingsService, FoodTrackerPluginSettings, DEFAULT_SETTINGS, sanitizeSettings } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import { FOOD_TRACKER_ICON_NAME, FOOD_TRACKER_SVG_CONTENT } from "./icon";
 import StatisticsModal from "./StatisticsModal";
@@ -275,7 +275,13 @@ export default class FoodTrackerPlugin extends Plugin {
 			totalDisplayMode: Platform.isMobile ? "document" : DEFAULT_SETTINGS.totalDisplayMode,
 		} as FoodTrackerPluginSettings;
 
-		this.settings = Object.assign({}, mobileAwareDefaults, savedData);
+		const merged = Object.assign({}, mobileAwareDefaults, savedData);
+		merged.frontmatterFieldNames = {
+			...DEFAULT_SETTINGS.frontmatterFieldNames,
+			...(savedData.frontmatterFieldNames ?? {}),
+		};
+
+		this.settings = sanitizeSettings(merged);
 	}
 
 	async saveSettings() {
