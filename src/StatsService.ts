@@ -8,6 +8,7 @@ import {
 	FRONTMATTER_KEYS,
 	FrontmatterTotals,
 	nutrientDataToFrontmatterTotals,
+	applyNutrientTotalsToFrontmatter,
 } from "./FrontmatterTotalsService";
 import { NutrientData, calculateNutritionTotals } from "./NutritionCalculator";
 import NutrientCache from "./NutrientCache";
@@ -182,16 +183,7 @@ export default class StatsService {
 	private async writeFrontmatterTotals(file: TFile, totals: NutrientData): Promise<void> {
 		try {
 			await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-				const formattedTotals = nutrientDataToFrontmatterTotals(totals);
-
-				for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
-					const value = formattedTotals[key as keyof FrontmatterTotals];
-					if (value !== undefined && (value !== 0 || key === "calories")) {
-						frontmatter[frontmatterKey] = value;
-					} else {
-						delete frontmatter[frontmatterKey];
-					}
-				}
+				applyNutrientTotalsToFrontmatter(frontmatter, totals);
 			});
 		} catch (error) {
 			console.error(`Error writing frontmatter totals for ${file.path}:`, error);
