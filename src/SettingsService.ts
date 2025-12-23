@@ -2,6 +2,28 @@ import { BehaviorSubject, Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { SPECIAL_CHARS_REGEX } from "./constants";
 
+export interface FrontmatterFieldNames {
+	calories: string;
+	fats: string;
+	saturated_fats: string;
+	protein: string;
+	carbs: string;
+	fiber: string;
+	sugar: string;
+	sodium: string;
+}
+
+export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = {
+	calories: "ft-calories",
+	fats: "ft-fats",
+	saturated_fats: "ft-saturated_fats",
+	protein: "ft-protein",
+	carbs: "ft-carbs",
+	fiber: "ft-fiber",
+	sugar: "ft-sugar",
+	sodium: "ft-sodium",
+};
+
 export interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
@@ -10,6 +32,7 @@ export interface FoodTrackerPluginSettings {
 	goalsFile: string;
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
+	frontmatterFieldNames: FrontmatterFieldNames;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
@@ -20,6 +43,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
+	frontmatterFieldNames: DEFAULT_FRONTMATTER_FIELD_NAMES,
 };
 
 /**
@@ -100,6 +124,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the frontmatter field names
+	 */
+	get frontmatterFieldNames$(): Observable<FrontmatterFieldNames> {
+		return this.settings$.pipe(map(settings => settings.frontmatterFieldNames));
+	}
+
+	/**
 	 * Get the current settings value synchronously
 	 */
 	get currentSettings(): FoodTrackerPluginSettings {
@@ -170,6 +201,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Get the current frontmatter field names synchronously
+	 */
+	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
+		return this.currentSettings.frontmatterFieldNames;
+	}
+
+	/**
 	 * Updates all settings and notifies all subscribers
 	 */
 	updateSettings(newSettings: FoodTrackerPluginSettings): void {
@@ -234,6 +272,17 @@ export class SettingsService {
 	 */
 	updateShowCalorieHints(show: boolean): void {
 		this.updateSetting("showCalorieHints", show);
+	}
+
+	/**
+	 * Updates frontmatter field names (partial update supported)
+	 */
+	updateFrontmatterFieldNames(fieldNames: Partial<FrontmatterFieldNames>): void {
+		const currentFieldNames = this.currentFrontmatterFieldNames;
+		this.updateSetting("frontmatterFieldNames", {
+			...currentFieldNames,
+			...fieldNames,
+		});
 	}
 
 	/**
