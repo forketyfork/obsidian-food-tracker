@@ -31,7 +31,9 @@ export function extractFrontmatterTotals(
 	const totals: FrontmatterTotals = {};
 	let hasAnyValue = false;
 
-	for (const [key, frontmatterKey] of Object.entries(fieldNames)) {
+	const keys = Object.keys(fieldNames) as FrontmatterKey[];
+	for (const key of keys) {
+		const frontmatterKey = fieldNames[key];
 		const value = frontmatter[frontmatterKey];
 		if (value !== undefined && value !== null) {
 			let numValue: number;
@@ -43,7 +45,7 @@ export function extractFrontmatterTotals(
 				continue;
 			}
 			if (!isNaN(numValue)) {
-				totals[key as FrontmatterKey] = numValue;
+				totals[key] = numValue;
 				hasAnyValue = true;
 			}
 		}
@@ -72,8 +74,11 @@ export function applyNutrientTotalsToFrontmatter(
 	totals: NutrientData | null,
 	fieldNames: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
 ): void {
+	const keys = Object.keys(fieldNames) as FrontmatterKey[];
+
 	if (!totals || Object.keys(totals).length === 0) {
-		for (const frontmatterKey of Object.values(fieldNames)) {
+		for (const key of keys) {
+			const frontmatterKey = fieldNames[key];
 			if (frontmatterKey in frontmatter) {
 				frontmatter[frontmatterKey] = 0;
 			}
@@ -83,8 +88,9 @@ export function applyNutrientTotalsToFrontmatter(
 
 	const formattedTotals = nutrientDataToFrontmatterTotals(totals);
 
-	for (const [key, frontmatterKey] of Object.entries(fieldNames)) {
-		const value = formattedTotals[key as FrontmatterKey];
+	for (const key of keys) {
+		const frontmatterKey = fieldNames[key];
+		const value = formattedTotals[key];
 		if (value !== undefined) {
 			if (value !== 0) {
 				frontmatter[frontmatterKey] = value;

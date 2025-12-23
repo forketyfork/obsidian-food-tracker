@@ -149,10 +149,7 @@ export default class StatsService {
 		return { totals: aggregated, filesToBackfill };
 	}
 
-	private async backfillFiles(
-		files: TFile[],
-		fieldNames: FrontmatterFieldNames
-	): Promise<FrontmatterTotals> {
+	private async backfillFiles(files: TFile[], fieldNames: FrontmatterFieldNames): Promise<FrontmatterTotals> {
 		const aggregated: FrontmatterTotals = {};
 
 		for (const file of files) {
