@@ -1,12 +1,12 @@
 import { App, TFile } from "obsidian";
 import NutritionTotal from "./NutritionTotal";
-import { SettingsService } from "./SettingsService";
+import { FrontmatterFieldNames, SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
 import {
 	extractFrontmatterTotals,
-	FRONTMATTER_KEYS,
 	FrontmatterTotals,
+	FrontmatterKey,
 	nutrientDataToFrontmatterTotals,
 	applyNutrientTotalsToFrontmatter,
 } from "./FrontmatterTotalsService";
@@ -95,11 +95,12 @@ export default class StatsService {
 			let element: HTMLElement | null = null;
 
 			if (matchingFiles?.length) {
-				const { totals, filesToBackfill } = this.aggregateFrontmatterTotals(matchingFiles);
+				const fieldNames = this.settingsService.currentFrontmatterFieldNames;
+				const { totals, filesToBackfill } = this.aggregateFrontmatterTotals(matchingFiles, fieldNames);
 
 				if (filesToBackfill.length > 0) {
-					const backfilledTotals = await this.backfillFiles(filesToBackfill);
-					for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+					const backfilledTotals = await this.backfillFiles(filesToBackfill, fieldNames);
+					for (const key of Object.keys(fieldNames) as FrontmatterKey[]) {
 						if (backfilledTotals[key] !== undefined) {
 							totals[key] = (totals[key] ?? 0) + backfilledTotals[key];
 						}
@@ -119,7 +120,10 @@ export default class StatsService {
 		return Promise.all(statsPromises);
 	}
 
-	private aggregateFrontmatterTotals(files: TFile[]): {
+	private aggregateFrontmatterTotals(
+		files: TFile[],
+		fieldNames: FrontmatterFieldNames
+	): {
 		totals: FrontmatterTotals;
 		filesToBackfill: TFile[];
 	} {
@@ -128,14 +132,14 @@ export default class StatsService {
 
 		for (const file of files) {
 			const cache = this.app.metadataCache.getFileCache(file);
-			const totals = cache?.frontmatter ? extractFrontmatterTotals(cache.frontmatter) : null;
+			const totals = cache?.frontmatter ? extractFrontmatterTotals(cache.frontmatter, fieldNames) : null;
 
 			if (!totals) {
 				filesToBackfill.push(file);
 				continue;
 			}
 
-			for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+			for (const key of Object.keys(fieldNames) as FrontmatterKey[]) {
 				if (totals[key] !== undefined) {
 					aggregated[key] = (aggregated[key] ?? 0) + totals[key];
 				}
@@ -145,7 +149,7 @@ export default class StatsService {
 		return { totals: aggregated, filesToBackfill };
 	}
 
-	private async backfillFiles(files: TFile[]): Promise<FrontmatterTotals> {
+	private async backfillFiles(files: TFile[], fieldNames: FrontmatterFieldNames): Promise<FrontmatterTotals> {
 		const aggregated: FrontmatterTotals = {};
 
 		for (const file of files) {
@@ -164,13 +168,13 @@ export default class StatsService {
 				if (result?.combinedTotals) {
 					const totals = nutrientDataToFrontmatterTotals(result.combinedTotals);
 
-					for (const key of Object.keys(FRONTMATTER_KEYS) as Array<keyof FrontmatterTotals>) {
+					for (const key of Object.keys(fieldNames) as FrontmatterKey[]) {
 						if (totals[key] !== undefined) {
 							aggregated[key] = (aggregated[key] ?? 0) + totals[key];
 						}
 					}
 
-					void this.writeFrontmatterTotals(file, result.combinedTotals);
+					void this.writeFrontmatterTotals(file, result.combinedTotals, fieldNames);
 				}
 			} catch (error) {
 				console.error(`Error backfilling ${file.path}:`, error);
@@ -180,10 +184,14 @@ export default class StatsService {
 		return aggregated;
 	}
 
-	private async writeFrontmatterTotals(file: TFile, totals: NutrientData): Promise<void> {
+	private async writeFrontmatterTotals(
+		file: TFile,
+		totals: NutrientData,
+		fieldNames: FrontmatterFieldNames
+	): Promise<void> {
 		try {
 			await this.app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => {
-				applyNutrientTotalsToFrontmatter(frontmatter, totals);
+				applyNutrientTotalsToFrontmatter(frontmatter, totals, fieldNames);
 			});
 		} catch (error) {
 			console.error(`Error writing frontmatter totals for ${file.path}:`, error);
