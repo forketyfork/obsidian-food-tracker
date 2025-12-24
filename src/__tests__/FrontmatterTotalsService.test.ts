@@ -9,13 +9,13 @@ import { NutrientData } from "../NutritionCalculator";
 import { DEFAULT_FRONTMATTER_FIELD_NAMES, FrontmatterFieldNames } from "../SettingsService";
 
 describe("FrontmatterTotalsService", () => {
-	describe("FRONTMATTER_PREFIX (deprecated)", () => {
+	describe("FRONTMATTER_PREFIX", () => {
 		test("should be 'ft-'", () => {
 			expect(FRONTMATTER_PREFIX).toBe("ft-");
 		});
 	});
 
-	describe("FRONTMATTER_KEYS (deprecated)", () => {
+	describe("FRONTMATTER_KEYS", () => {
 		test("should have correct prefixed keys for all nutrients", () => {
 			expect(FRONTMATTER_KEYS.calories).toBe("ft-calories");
 			expect(FRONTMATTER_KEYS.fats).toBe("ft-fats");

@@ -5,10 +5,7 @@ import { DEFAULT_FRONTMATTER_FIELD_NAMES, FrontmatterFieldNames, SettingsService
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
 
-/** @deprecated Use DEFAULT_FRONTMATTER_FIELD_NAMES from SettingsService instead */
 export const FRONTMATTER_PREFIX = "ft-";
-
-/** @deprecated Use FrontmatterFieldNames from SettingsService instead */
 export const FRONTMATTER_KEYS = DEFAULT_FRONTMATTER_FIELD_NAMES;
 
 export type FrontmatterKey = keyof FrontmatterFieldNames;
