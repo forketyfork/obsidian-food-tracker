@@ -72,6 +72,35 @@ export function nutrientDataToFrontmatterTotals(data: NutrientData): Frontmatter
 	return totals;
 }
 
+export function applyNutrientTotalsToFrontmatter(
+	frontmatter: Record<string, unknown>,
+	totals: NutrientData | null
+): void {
+	if (!totals || Object.keys(totals).length === 0) {
+		for (const frontmatterKey of Object.values(FRONTMATTER_KEYS)) {
+			if (frontmatterKey in frontmatter) {
+				frontmatter[frontmatterKey] = 0;
+			}
+		}
+		return;
+	}
+
+	const formattedTotals = nutrientDataToFrontmatterTotals(totals);
+
+	for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
+		const value = formattedTotals[key as FrontmatterKey];
+		if (value !== undefined) {
+			if (value !== 0) {
+				frontmatter[frontmatterKey] = value;
+			} else if (frontmatterKey in frontmatter) {
+				frontmatter[frontmatterKey] = 0;
+			}
+		} else if (frontmatterKey in frontmatter) {
+			frontmatter[frontmatterKey] = 0;
+		}
+	}
+}
+
 export default class FrontmatterTotalsService {
 	private app: App;
 	private nutrientCache: NutrientCache;
@@ -156,23 +185,7 @@ export default class FrontmatterTotalsService {
 	}
 
 	private updateFrontmatterValues(frontmatter: Record<string, unknown>, totals: NutrientData | null): void {
-		if (!totals || Object.keys(totals).length === 0) {
-			for (const frontmatterKey of Object.values(FRONTMATTER_KEYS)) {
-				delete frontmatter[frontmatterKey];
-			}
-			return;
-		}
-
-		const formattedTotals = nutrientDataToFrontmatterTotals(totals);
-
-		for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
-			const value = formattedTotals[key as FrontmatterKey];
-			if (value !== undefined && (value !== 0 || key === "calories")) {
-				frontmatter[frontmatterKey] = value;
-			} else {
-				delete frontmatter[frontmatterKey];
-			}
-		}
+		applyNutrientTotalsToFrontmatter(frontmatter, totals);
 	}
 
 	cancelPendingUpdates(): void {

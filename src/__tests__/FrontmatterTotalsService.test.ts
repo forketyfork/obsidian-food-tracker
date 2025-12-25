@@ -1,6 +1,7 @@
 import {
 	extractFrontmatterTotals,
 	nutrientDataToFrontmatterTotals,
+	applyNutrientTotalsToFrontmatter,
 	FRONTMATTER_KEYS,
 	FRONTMATTER_PREFIX,
 } from "../FrontmatterTotalsService";
@@ -208,6 +209,138 @@ describe("FrontmatterTotalsService", () => {
 				calories: 100,
 			});
 			expect("serving_size" in result).toBe(false);
+		});
+	});
+
+	describe("applyNutrientTotalsToFrontmatter", () => {
+		test("sets existing values to 0 when totals is null", () => {
+			const frontmatter: Record<string, unknown> = {
+				title: "My Note",
+				"ft-calories": 500,
+				"ft-protein": 25,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, null);
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBe(0);
+			expect(frontmatter["ft-fats"]).toBeUndefined();
+			expect(frontmatter["ft-saturated_fats"]).toBeUndefined();
+			expect(frontmatter["ft-carbs"]).toBeUndefined();
+			expect(frontmatter["ft-fiber"]).toBeUndefined();
+			expect(frontmatter["ft-sugar"]).toBeUndefined();
+			expect(frontmatter["ft-sodium"]).toBeUndefined();
+			expect(frontmatter.title).toBe("My Note");
+		});
+
+		test("sets existing values to 0 when totals is empty object", () => {
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 1000,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {});
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBeUndefined();
+		});
+
+		test("applies calculated totals to frontmatter", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 1500,
+				protein: 75.5,
+				fats: 60.3,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(1500);
+			expect(frontmatter["ft-protein"]).toBe(75.5);
+			expect(frontmatter["ft-fats"]).toBe(60.3);
+			expect(frontmatter["ft-carbs"]).toBeUndefined();
+			expect(frontmatter["ft-fiber"]).toBeUndefined();
+		});
+
+		test("preserves non-ft properties in frontmatter", () => {
+			const frontmatter: Record<string, unknown> = {
+				title: "Daily Note",
+				date: "2024-01-15",
+				tags: ["daily"],
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, null);
+
+			expect(frontmatter.title).toBe("Daily Note");
+			expect(frontmatter.date).toBe("2024-01-15");
+			expect(frontmatter.tags).toEqual(["daily"]);
+		});
+
+		test("rounds values according to nutrientDataToFrontmatterTotals", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 1523.7,
+				protein: 75.55,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(1524);
+			expect(frontmatter["ft-protein"]).toBe(75.6);
+		});
+
+		test("handles negative calories from workout-only notes", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: -300,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(-300);
+			expect(frontmatter["ft-protein"]).toBeUndefined();
+		});
+
+		test("keeps existing zero values", () => {
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 0,
+				"ft-protein": 0,
+				"ft-carbs": 100,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 0,
+				protein: 50,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBe(50);
+			expect(frontmatter["ft-carbs"]).toBe(0);
+			expect(frontmatter["ft-fats"]).toBeUndefined();
+		});
+
+		test("does not create zero-valued properties that don't exist", () => {
+			const frontmatter: Record<string, unknown> = {};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, {
+				calories: 1000,
+				protein: 0,
+			});
+
+			expect(frontmatter["ft-calories"]).toBe(1000);
+			expect(frontmatter["ft-protein"]).toBeUndefined();
+			expect(frontmatter["ft-fats"]).toBeUndefined();
+		});
+
+		test("keeps existing properties with zero when totals is null", () => {
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 500,
+				"ft-protein": 25,
+				"ft-carbs": 100,
+			};
+
+			applyNutrientTotalsToFrontmatter(frontmatter, null);
+
+			expect(frontmatter["ft-calories"]).toBe(0);
+			expect(frontmatter["ft-protein"]).toBe(0);
+			expect(frontmatter["ft-carbs"]).toBe(0);
+			expect(frontmatter["ft-fats"]).toBeUndefined();
 		});
 	});
 });
