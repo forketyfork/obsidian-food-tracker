@@ -67,7 +67,8 @@ export default class NutritionTotal {
 		goals?: NutrientGoals,
 		workoutTag: string = "workout",
 		workoutTagEscaped?: boolean,
-		showIcon: boolean = true
+		showIcon: boolean = true,
+		getExerciseCaloriesPerRep?: (exerciseName: string) => number | null
 	): HTMLElement | null {
 		try {
 			const result = calculateNutritionTotals({
@@ -76,6 +77,7 @@ export default class NutritionTotal {
 				escapedFoodTag: escaped,
 				workoutTag,
 				workoutTagEscaped,
+				getExerciseCaloriesPerRep,
 				getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
 				goals,
 			});

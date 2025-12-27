@@ -2,6 +2,7 @@ import { Plugin, MarkdownView, TFile, addIcon, Platform } from "obsidian";
 import FoodTrackerSettingTab from "./FoodTrackerSettingTab";
 import NutrientModal from "./NutrientModal";
 import NutrientCache from "./NutrientCache";
+import ExerciseMetadataService from "./ExerciseMetadataService";
 import FoodSuggest from "./FoodSuggest";
 import NutritionTotal from "./NutritionTotal";
 import FoodHighlightExtension from "./FoodHighlightExtension";
@@ -24,6 +25,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	documentTotalManager: DocumentTotalManager;
 	settingsService: SettingsService;
 	goalsService: GoalsService;
+	exerciseMetadataService: ExerciseMetadataService;
 	private statsService: StatsService;
 	private frontmatterTotalsService: FrontmatterTotalsService;
 	private foodHighlightExtension: FoodHighlightExtension;
@@ -48,6 +50,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Initialize nutrient cache
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
 		this.nutrientCache.initialize();
+
+		// Initialize exercise metadata resolver
+		this.exerciseMetadataService = new ExerciseMetadataService(this.app);
 
 		// Initialize settings service
 		this.settingsService = new SettingsService();
@@ -90,7 +95,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.app,
 			this.nutrientCache,
 			this.settingsService,
-			this.goalsService
+			this.goalsService,
+			this.exerciseMetadataService
 		);
 
 		// Initialize stats service
@@ -99,7 +105,8 @@ export default class FoodTrackerPlugin extends Plugin {
 			this.nutritionTotal,
 			this.settingsService,
 			this.goalsService,
-			this.nutrientCache
+			this.nutrientCache,
+			this.exerciseMetadataService
 		);
 
 		// Add ribbon button for statistics
@@ -186,8 +193,15 @@ export default class FoodTrackerPlugin extends Plugin {
 			})
 		);
 
+		this.registerEvent(
+			this.app.metadataCache.on("changed", () => {
+				this.exerciseMetadataService.clear();
+			})
+		);
+
 		const onResolved = () => {
 			this.nutrientCache.refresh();
+			this.exerciseMetadataService.clear();
 			void this.updateNutritionTotal();
 			this.app.metadataCache.off("resolved", onResolved);
 		};
@@ -317,6 +331,8 @@ export default class FoodTrackerPlugin extends Plugin {
 				return;
 			}
 
+			const sourcePath = activeView.file.path;
+
 			const content = await this.app.vault.cachedRead(activeView.file);
 			const totalElement = this.nutritionTotal.calculateTotalNutrients(
 				content,
@@ -325,7 +341,8 @@ export default class FoodTrackerPlugin extends Plugin {
 				this.goalsService.currentGoals,
 				this.settingsService.currentEscapedWorkoutTag,
 				true,
-				true
+				true,
+				exerciseName => this.exerciseMetadataService.getCaloriesPerRep(exerciseName, sourcePath)
 			);
 
 			if (this.settings.totalDisplayMode === "status-bar") {

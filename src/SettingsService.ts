@@ -3,20 +3,20 @@ import { map } from "rxjs/operators";
 import { SPECIAL_CHARS_REGEX } from "./constants";
 
 export interface FoodTrackerPluginSettings {
-	nutrientDirectory: string;
-	totalDisplayMode: "status-bar" | "document";
 	foodTag: string;
 	workoutTag: string;
+	nutrientDirectory: string;
+	totalDisplayMode: "status-bar" | "document";
 	goalsFile: string;
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
-	nutrientDirectory: "nutrients",
-	totalDisplayMode: "status-bar",
 	foodTag: "food",
 	workoutTag: "workout",
+	nutrientDirectory: "nutrients",
+	totalDisplayMode: "status-bar",
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
@@ -135,38 +135,10 @@ export class SettingsService {
 	}
 
 	/**
-	 * Get the current nutrient directory value synchronously
-	 */
-	get currentNutrientDirectory(): string {
-		return this.currentSettings.nutrientDirectory;
-	}
-
-	/**
-	 * Get the current goals file path synchronously
-	 */
-	get currentGoalsFile(): string {
-		return this.currentSettings.goalsFile;
-	}
-
-	/**
-	 * Get the current daily note filename format synchronously
+	 * Get the current daily note format synchronously
 	 */
 	get currentDailyNoteFormat(): string {
 		return this.currentSettings.dailyNoteFormat;
-	}
-
-	/**
-	 * Get the current total display mode value synchronously
-	 */
-	get currentTotalDisplayMode(): "status-bar" | "document" {
-		return this.currentSettings.totalDisplayMode;
-	}
-
-	/**
-	 * Get the current show calorie hints value synchronously
-	 */
-	get currentShowCalorieHints(): boolean {
-		return this.currentSettings.showCalorieHints;
 	}
 
 	/**
