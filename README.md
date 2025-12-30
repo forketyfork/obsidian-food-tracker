@@ -44,6 +44,8 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
   them from your totals
   - Autocomplete only suggests calorie values for workout entries (no food names or other nutrients)
   - Visual distinction: workout calories are highlighted in red to differentiate from food intake
+- **Exercise notes (draft)**: Early parser support for structured exercise entries on the workout tag (`#workout`) capturing
+  movement names, working weight, set breakdowns, and calories via per-rep frontmatter metadata for future dashboards
 
 ### 📊 Real-time Nutrition Tracking
 
@@ -179,6 +181,27 @@ In both cases, the plugin subtracts the logged calories (and any other specified
 
 **Calorie floor:** Your total calorie count is always floored at 0. If your workout calories exceed your food intake, the plugin displays 0 kcal instead of a negative value, ensuring totals never go below zero.
 
+### Draft: Structured Exercise Notes
+
+An early parser is available for set-based workout logging alongside nutrition notes. It reuses the `#workout` tag and records the movement name, working weight, rep counts per set, and calories burned when your exercise note includes per-rep metadata.
+
+```
+#workout [[Pec Fly]] 40kg 15-15-15
+#workout Deadlift 120 5-5-5
+```
+
+- Exercise names can be plain text or wikilinks.
+- Weight units support `kg` or `lb` (omitted units default to kilograms).
+- Sets are parsed from dash-separated rep counts and multiplied by the `kcal_per_rep` (or `calories_per_rep`) frontmatter value defined on the linked exercise note. For example:
+
+  ```yaml
+  ---
+  kcal_per_rep: 3.2
+  ---
+  ```
+
+- Calories from structured workouts are subtracted from your totals the same way as explicit `#workout 200kcal` entries.
+
 ### Setting Up Nutrition Goals
 
 1. Create a goals file in your vault (e.g., `nutrition-goals.md`)
@@ -215,7 +238,7 @@ Go to Settings > Food Tracker to configure:
 - **Nutrient directory**: Choose where nutrient files are stored (default: "nutrients"). The setting now offers type-ahead folder suggestions.
 - **Nutrition total display**: Choose to show the total in the status bar or directly in the document
 - **Food tag**: Customize the tag used for food entries (default: "food" for `#food`, can be changed to "meal" for `#meal`, "nutrition" for `#nutrition`, etc.)
-- **Workout tag**: Customize the tag used for workout entries (default: "workout" for `#workout`)
+- **Workout tag**: Customize the tag used for workout entries and structured exercise sets (default: "workout" for `#workout`)
 - **Daily note filename format**: Specify the Moment.js-style pattern used to find daily notes (default: `YYYY-MM-DD`). Supports tokens like `dddd` or literal text (e.g., `YYYY-MM-DD-[journal]`). The preview shows how today's note would be named.
 - **Daily note format examples**:
   - `YYYY.MM.DD` → `2025.11.12`

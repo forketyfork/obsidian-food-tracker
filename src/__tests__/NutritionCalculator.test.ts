@@ -284,4 +284,30 @@ describe("calculateNutritionTotals", () => {
 			percentRemaining: 0,
 		});
 	});
+
+	test("derives workout calories from set-based entries with per-rep metadata", () => {
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#workout [[Pec Fly]] 40kg 15-15-10\n#food Lunch 300kcal",
+				getNutritionData: () => null,
+				getExerciseCaloriesPerRep: exerciseName => (exerciseName === "Pec Fly" ? 3 : null),
+			})
+		);
+
+		expect(result).not.toBeNull();
+		expect(result?.workoutTotals.calories).toBeCloseTo(120); // (15+15+10) reps * 3 kcal
+		expect(result?.inlineTotals.calories).toBeCloseTo(180); // 300 - 120
+	});
+
+	test("ignores set-based workouts when no per-rep metadata is available", () => {
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#workout [[Unknown Move]] 10-10-10\n#food Snack 150kcal",
+				getNutritionData: () => null,
+			})
+		);
+
+		expect(result?.workoutTotals.calories).toBeUndefined();
+		expect(result?.inlineTotals.calories).toBeCloseTo(150);
+	});
 });
