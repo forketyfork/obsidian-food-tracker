@@ -496,6 +496,17 @@ describe("FoodSuggestionCore", () => {
 			expect(replacement).toBe("123g ");
 		});
 
+		test("should handle measure suggestions for markdown links", () => {
+			const line = "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 200";
+			const trigger = core.analyzeTrigger(line, line.length);
+
+			expect(trigger?.query).toBe("200");
+			expect(trigger?.context).toBe("measure");
+
+			const suggestions = core.getSuggestions("200", provider, trigger?.context);
+			expect(suggestions).toContain("200g");
+		});
+
 		test("should handle workout tag workflow with only kcal suggestions", () => {
 			// User types "#workout running"
 			let trigger = core.analyzeTrigger("#workout running", 16);

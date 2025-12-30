@@ -142,13 +142,16 @@ function parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] 
 	for (const line of lines) {
 		const match = entryRegex.exec(line);
 		if (match) {
-			const rawFilename = match[1];
+			const rawFilename = match.groups?.wikilink ?? match.groups?.markdownLink ?? match[1];
 			const filename = normalizeFilename(rawFilename);
 			if (!filename) {
 				continue;
 			}
-			const amount = parseFloat(match[2]);
-			const unit = match[3].toLowerCase();
+			const amountString = match.groups?.amount ?? match[2];
+			const unitMatch = match.groups?.unit ?? match[3];
+
+			const amount = parseFloat(amountString);
+			const unit = unitMatch.toLowerCase();
 
 			entries.push({
 				filename,
@@ -162,7 +165,30 @@ function parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] 
 }
 
 export function normalizeFilename(raw: string): string | undefined {
-	return raw.split("|")[0].split("#")[0].split("/").pop()?.trim();
+	if (!raw) {
+		return undefined;
+	}
+
+	const withoutAlias = raw.split("|")[0];
+	const withoutHeading = withoutAlias.split("#")[0];
+	const segments = withoutHeading.split("/");
+	let filename = segments.pop()?.trim();
+
+	if (!filename) {
+		return undefined;
+	}
+
+	if (filename.toLowerCase().endsWith(".md")) {
+		filename = filename.slice(0, -3);
+	}
+
+	try {
+		filename = decodeURIComponent(filename);
+	} catch (error) {
+		console.error("Failed to decode filename", error);
+	}
+
+	return filename;
 }
 
 function parseInlineNutrientEntries(content: string, escapedFoodTag: string): InlineNutrientEntry[] {

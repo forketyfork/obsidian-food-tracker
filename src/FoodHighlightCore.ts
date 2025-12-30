@@ -137,9 +137,10 @@ export function extractInlineCalorieAnnotations(
 	}
 
 	const tagPattern = tags.join("|");
+	const foodLinkPattern = `(?:\\[\\[(?<wikilink>[^\\]]+)\\]\\]|\\[[^\\]]*\\]\\((?<markdownLink>[^)]+)\\))`;
 
 	const linkedFoodRegex = new RegExp(
-		`#(${tagPattern})\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
+		`#(${tagPattern})\\s+${foodLinkPattern}\\s+(?<amount>\\d+(?:\\.\\d+)?)(?<unit>kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
 		"gi"
 	);
 
@@ -156,9 +157,9 @@ export function extractInlineCalorieAnnotations(
 
 		for (const match of line.matchAll(linkedFoodRegex)) {
 			const matchedTag = match[1].toLowerCase();
-			const rawFileName = match[2];
-			const amountString = match[3];
-			const unit = match[4];
+			const rawFileName = match.groups?.wikilink ?? match.groups?.markdownLink ?? match[2];
+			const amountString = match.groups?.amount ?? match[3];
+			const unit = match.groups?.unit ?? match[4];
 
 			const amount = parseFloat(amountString);
 			if (!isFinite(amount) || amount <= 0) {

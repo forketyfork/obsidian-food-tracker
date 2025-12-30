@@ -61,6 +61,20 @@ describe("calculateNutritionTotals", () => {
 		expect(result?.linkedTotals.carbs).toBeCloseTo(10);
 	});
 
+	test("supports markdown links with encoded paths", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 120 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 100g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("Tartine brioche Nutella");
+		expect(result?.linkedTotals.calories).toBeCloseTo(120);
+	});
+
 	test("normalizes wikilink with heading and folder path", () => {
 		const getNutritionData = jest.fn().mockReturnValue({ calories: 200 });
 

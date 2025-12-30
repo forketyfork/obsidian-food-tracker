@@ -115,6 +115,13 @@ describe("FoodHighlightCore", () => {
 				expect(ranges).toHaveLength(1);
 				expect(ranges[0]).toEqual({ start: 16, end: 22, type: "amount" }); // 125.5g
 			});
+
+			test("highlights markdown links with paths", () => {
+				const text = "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 250g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toEqual([{ start: 77, end: 81, type: "amount" }]);
+			});
 		});
 
 		describe("custom food tags", () => {
@@ -322,6 +329,7 @@ Regular text line
 			bread: 290,
 			pasta: 350,
 			rice: 130,
+			"tartine brioche nutella": 120,
 		};
 
 		const servingSizeMap: Record<string, number> = {
@@ -418,6 +426,18 @@ Regular text line
 					{
 						position: text.length,
 						text: "58kcal",
+					},
+				]);
+			});
+
+			test("supports markdown links with encoded paths", () => {
+				const text = "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 100g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "120kcal",
 					},
 				]);
 			});
