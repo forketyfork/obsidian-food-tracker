@@ -142,7 +142,7 @@ function parseFoodEntries(content: string, escapedFoodTag: string): FoodEntry[] 
 	for (const line of lines) {
 		const match = entryRegex.exec(line);
 		if (match) {
-			const rawFilename = match.groups?.wikilink ?? match.groups?.markdownLink ?? match[1];
+			const rawFilename = match.groups?.wikiLink ?? match.groups?.markdownLink ?? match[1];
 			const filename = normalizeFilename(rawFilename);
 			if (!filename) {
 				continue;
@@ -185,7 +185,7 @@ export function normalizeFilename(raw: string): string | undefined {
 	try {
 		filename = decodeURIComponent(filename);
 	} catch (error) {
-		console.error("Failed to decode filename", error);
+		console.error("Failed to decode filename:", filename, error);
 	}
 
 	return filename;

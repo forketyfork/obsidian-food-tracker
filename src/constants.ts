@@ -96,7 +96,7 @@ export const createInlineNutritionRegex = (escapedFoodTag: string) =>
 		"i"
 	);
 
-const createFoodLinkPattern = () => `(?:\\[\\[(?<wikilink>[^\\]]+)\\]\\]|\\[[^\\]]*\\]\\((?<markdownLink>[^)]+)\\))`;
+const createFoodLinkPattern = () => `(?:\\[\\[(?<wikiLink>[^\\]]+)\\]\\]|\\[[^\\]]*\\]\\((?<markdownLink>[^)]+)\\))`;
 
 /**
  * Creates regex to match linked food entries with amounts

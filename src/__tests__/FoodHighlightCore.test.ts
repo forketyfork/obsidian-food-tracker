@@ -122,6 +122,22 @@ describe("FoodHighlightCore", () => {
 
 				expect(ranges).toEqual([{ start: 77, end: 81, type: "amount" }]);
 			});
+
+			test("highlights wikilinks with .md extension", () => {
+				const text = "#food [[Chicken Breast.md]] 175g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 28, end: 32, type: "amount" });
+			});
+
+			test("highlights markdown links with headings", () => {
+				const text = "#food [Salmon](nutrients/Salmon.md#info) 100g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 41, end: 45, type: "amount" });
+			});
 		});
 
 		describe("custom food tags", () => {
@@ -438,6 +454,30 @@ Regular text line
 					{
 						position: text.length,
 						text: "120kcal",
+					},
+				]);
+			});
+
+			test("supports wikilinks with .md extension", () => {
+				const text = "#food [[bread.md]] 50g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "145kcal",
+					},
+				]);
+			});
+
+			test("supports markdown links with headings", () => {
+				const text = "#food [Rice](nutrients/rice.md#info) 100g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "130kcal",
 					},
 				]);
 			});
