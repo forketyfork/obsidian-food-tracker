@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-food-tracker",
-	"version": "0.15.1",
+	"version": "0.15.2",
 	"description": "A plugin to track your food intake (calories, macronutrients) and nutritional information in Obsidian.",
 	"main": "main.js",
 	"scripts": {
@@ -35,8 +35,8 @@
 		"@types/jest": "^30.0.0",
 		"@types/lodash": "^4.17.21",
 		"@types/node": "^25.0.3",
-		"@typescript-eslint/eslint-plugin": "^8.50.1",
-		"@typescript-eslint/parser": "^8.50.1",
+		"@typescript-eslint/eslint-plugin": "^8.51.0",
+		"@typescript-eslint/parser": "^8.51.0",
 		"builtin-modules": "^5.0.0",
 		"csso-cli": "^4.0.2",
 		"esbuild": "^0.27.2",
@@ -53,7 +53,7 @@
 	"packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
 	"dependencies": {
 		"@codemirror/state": "^6.5.3",
-		"@codemirror/view": "^6.39.5",
+		"@codemirror/view": "^6.39.8",
 		"lodash": "^4.17.21",
 		"rxjs": "^7.8.1"
 	}

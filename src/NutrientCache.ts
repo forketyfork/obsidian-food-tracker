@@ -1,4 +1,4 @@
-import { App, TFile, TAbstractFile, Notice } from "obsidian";
+import { App, TFile, TAbstractFile, Notice, CachedMetadata } from "obsidian";
 import { NutrientProvider } from "./FoodSuggestionCore";
 
 interface NutrientData {
@@ -107,8 +107,14 @@ export default class NutrientCache implements NutrientProvider {
 	 * Handles cleanup of old mappings when files are modified or renamed
 	 */
 	private processNutrientFile(file: TFile): void {
-		const nutrientName = this.extractNutrientName(file);
-		const nutritionData = this.extractNutritionData(file);
+		const fileCache = this.app.metadataCache.getFileCache(file);
+		if (!fileCache) {
+			// Metadata cache is not ready yet; keep existing entry until it's available
+			return;
+		}
+
+		const nutrientName = this.extractNutrientName(fileCache, file.path);
+		const nutritionData = this.extractNutritionData(fileCache, file.path);
 
 		if (nutrientName) {
 			// Check for duplicate nutrient names
@@ -187,21 +193,21 @@ export default class NutrientCache implements NutrientProvider {
 		this.notifyChange();
 	}
 
-	private extractNutrientName(file: TFile): string | null {
+	private extractNutrientName(fileCache: CachedMetadata, filePath: string): string | null {
 		try {
-			const parsedFrontMatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+			const parsedFrontMatter = fileCache.frontmatter;
 			if (parsedFrontMatter?.name) {
 				return String(parsedFrontMatter.name);
 			}
 		} catch (error) {
-			console.error("Error extracting nutrient name from file:", file.path, error);
+			console.error("Error extracting nutrient name from file:", filePath, error);
 		}
 		return null;
 	}
 
-	private extractNutritionData(file: TFile): NutrientData {
+	private extractNutritionData(fileCache: CachedMetadata, filePath: string): NutrientData {
 		try {
-			const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+			const frontmatter = fileCache.frontmatter;
 			if (!frontmatter) return {};
 
 			const nutrientFields: { key: keyof NutrientData; aliases: string[] }[] = [
@@ -226,7 +232,7 @@ export default class NutrientCache implements NutrientProvider {
 			}
 			return data;
 		} catch (error) {
-			console.error(`Error extracting nutrition data from ${file.path}:`, error);
+			console.error(`Error extracting nutrition data from ${filePath}:`, error);
 			return {};
 		}
 	}
