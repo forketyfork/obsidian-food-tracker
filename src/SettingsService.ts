@@ -21,7 +21,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
-	linkType: "markdown",
+	linkType: "wikilink",
 };
 
 /**
