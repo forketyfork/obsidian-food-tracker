@@ -128,7 +128,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			.map(part => encodeURIComponent(part))
 			.join("/");
 
-		return `[${nutrientName}](${encodedPath})`;
+		return `[${nutrientName}](${encodedPath}.md)`;
 	}
 
 	/**
@@ -157,7 +157,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			.map(part => encodeURIComponent(part))
 			.join("/");
 
-		return `${encodedPath})`;
+		return `${encodedPath}.md)`;
 	}
 
 	/**

@@ -207,7 +207,7 @@ export class FoodSuggestionCore {
 			const wikilinkQuery = wikilinkStartMatch[1];
 			return {
 				query: wikilinkQuery,
-				startOffset: cursorPosition - wikilinkQuery.length,
+				startOffset: cursorPosition - wikilinkQuery.length - 2, // -2 to include the [[
 				endOffset: cursorPosition,
 				tagType,
 				linkType: "wikilink",
@@ -246,7 +246,7 @@ export class FoodSuggestionCore {
 			const linkText = markdownLinkStartMatch[1];
 			return {
 				query: linkText,
-				startOffset: cursorPosition - linkText.length,
+				startOffset: cursorPosition - linkText.length - 1, // -1 to include the [
 				endOffset: cursorPosition,
 				tagType,
 				linkType: "markdown",

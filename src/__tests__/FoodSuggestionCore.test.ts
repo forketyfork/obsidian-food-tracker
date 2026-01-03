@@ -519,7 +519,7 @@ describe("FoodSuggestionCore", () => {
 
 			expect(trigger).toEqual({
 				query: "",
-				startOffset: 7,
+				startOffset: 6, // Includes the [
 				endOffset: 7,
 				tagType: "food",
 				linkType: "markdown",
@@ -532,7 +532,7 @@ describe("FoodSuggestionCore", () => {
 
 			expect(trigger).toEqual({
 				query: "app",
-				startOffset: 7,
+				startOffset: 6, // Includes the [
 				endOffset: 10,
 				tagType: "food",
 				linkType: "markdown",
@@ -545,7 +545,7 @@ describe("FoodSuggestionCore", () => {
 
 			expect(trigger).toEqual({
 				query: "",
-				startOffset: 8,
+				startOffset: 6, // Includes the [[
 				endOffset: 8,
 				tagType: "food",
 				linkType: "wikilink",
@@ -558,7 +558,7 @@ describe("FoodSuggestionCore", () => {
 
 			expect(trigger).toEqual({
 				query: "app",
-				startOffset: 8,
+				startOffset: 6, // Includes the [[
 				endOffset: 11,
 				tagType: "food",
 				linkType: "wikilink",
