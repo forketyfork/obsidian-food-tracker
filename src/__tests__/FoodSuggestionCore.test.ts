@@ -101,7 +101,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 6,
 				endOffset: 11,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -112,7 +111,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 6,
 				endOffset: 6,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -123,7 +121,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 6,
 				endOffset: 9,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -156,7 +153,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 6,
 				endOffset: 16,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -170,7 +166,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 10,
 				endOffset: 15,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -181,7 +176,6 @@ describe("FoodSuggestionCore", () => {
 				startOffset: 6,
 				endOffset: 25,
 				tagType: "food",
-				linkType: "wikilink",
 			});
 		});
 
@@ -511,149 +505,6 @@ describe("FoodSuggestionCore", () => {
 
 			const suggestions = core.getSuggestions("200", provider, trigger?.context);
 			expect(suggestions).toContain("200g");
-		});
-
-		test("should trigger autocomplete when starting markdown link with single [", () => {
-			const line = "#food [";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "",
-				startOffset: 6, // Includes the [
-				endOffset: 7,
-				tagType: "food",
-				linkType: "markdown",
-			});
-		});
-
-		test("should trigger autocomplete when typing text after single [", () => {
-			const line = "#food [app";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "app",
-				startOffset: 6, // Includes the [
-				endOffset: 10,
-				tagType: "food",
-				linkType: "markdown",
-			});
-		});
-
-		test("should trigger autocomplete when starting wikilink with [[", () => {
-			const line = "#food [[";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "",
-				startOffset: 6, // Includes the [[
-				endOffset: 8,
-				tagType: "food",
-				linkType: "wikilink",
-			});
-		});
-
-		test("should trigger autocomplete when typing text after [[", () => {
-			const line = "#food [[app";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "app",
-				startOffset: 6, // Includes the [[
-				endOffset: 11,
-				tagType: "food",
-				linkType: "wikilink",
-			});
-		});
-
-		test("should trigger autocomplete when opening markdown link path", () => {
-			const line = "#food [Chicken](";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "",
-				startOffset: 16,
-				endOffset: 16,
-				tagType: "food",
-				linkType: "markdown",
-			});
-
-			const suggestions = core.getSuggestions("", provider);
-			expect(suggestions).toEqual(["apple", "banana", "chicken breast", "rice", "milk"]);
-		});
-
-		test("should trigger autocomplete when typing in markdown link path", () => {
-			const line = "#food [Chicken](ch";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger).toEqual({
-				query: "ch",
-				startOffset: 16,
-				endOffset: 18,
-				tagType: "food",
-				linkType: "markdown",
-			});
-
-			const suggestions = core.getSuggestions("ch", provider);
-			expect(suggestions).toContain("chicken breast");
-		});
-
-		test("should extract filename from path in markdown link autocomplete", () => {
-			const line = "#food [Chicken](../nutrients/Ch";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("Ch");
-			expect(trigger?.linkType).toBe("markdown");
-			expect(trigger?.startOffset).toBe(16);
-
-			const suggestions = core.getSuggestions(trigger!.query, provider);
-			expect(suggestions).toContain("chicken breast");
-		});
-
-		test("should decode URL-encoded paths in markdown link autocomplete", () => {
-			const line = "#food [display](../nutrients/Chicken%20Br";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("Chicken Br");
-			expect(trigger?.linkType).toBe("markdown");
-
-			const suggestions = core.getSuggestions(trigger!.query, provider);
-			expect(suggestions).toContain("chicken breast");
-		});
-
-		test("should remove .md extension in markdown link autocomplete", () => {
-			const line = "#food [display](../nutrients/Chicken.md";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("Chicken");
-			expect(trigger?.linkType).toBe("markdown");
-
-			const suggestions = core.getSuggestions(trigger!.query, provider);
-			expect(suggestions).toContain("chicken breast");
-		});
-
-		test("should handle .md extension with partial filename", () => {
-			const line = "#food [display](Ch.md";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("Ch");
-			expect(trigger?.linkType).toBe("markdown");
-		});
-
-		test("should handle complex path with URL encoding and extension", () => {
-			const line = "#food [display](../nutrients/Chicken%20Breast.md";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("Chicken Breast");
-			expect(trigger?.linkType).toBe("markdown");
-		});
-
-		test("should prioritize measure context over markdown link detection", () => {
-			const line = "#food [Chicken](../nutrients/Chicken.md) 100g";
-			const trigger = core.analyzeTrigger(line, line.length);
-
-			expect(trigger?.query).toBe("100g");
-			expect(trigger?.context).toBe("measure");
-			expect(trigger?.linkType).toBeUndefined();
 		});
 
 		test("should handle workout tag workflow with only kcal suggestions", () => {

@@ -12,7 +12,6 @@ export interface SuggestionTrigger {
 	endOffset: number;
 	context?: "measure" | "nutrition";
 	tagType?: "food" | "workout";
-	linkType?: "wikilink" | "markdown";
 }
 
 /**
@@ -59,10 +58,7 @@ export class FoodSuggestionCore {
 	private currentWorkoutTag: string = "";
 	private nutritionQueryRegex: RegExp; // Matches text ending with number+letters (e.g., "apple 100g")
 	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
-	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
-	private markdownLinkRegex: RegExp; // Matches markdown link being typed: [text](path
-	private wikilinkStartRegex: RegExp; // Matches wikilink being typed: [[text
-	private markdownLinkStartRegex: RegExp; // Matches single [ not followed by another [
+	private foodWithMeasureRegex: RegExp; // Matches wikilink or markdown link followed by number+letters
 
 	constructor(settingsService: SettingsService) {
 		this.settingsService = settingsService;
@@ -74,12 +70,6 @@ export class FoodSuggestionCore {
 		this.nutritionValidationRegex = /^-?\d+[a-z]*$/;
 		// Match wikilink or markdown link followed by space and number+letters (supports negative numbers)
 		this.foodWithMeasureRegex = /(?:\[\[[^\]]+\]\]|\[[^\]]*\]\([^\)]+\))\s+(-?\d+[a-z]*)$/;
-		// Match markdown link being typed: [text](path - captures the path part
-		this.markdownLinkRegex = /\[[^\]]*\]\(([^\)]*)$/;
-		// Match wikilink being typed: [[text - captures the text part
-		this.wikilinkStartRegex = /\[\[([^\]]*)$/;
-		// Match single [ not followed by another [ and not part of a complete link
-		this.markdownLinkStartRegex = /\[([^\[\]]*)$/;
 
 		// Initialize with current tags
 		this.updateTagRegexes(this.settingsService.currentFoodTag, this.settingsService.currentWorkoutTag);
@@ -200,66 +190,12 @@ export class FoodSuggestionCore {
 			return null;
 		}
 
-		// Check if we're typing a wikilink: [[text
-		// This should be checked BEFORE single [ to handle [[ correctly
-		const wikilinkStartMatch = this.wikilinkStartRegex.exec(query);
-		if (wikilinkStartMatch) {
-			const wikilinkQuery = wikilinkStartMatch[1];
-			return {
-				query: wikilinkQuery,
-				startOffset: cursorPosition - wikilinkQuery.length - 2, // -2 to include the [[
-				endOffset: cursorPosition,
-				tagType,
-				linkType: "wikilink",
-			};
-		}
-
-		// Check if we're typing a markdown link: [text](path
-		const markdownLinkMatch = this.markdownLinkRegex.exec(query);
-		if (markdownLinkMatch) {
-			const linkPath = markdownLinkMatch[1];
-			// Extract just the filename part (remove path prefix and extension)
-			const pathParts = linkPath.split("/");
-			const filenamePart = pathParts[pathParts.length - 1] || "";
-			// Decode URL encoding and remove .md extension for better matching
-			let decodedQuery = "";
-			try {
-				decodedQuery = decodeURIComponent(filenamePart);
-			} catch {
-				// If decode fails, use the original
-				decodedQuery = filenamePart;
-			}
-			decodedQuery = decodedQuery.replace(/\.md$/i, "");
-
-			return {
-				query: decodedQuery,
-				startOffset: cursorPosition - linkPath.length,
-				endOffset: cursorPosition,
-				tagType,
-				linkType: "markdown",
-			};
-		}
-
-		// Check if we're starting a markdown link: [text (not [[)
-		const markdownLinkStartMatch = this.markdownLinkStartRegex.exec(query);
-		if (markdownLinkStartMatch) {
-			const linkText = markdownLinkStartMatch[1];
-			return {
-				query: linkText,
-				startOffset: cursorPosition - linkText.length - 1, // -1 to include the [
-				endOffset: cursorPosition,
-				tagType,
-				linkType: "markdown",
-			};
-		}
-
 		// Regular food name autocomplete (only for food tags)
 		return {
 			query: query,
 			startOffset: cursorPosition - query.length,
 			endOffset: cursorPosition,
 			tagType,
-			linkType: "wikilink",
 		};
 	}
 

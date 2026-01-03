@@ -21,7 +21,6 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	private settingsService: SettingsService;
 	private currentContext?: "measure" | "nutrition";
 	private currentTagType?: "food" | "workout";
-	private currentLinkType?: "wikilink" | "markdown";
 	private currentFile?: TFile;
 
 	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
@@ -37,10 +36,9 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 		if (!trigger) return null;
 
-		// Store the context, tag type, link type, and file for use in getSuggestions and selectSuggestion
+		// Store the context, tag type, and file for use in getSuggestions and selectSuggestion
 		this.currentContext = trigger.context;
 		this.currentTagType = trigger.tagType;
-		this.currentLinkType = trigger.linkType;
 		this.currentFile = file;
 
 		return {
@@ -75,19 +73,8 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 		if (this.suggestionCore.isNutritionKeyword(nutrient)) {
 			replacement = this.suggestionCore.getNutritionKeywordReplacement(nutrient);
-		} else if (this.currentLinkType === "markdown" && this.currentFile) {
-			// Check if we're starting a markdown link [text or inside parentheses [text](path
-			const line = context.editor.getLine(context.start.line);
-			const beforeStart = line.substring(0, context.start.ch);
-			const isInsideParentheses = beforeStart.endsWith("](");
-
-			if (isInsideParentheses) {
-				// We're typing inside [text](path - just insert the path
-				replacement = this.getMarkdownLinkPath(nutrient);
-			} else {
-				// We're typing [text - insert the full markdown link
-				replacement = this.getFullMarkdownLink(nutrient);
-			}
+		} else if (this.settingsService.currentLinkType === "markdown" && this.currentFile) {
+			replacement = this.getFullMarkdownLink(nutrient);
 		} else {
 			replacement = this.suggestionCore.getFoodNameReplacement(nutrient, this.nutrientCache);
 		}
@@ -129,35 +116,6 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			.join("/");
 
 		return `[${nutrientName}](${encodedPath}.md)`;
-	}
-
-	/**
-	 * Generates a markdown link path for a nutrient
-	 * Constructs a relative path from the current file to the nutrient file
-	 */
-	private getMarkdownLinkPath(nutrientName: string): string {
-		const fileName = this.nutrientCache.getFileNameFromNutrientName(nutrientName);
-		if (!fileName || !this.currentFile) {
-			return nutrientName;
-		}
-
-		// Get the nutrient directory
-		const nutrientDir = this.settingsService.currentNutrientDirectory;
-
-		// Construct the full path to the nutrient file
-		const nutrientPath = `${nutrientDir}/${fileName}`;
-
-		// Calculate relative path from current file to nutrient file
-		const currentDir = this.currentFile.parent?.path ?? "";
-		const relativePath = this.calculateRelativePath(currentDir, nutrientPath);
-
-		// URL encode the path components (but not the slashes)
-		const encodedPath = relativePath
-			.split("/")
-			.map(part => encodeURIComponent(part))
-			.join("/");
-
-		return `${encodedPath}.md)`;
 	}
 
 	/**
