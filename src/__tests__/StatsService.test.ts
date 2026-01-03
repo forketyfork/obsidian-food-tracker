@@ -390,7 +390,7 @@ describe("StatsService", () => {
 
 		const stats = await service.getMonthlyStats(2024, 8);
 		const day1 = stats.find(s => s.date === "2024-08-01");
-		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*=\"Calories: 300\"]')).not.toBeNull();
-		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*=\"Protein: 25\"]')).not.toBeNull();
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Calories: 300"]')).not.toBeNull();
+		expect(day1?.element?.querySelector('[data-food-tracker-tooltip*="Protein: 25"]')).not.toBeNull();
 	});
 });

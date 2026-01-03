@@ -258,9 +258,9 @@ export class SettingsService {
 	 */
 	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
 		return cloneFrontmatterFieldNames(this.currentSettings.frontmatterFieldNames);
-  }
-  
-  /**
+	}
+
+	/**
 	 * Get the current link type value synchronously
 	 */
 	get currentLinkType(): "wikilink" | "markdown" {

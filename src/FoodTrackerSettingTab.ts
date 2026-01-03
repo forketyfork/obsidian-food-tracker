@@ -186,8 +186,9 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 						.setPlaceholder(DEFAULT_FRONTMATTER_FIELD_NAMES[config.key])
 						.setValue(this.plugin.settings.frontmatterFieldNames[config.key])
 						.onChange(async value => {
-							const partial: Partial<FrontmatterFieldNames> = { [config.key]: value };
-							this.plugin.settingsService.updateFrontmatterFieldNames(partial);
+							const frontmatterFieldNames = this.plugin.settings.frontmatterFieldNames;
+							frontmatterFieldNames[config.key] = value;
+							this.plugin.settingsService.updateFrontmatterFieldNames(frontmatterFieldNames);
 							this.plugin.settings = {
 								...this.plugin.settings,
 								frontmatterFieldNames: this.plugin.settingsService.currentFrontmatterFieldNames,
