@@ -513,14 +513,53 @@ describe("FoodSuggestionCore", () => {
 			expect(suggestions).toContain("200g");
 		});
 
-		test("should trigger autocomplete when starting markdown link", () => {
+		test("should trigger autocomplete when starting markdown link with single [", () => {
 			const line = "#food [";
 			const trigger = core.analyzeTrigger(line, line.length);
 
 			expect(trigger).toEqual({
-				query: "[",
-				startOffset: 6,
+				query: "",
+				startOffset: 7,
 				endOffset: 7,
+				tagType: "food",
+				linkType: "markdown",
+			});
+		});
+
+		test("should trigger autocomplete when typing text after single [", () => {
+			const line = "#food [app";
+			const trigger = core.analyzeTrigger(line, line.length);
+
+			expect(trigger).toEqual({
+				query: "app",
+				startOffset: 7,
+				endOffset: 10,
+				tagType: "food",
+				linkType: "markdown",
+			});
+		});
+
+		test("should trigger autocomplete when starting wikilink with [[", () => {
+			const line = "#food [[";
+			const trigger = core.analyzeTrigger(line, line.length);
+
+			expect(trigger).toEqual({
+				query: "",
+				startOffset: 8,
+				endOffset: 8,
+				tagType: "food",
+				linkType: "wikilink",
+			});
+		});
+
+		test("should trigger autocomplete when typing text after [[", () => {
+			const line = "#food [[app";
+			const trigger = core.analyzeTrigger(line, line.length);
+
+			expect(trigger).toEqual({
+				query: "app",
+				startOffset: 8,
+				endOffset: 11,
 				tagType: "food",
 				linkType: "wikilink",
 			});

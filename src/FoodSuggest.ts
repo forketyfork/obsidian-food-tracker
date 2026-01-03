@@ -76,8 +76,18 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		if (this.suggestionCore.isNutritionKeyword(nutrient)) {
 			replacement = this.suggestionCore.getNutritionKeywordReplacement(nutrient);
 		} else if (this.currentLinkType === "markdown" && this.currentFile) {
-			// Generate markdown link format
-			replacement = this.getMarkdownLinkPath(nutrient);
+			// Check if we're starting a markdown link [text or inside parentheses [text](path
+			const line = context.editor.getLine(context.start.line);
+			const beforeStart = line.substring(0, context.start.ch);
+			const isInsideParentheses = beforeStart.endsWith("](");
+
+			if (isInsideParentheses) {
+				// We're typing inside [text](path - just insert the path
+				replacement = this.getMarkdownLinkPath(nutrient);
+			} else {
+				// We're typing [text - insert the full markdown link
+				replacement = this.getFullMarkdownLink(nutrient);
+			}
 		} else {
 			replacement = this.suggestionCore.getFoodNameReplacement(nutrient, this.nutrientCache);
 		}
@@ -90,6 +100,35 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			ch: context.start.ch + replacement.length,
 		};
 		context.editor.setCursor(newCursorPos);
+	}
+
+	/**
+	 * Generates a full markdown link for a nutrient
+	 * Constructs a complete markdown link with display text and relative path
+	 */
+	private getFullMarkdownLink(nutrientName: string): string {
+		const fileName = this.nutrientCache.getFileNameFromNutrientName(nutrientName);
+		if (!fileName || !this.currentFile) {
+			return `[${nutrientName}]()`;
+		}
+
+		// Get the nutrient directory
+		const nutrientDir = this.settingsService.currentNutrientDirectory;
+
+		// Construct the full path to the nutrient file
+		const nutrientPath = `${nutrientDir}/${fileName}`;
+
+		// Calculate relative path from current file to nutrient file
+		const currentDir = this.currentFile.parent?.path ?? "";
+		const relativePath = this.calculateRelativePath(currentDir, nutrientPath);
+
+		// URL encode the path components (but not the slashes)
+		const encodedPath = relativePath
+			.split("/")
+			.map(part => encodeURIComponent(part))
+			.join("/");
+
+		return `[${nutrientName}](${encodedPath})`;
 	}
 
 	/**

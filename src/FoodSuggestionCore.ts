@@ -61,6 +61,8 @@ export class FoodSuggestionCore {
 	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
 	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
 	private markdownLinkRegex: RegExp; // Matches markdown link being typed: [text](path
+	private wikilinkStartRegex: RegExp; // Matches wikilink being typed: [[text
+	private markdownLinkStartRegex: RegExp; // Matches single [ not followed by another [
 
 	constructor(settingsService: SettingsService) {
 		this.settingsService = settingsService;
@@ -74,6 +76,10 @@ export class FoodSuggestionCore {
 		this.foodWithMeasureRegex = /(?:\[\[[^\]]+\]\]|\[[^\]]*\]\([^\)]+\))\s+(-?\d+[a-z]*)$/;
 		// Match markdown link being typed: [text](path - captures the path part
 		this.markdownLinkRegex = /\[[^\]]*\]\(([^\)]*)$/;
+		// Match wikilink being typed: [[text - captures the text part
+		this.wikilinkStartRegex = /\[\[([^\]]*)$/;
+		// Match single [ not followed by another [ and not part of a complete link
+		this.markdownLinkStartRegex = /\[([^\[\]]*)$/;
 
 		// Initialize with current tags
 		this.updateTagRegexes(this.settingsService.currentFoodTag, this.settingsService.currentWorkoutTag);
@@ -194,6 +200,20 @@ export class FoodSuggestionCore {
 			return null;
 		}
 
+		// Check if we're typing a wikilink: [[text
+		// This should be checked BEFORE single [ to handle [[ correctly
+		const wikilinkStartMatch = this.wikilinkStartRegex.exec(query);
+		if (wikilinkStartMatch) {
+			const wikilinkQuery = wikilinkStartMatch[1];
+			return {
+				query: wikilinkQuery,
+				startOffset: cursorPosition - wikilinkQuery.length,
+				endOffset: cursorPosition,
+				tagType,
+				linkType: "wikilink",
+			};
+		}
+
 		// Check if we're typing a markdown link: [text](path
 		const markdownLinkMatch = this.markdownLinkRegex.exec(query);
 		if (markdownLinkMatch) {
@@ -214,6 +234,19 @@ export class FoodSuggestionCore {
 			return {
 				query: decodedQuery,
 				startOffset: cursorPosition - linkPath.length,
+				endOffset: cursorPosition,
+				tagType,
+				linkType: "markdown",
+			};
+		}
+
+		// Check if we're starting a markdown link: [text (not [[)
+		const markdownLinkStartMatch = this.markdownLinkStartRegex.exec(query);
+		if (markdownLinkStartMatch) {
+			const linkText = markdownLinkStartMatch[1];
+			return {
+				query: linkText,
+				startOffset: cursorPosition - linkText.length,
 				endOffset: cursorPosition,
 				tagType,
 				linkType: "markdown",
