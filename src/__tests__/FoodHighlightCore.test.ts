@@ -115,6 +115,29 @@ describe("FoodHighlightCore", () => {
 				expect(ranges).toHaveLength(1);
 				expect(ranges[0]).toEqual({ start: 16, end: 22, type: "amount" }); // 125.5g
 			});
+
+			test("highlights markdown links with paths", () => {
+				const text = "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 250g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toEqual([{ start: 77, end: 81, type: "amount" }]);
+			});
+
+			test("highlights wikilinks with .md extension", () => {
+				const text = "#food [[Chicken Breast.md]] 175g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 28, end: 32, type: "amount" });
+			});
+
+			test("highlights markdown links with headings", () => {
+				const text = "#food [Salmon](nutrients/Salmon.md#info) 100g";
+				const ranges = extractFoodHighlightRanges(text, 0, defaultOptions);
+
+				expect(ranges).toHaveLength(1);
+				expect(ranges[0]).toEqual({ start: 41, end: 45, type: "amount" });
+			});
 		});
 
 		describe("custom food tags", () => {
@@ -322,6 +345,7 @@ Regular text line
 			bread: 290,
 			pasta: 350,
 			rice: 130,
+			"tartine brioche nutella": 120,
 		};
 
 		const servingSizeMap: Record<string, number> = {
@@ -418,6 +442,42 @@ Regular text line
 					{
 						position: text.length,
 						text: "58kcal",
+					},
+				]);
+			});
+
+			test("supports markdown links with encoded paths", () => {
+				const text = "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 100g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "120kcal",
+					},
+				]);
+			});
+
+			test("supports wikilinks with .md extension", () => {
+				const text = "#food [[bread.md]] 50g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "145kcal",
+					},
+				]);
+			});
+
+			test("supports markdown links with headings", () => {
+				const text = "#food [Rice](nutrients/rice.md#info) 100g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "130kcal",
 					},
 				]);
 			});

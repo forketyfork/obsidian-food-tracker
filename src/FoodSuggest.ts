@@ -21,6 +21,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	private settingsService: SettingsService;
 	private currentContext?: "measure" | "nutrition";
 	private currentTagType?: "food" | "workout";
+	private currentFile?: TFile;
 
 	constructor(app: App, settingsService: SettingsService, nutrientCache: NutrientCache) {
 		super(app);
@@ -29,15 +30,16 @@ export default class FoodSuggest extends EditorSuggest<string> {
 		this.suggestionCore = new FoodSuggestionCore(settingsService);
 	}
 
-	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile): EditorSuggestTriggerInfo | null {
+	onTrigger(cursor: EditorPosition, editor: Editor, file: TFile): EditorSuggestTriggerInfo | null {
 		const line = editor.getLine(cursor.line);
 		const trigger = this.suggestionCore.analyzeTrigger(line, cursor.ch);
 
 		if (!trigger) return null;
 
-		// Store the context and tag type for use in getSuggestions
+		// Store the context, tag type, and file for use in getSuggestions and selectSuggestion
 		this.currentContext = trigger.context;
 		this.currentTagType = trigger.tagType;
+		this.currentFile = file;
 
 		return {
 			start: { line: cursor.line, ch: trigger.startOffset },
@@ -71,6 +73,8 @@ export default class FoodSuggest extends EditorSuggest<string> {
 
 		if (this.suggestionCore.isNutritionKeyword(nutrient)) {
 			replacement = this.suggestionCore.getNutritionKeywordReplacement(nutrient);
+		} else if (this.settingsService.currentLinkType === "markdown" && this.currentFile) {
+			replacement = this.getFullMarkdownLink(nutrient);
 		} else {
 			replacement = this.suggestionCore.getFoodNameReplacement(nutrient, this.nutrientCache);
 		}
@@ -83,5 +87,61 @@ export default class FoodSuggest extends EditorSuggest<string> {
 			ch: context.start.ch + replacement.length,
 		};
 		context.editor.setCursor(newCursorPos);
+	}
+
+	/**
+	 * Generates a full markdown link for a nutrient
+	 * Constructs a complete markdown link with display text and relative path
+	 */
+	private getFullMarkdownLink(nutrientName: string): string {
+		const fileName = this.nutrientCache.getFileNameFromNutrientName(nutrientName);
+		if (!fileName || !this.currentFile) {
+			return `[${nutrientName}]()`;
+		}
+
+		// Get the nutrient directory
+		const nutrientDir = this.settingsService.currentNutrientDirectory;
+
+		// Construct the full path to the nutrient file
+		const nutrientPath = `${nutrientDir}/${fileName}`;
+
+		// Calculate relative path from current file to nutrient file
+		const currentDir = this.currentFile.parent?.path ?? "";
+		const relativePath = this.calculateRelativePath(currentDir, nutrientPath);
+
+		// URL encode the path components (but not the slashes)
+		const encodedPath = relativePath
+			.split("/")
+			.map(part => encodeURIComponent(part))
+			.join("/");
+
+		return `[${nutrientName}](${encodedPath}.md)`;
+	}
+
+	/**
+	 * Calculates a relative path from one directory to a file
+	 */
+	private calculateRelativePath(fromDir: string, toPath: string): string {
+		const fromParts = fromDir ? fromDir.split("/") : [];
+		const toParts = toPath.split("/");
+
+		// Find common prefix
+		let commonLength = 0;
+		while (
+			commonLength < fromParts.length &&
+			commonLength < toParts.length &&
+			fromParts[commonLength] === toParts[commonLength]
+		) {
+			commonLength++;
+		}
+
+		// Build relative path with ../ for each level up
+		const upLevels = fromParts.length - commonLength;
+		const upPath = upLevels > 0 ? Array(upLevels).fill("..").join("/") + "/" : "";
+
+		// Add the remaining path parts
+		const remainingPath = toParts.slice(commonLength).join("/");
+
+		return upPath + remainingPath;
 	}
 }

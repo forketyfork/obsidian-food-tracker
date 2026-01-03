@@ -95,6 +95,20 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Link type")
+			.setDesc("Type of links to insert when selecting nutrients from autocomplete")
+			.addDropdown(dropdown =>
+				dropdown
+					.addOption("markdown", "Markdown links [name](path)")
+					.addOption("wikilink", "Wikilinks [[name]]")
+					.setValue(this.plugin.settings.linkType)
+					.onChange(async value => {
+						this.plugin.settings.linkType = value as "wikilink" | "markdown";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Workout tag")
 			.setDesc("Tag name for logging workouts (without #)")
 			.addText(text =>

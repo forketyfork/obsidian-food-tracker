@@ -10,6 +10,7 @@ export interface FoodTrackerPluginSettings {
 	goalsFile: string;
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
+	linkType: "wikilink" | "markdown";
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
@@ -20,6 +21,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
+	linkType: "wikilink",
 };
 
 /**
@@ -167,6 +169,13 @@ export class SettingsService {
 	 */
 	get currentShowCalorieHints(): boolean {
 		return this.currentSettings.showCalorieHints;
+	}
+
+	/**
+	 * Get the current link type value synchronously
+	 */
+	get currentLinkType(): "wikilink" | "markdown" {
+		return this.currentSettings.linkType;
 	}
 
 	/**
