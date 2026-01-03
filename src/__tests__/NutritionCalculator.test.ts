@@ -61,6 +61,48 @@ describe("calculateNutritionTotals", () => {
 		expect(result?.linkedTotals.carbs).toBeCloseTo(10);
 	});
 
+	test("supports markdown links with encoded paths", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 120 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [Tartine brioche Nutella](../nutrients/Tartine%20brioche%20Nutella.md) 100g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("Tartine brioche Nutella");
+		expect(result?.linkedTotals.calories).toBeCloseTo(120);
+	});
+
+	test("supports wikilinks with .md extension", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 150 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[Chicken Breast.md]] 200g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("Chicken Breast");
+		expect(result?.linkedTotals.calories).toBeCloseTo(300);
+	});
+
+	test("supports markdown links with headings", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 180 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [Salmon](nutrients/Salmon.md#nutritional-info) 100g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("Salmon");
+		expect(result?.linkedTotals.calories).toBeCloseTo(180);
+	});
+
 	test("normalizes wikilink with heading and folder path", () => {
 		const getNutritionData = jest.fn().mockReturnValue({ calories: 200 });
 

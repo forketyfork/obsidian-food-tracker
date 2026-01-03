@@ -96,6 +96,8 @@ export const createInlineNutritionRegex = (escapedFoodTag: string) =>
 		"i"
 	);
 
+const createFoodLinkPattern = () => `(?:\\[\\[(?<wikiLink>[^\\]]+)\\]\\]|\\[[^\\]]*\\]\\((?<markdownLink>[^)]+)\\))`;
+
 /**
  * Creates regex to match linked food entries with amounts
  *
@@ -105,13 +107,13 @@ export const createInlineNutritionRegex = (escapedFoodTag: string) =>
  * @example
  * ```typescript
  * const regex = createLinkedFoodRegex("food");
- * // Matches: "#food [[Chicken Breast]] 200g"
- * // Captures: ["Chicken Breast", "200", "g"]
+ * // Matches: "#food [[Chicken Breast]] 200g" or markdown style links
+ * // Captures: ["Chicken Breast" | "path/to/Chicken.md", "200", "g"]
  * ```
  */
 export const createLinkedFoodRegex = (escapedFoodTag: string) =>
 	new RegExp(
-		`#${escapedFoodTag}\\s+\\[\\[([^\\]]+)\\]\\]\\s+(\\d+(?:\\.\\d+)?)(kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
+		`#${escapedFoodTag}\\s+${createFoodLinkPattern()}\\s+(?<amount>\\d+(?:\\.\\d+)?)(?<unit>kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?)`,
 		"i"
 	);
 
@@ -129,7 +131,10 @@ export const createLinkedFoodRegex = (escapedFoodTag: string) =>
  * ```
  */
 export const createLinkedFoodHighlightRegex = (escapedFoodTag: string) =>
-	new RegExp(`#${escapedFoodTag}\\s+\\[[^\\]]+\\]\\]\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs))`, "i");
+	new RegExp(
+		`#${escapedFoodTag}\\s+${createFoodLinkPattern()}\\s+(\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs))`,
+		"i"
+	);
 
 // ================================
 // Advanced highlighting regex patterns
@@ -147,7 +152,7 @@ const createInlineNutritionPattern = () =>
  * Example: "#food [[Chicken]] 200g"
  */
 const createLinkedFoodPattern = () =>
-	`\\[\\[[^\\]]+\\]\\]\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?))`;
+	`${createFoodLinkPattern()}\\s+(?<amountValue>\\d+(?:\\.\\d+)?(?:kg|lb|cups?|tbsp|tsp|ml|oz|g|l|pcs?))`;
 /**
  * Combined regex for food highlighting that matches both inline nutrition and linked food patterns
  * Uses named capture groups to distinguish between different match types

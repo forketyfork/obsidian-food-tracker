@@ -84,6 +84,7 @@ export interface FoodTrackerPluginSettings {
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
 	frontmatterFieldNames: FrontmatterFieldNames;
+	linkType: "wikilink" | "markdown";
 }
 
 export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
@@ -95,6 +96,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
 	frontmatterFieldNames: cloneFrontmatterFieldNames(DEFAULT_FRONTMATTER_FIELD_NAMES),
+	linkType: "wikilink",
 };
 
 /**
@@ -256,6 +258,13 @@ export class SettingsService {
 	 */
 	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
 		return cloneFrontmatterFieldNames(this.currentSettings.frontmatterFieldNames);
+  }
+  
+  /**
+	 * Get the current link type value synchronously
+	 */
+	get currentLinkType(): "wikilink" | "markdown" {
+		return this.currentSettings.linkType;
 	}
 
 	/**

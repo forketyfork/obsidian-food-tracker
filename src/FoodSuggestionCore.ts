@@ -58,7 +58,7 @@ export class FoodSuggestionCore {
 	private currentWorkoutTag: string = "";
 	private nutritionQueryRegex: RegExp; // Matches text ending with number+letters (e.g., "apple 100g")
 	private nutritionValidationRegex: RegExp; // Validates number+letters format (e.g., "100g")
-	private foodWithMeasureRegex: RegExp; // Matches wikilink followed by number+letters
+	private foodWithMeasureRegex: RegExp; // Matches wikilink or markdown link followed by number+letters
 
 	constructor(settingsService: SettingsService) {
 		this.settingsService = settingsService;
@@ -68,8 +68,8 @@ export class FoodSuggestionCore {
 		this.nutritionQueryRegex = /.*\s+(-?\d+[a-z]*)$/;
 		// Validate that text is just number+letters (supports negative numbers)
 		this.nutritionValidationRegex = /^-?\d+[a-z]*$/;
-		// Match wikilink followed by space and number+letters (supports negative numbers)
-		this.foodWithMeasureRegex = /\[\[[^\]]+\]\]\s+(-?\d+[a-z]*)$/;
+		// Match wikilink or markdown link followed by space and number+letters (supports negative numbers)
+		this.foodWithMeasureRegex = /(?:\[\[[^\]]+\]\]|\[[^\]]*\]\([^\)]+\))\s+(-?\d+[a-z]*)$/;
 
 		// Initialize with current tags
 		this.updateTagRegexes(this.settingsService.currentFoodTag, this.settingsService.currentWorkoutTag);
