@@ -2,6 +2,79 @@ import { BehaviorSubject, Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { SPECIAL_CHARS_REGEX } from "./constants";
 
+export interface FrontmatterFieldNames {
+	calories: string;
+	fats: string;
+	saturated_fats: string;
+	protein: string;
+	carbs: string;
+	fiber: string;
+	sugar: string;
+	sodium: string;
+}
+
+const FRONTMATTER_KEYS_ORDER: Array<keyof FrontmatterFieldNames> = [
+	"calories",
+	"fats",
+	"saturated_fats",
+	"protein",
+	"carbs",
+	"fiber",
+	"sugar",
+	"sodium",
+];
+
+export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = Object.freeze({
+	calories: "ft-calories",
+	fats: "ft-fats",
+	saturated_fats: "ft-saturated_fats",
+	protein: "ft-protein",
+	carbs: "ft-carbs",
+	fiber: "ft-fiber",
+	sugar: "ft-sugar",
+	sodium: "ft-sodium",
+});
+
+export function cloneFrontmatterFieldNames(names: FrontmatterFieldNames): FrontmatterFieldNames {
+	return { ...names };
+}
+
+function sanitizeFrontmatterFieldNames(
+	fieldNames: Partial<FrontmatterFieldNames>,
+	base: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
+): FrontmatterFieldNames {
+	const merged: FrontmatterFieldNames = {
+		...base,
+		...fieldNames,
+	};
+
+	const sanitized: FrontmatterFieldNames = { ...merged } as FrontmatterFieldNames;
+	const seen = new Set<string>();
+
+	for (const key of FRONTMATTER_KEYS_ORDER) {
+		const rawValue = merged[key];
+		const trimmed = (rawValue ?? "").trim();
+		const value = trimmed || base[key];
+
+		if (seen.has(value)) {
+			sanitized[key] = base[key];
+			continue;
+		}
+
+		sanitized[key] = value;
+		seen.add(value);
+	}
+
+	return sanitized;
+}
+
+export function sanitizeSettings(settings: FoodTrackerPluginSettings): FoodTrackerPluginSettings {
+	return {
+		...settings,
+		frontmatterFieldNames: sanitizeFrontmatterFieldNames(settings.frontmatterFieldNames),
+	};
+}
+
 export interface FoodTrackerPluginSettings {
 	nutrientDirectory: string;
 	totalDisplayMode: "status-bar" | "document";
@@ -10,6 +83,7 @@ export interface FoodTrackerPluginSettings {
 	goalsFile: string;
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
+	frontmatterFieldNames: FrontmatterFieldNames;
 	linkType: "wikilink" | "markdown";
 }
 
@@ -21,6 +95,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	goalsFile: "nutrition-goals.md",
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
+	frontmatterFieldNames: cloneFrontmatterFieldNames(DEFAULT_FRONTMATTER_FIELD_NAMES),
 	linkType: "wikilink",
 };
 
@@ -102,6 +177,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the frontmatter field names
+	 */
+	get frontmatterFieldNames$(): Observable<FrontmatterFieldNames> {
+		return this.settings$.pipe(map(settings => settings.frontmatterFieldNames));
+	}
+
+	/**
 	 * Get the current settings value synchronously
 	 */
 	get currentSettings(): FoodTrackerPluginSettings {
@@ -172,6 +254,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Get the current frontmatter field names synchronously
+	 */
+	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
+		return cloneFrontmatterFieldNames(this.currentSettings.frontmatterFieldNames);
+	}
+
+	/**
 	 * Get the current link type value synchronously
 	 */
 	get currentLinkType(): "wikilink" | "markdown" {
@@ -182,7 +271,8 @@ export class SettingsService {
 	 * Updates all settings and notifies all subscribers
 	 */
 	updateSettings(newSettings: FoodTrackerPluginSettings): void {
-		this.settingsSubject.next(newSettings);
+		const sanitized = sanitizeSettings(newSettings);
+		this.settingsSubject.next(sanitized);
 	}
 
 	/**
@@ -243,6 +333,14 @@ export class SettingsService {
 	 */
 	updateShowCalorieHints(show: boolean): void {
 		this.updateSetting("showCalorieHints", show);
+	}
+
+	/**
+	 * Updates frontmatter field names (partial update supported)
+	 */
+	updateFrontmatterFieldNames(fieldNames: Partial<FrontmatterFieldNames>): void {
+		const sanitized = sanitizeFrontmatterFieldNames(fieldNames, this.currentFrontmatterFieldNames);
+		this.updateSetting("frontmatterFieldNames", sanitized);
 	}
 
 	/**

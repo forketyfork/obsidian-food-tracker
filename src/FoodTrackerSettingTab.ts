@@ -2,6 +2,7 @@ import { App, PluginSettingTab, Setting, moment, normalizePath } from "obsidian"
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import FolderSuggest from "./FolderSuggest";
 import FileSuggest from "./FileSuggest";
+import { DEFAULT_FRONTMATTER_FIELD_NAMES, type FrontmatterFieldNames } from "./SettingsService";
 
 const obsidianMoment = moment as unknown as typeof import("moment");
 /**
@@ -141,5 +142,60 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 					});
 				new FileSuggest(this.app, text.inputEl);
 			});
+
+		this.addFrontmatterFieldNamesSection(containerEl);
+	}
+
+	private addFrontmatterFieldNamesSection(containerEl: HTMLElement): void {
+		const detailsEl = containerEl.createEl("details", {
+			cls: "food-tracker-settings-collapsible",
+		});
+		detailsEl.createEl("summary", {
+			text: "Metadata field names",
+			cls: "food-tracker-settings-collapsible-summary",
+		});
+
+		const descEl = detailsEl.createEl("p", {
+			cls: "food-tracker-settings-collapsible-desc setting-item-description",
+			text: "Customize the frontmatter field names used to store nutrition totals in daily notes.",
+		});
+		descEl.style.marginTop = "0.5em";
+		descEl.style.marginBottom = "1em";
+
+		const fieldConfigs: Array<{
+			key: keyof FrontmatterFieldNames;
+			name: string;
+			desc: string;
+		}> = [
+			{ key: "calories", name: "Calories field", desc: "Field name for total calories" },
+			{ key: "fats", name: "Fats field", desc: "Field name for total fats (g)" },
+			{ key: "saturated_fats", name: "Saturated fats field", desc: "Field name for saturated fats (g)" },
+			{ key: "protein", name: "Protein field", desc: "Field name for total protein (g)" },
+			{ key: "carbs", name: "Carbs field", desc: "Field name for total carbohydrates (g)" },
+			{ key: "fiber", name: "Fiber field", desc: "Field name for total fiber (g)" },
+			{ key: "sugar", name: "Sugar field", desc: "Field name for total sugar (g)" },
+			{ key: "sodium", name: "Sodium field", desc: "Field name for total sodium (mg)" },
+		];
+
+		for (const config of fieldConfigs) {
+			new Setting(detailsEl)
+				.setName(config.name)
+				.setDesc(config.desc)
+				.addText(text =>
+					text
+						.setPlaceholder(DEFAULT_FRONTMATTER_FIELD_NAMES[config.key])
+						.setValue(this.plugin.settings.frontmatterFieldNames[config.key])
+						.onChange(async value => {
+							const frontmatterFieldNames = this.plugin.settings.frontmatterFieldNames;
+							frontmatterFieldNames[config.key] = value;
+							this.plugin.settingsService.updateFrontmatterFieldNames(frontmatterFieldNames);
+							this.plugin.settings = {
+								...this.plugin.settings,
+								frontmatterFieldNames: this.plugin.settingsService.currentFrontmatterFieldNames,
+							};
+							await this.plugin.saveSettings();
+						})
+				);
+		}
 	}
 }

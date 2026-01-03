@@ -1,24 +1,14 @@
 import { App, TFile } from "obsidian";
 import { NutrientData, calculateNutritionTotals } from "./NutritionCalculator";
 import NutrientCache from "./NutrientCache";
-import { SettingsService } from "./SettingsService";
+import { DEFAULT_FRONTMATTER_FIELD_NAMES, FrontmatterFieldNames, SettingsService } from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
 
 export const FRONTMATTER_PREFIX = "ft-";
+export const FRONTMATTER_KEYS = DEFAULT_FRONTMATTER_FIELD_NAMES;
 
-export const FRONTMATTER_KEYS = {
-	calories: `${FRONTMATTER_PREFIX}calories`,
-	fats: `${FRONTMATTER_PREFIX}fats`,
-	saturated_fats: `${FRONTMATTER_PREFIX}saturated_fats`,
-	protein: `${FRONTMATTER_PREFIX}protein`,
-	carbs: `${FRONTMATTER_PREFIX}carbs`,
-	fiber: `${FRONTMATTER_PREFIX}fiber`,
-	sugar: `${FRONTMATTER_PREFIX}sugar`,
-	sodium: `${FRONTMATTER_PREFIX}sodium`,
-} as const;
-
-export type FrontmatterKey = keyof typeof FRONTMATTER_KEYS;
+export type FrontmatterKey = keyof FrontmatterFieldNames;
 
 export interface FrontmatterTotals {
 	calories?: number;
@@ -31,11 +21,16 @@ export interface FrontmatterTotals {
 	sodium?: number;
 }
 
-export function extractFrontmatterTotals(frontmatter: Record<string, unknown>): FrontmatterTotals | null {
+export function extractFrontmatterTotals(
+	frontmatter: Record<string, unknown>,
+	fieldNames: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
+): FrontmatterTotals | null {
 	const totals: FrontmatterTotals = {};
 	let hasAnyValue = false;
 
-	for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
+	const keys = Object.keys(fieldNames) as FrontmatterKey[];
+	for (const key of keys) {
+		const frontmatterKey = fieldNames[key];
 		const value = frontmatter[frontmatterKey];
 		if (value !== undefined && value !== null) {
 			let numValue: number;
@@ -47,7 +42,7 @@ export function extractFrontmatterTotals(frontmatter: Record<string, unknown>): 
 				continue;
 			}
 			if (!isNaN(numValue)) {
-				totals[key as FrontmatterKey] = numValue;
+				totals[key] = numValue;
 				hasAnyValue = true;
 			}
 		}
@@ -73,10 +68,14 @@ export function nutrientDataToFrontmatterTotals(data: NutrientData): Frontmatter
 
 export function applyNutrientTotalsToFrontmatter(
 	frontmatter: Record<string, unknown>,
-	totals: NutrientData | null
+	totals: NutrientData | null,
+	fieldNames: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
 ): void {
+	const keys = Object.keys(fieldNames) as FrontmatterKey[];
+
 	if (!totals || Object.keys(totals).length === 0) {
-		for (const frontmatterKey of Object.values(FRONTMATTER_KEYS)) {
+		for (const key of keys) {
+			const frontmatterKey = fieldNames[key];
 			if (frontmatterKey in frontmatter) {
 				frontmatter[frontmatterKey] = 0;
 			}
@@ -86,8 +85,9 @@ export function applyNutrientTotalsToFrontmatter(
 
 	const formattedTotals = nutrientDataToFrontmatterTotals(totals);
 
-	for (const [key, frontmatterKey] of Object.entries(FRONTMATTER_KEYS)) {
-		const value = formattedTotals[key as FrontmatterKey];
+	for (const key of keys) {
+		const frontmatterKey = fieldNames[key];
+		const value = formattedTotals[key];
 		if (value !== undefined) {
 			if (value !== 0) {
 				frontmatter[frontmatterKey] = value;
@@ -174,7 +174,7 @@ export default class FrontmatterTotalsService {
 	}
 
 	private updateFrontmatterValues(frontmatter: Record<string, unknown>, totals: NutrientData | null): void {
-		applyNutrientTotalsToFrontmatter(frontmatter, totals);
+		applyNutrientTotalsToFrontmatter(frontmatter, totals, this.settingsService.currentFrontmatterFieldNames);
 	}
 
 	cancelPendingUpdates(): void {

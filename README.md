@@ -222,6 +222,7 @@ Go to Settings > Food Tracker to configure:
   - `YYYY-MM-DD-[journal]` → `2025-11-12-journal`
   - `dddd YYYY-MM-DD` → `Wednesday 2025-11-12`
 - **Goals file**: Specify the path to your nutrition goals file (e.g., "nutrition-goals.md"). The field includes type-ahead file suggestions.
+- **Metadata field names**: Customize the frontmatter property names used for storing nutrition totals in daily notes. By default, the plugin uses `ft-` prefixed names (e.g., `ft-calories`, `ft-protein`). You can customize these to match your existing setup or personal preferences (e.g., just `calories` instead of `ft-calories`).
 
 > **Note**: When you change the food or workout tag settings, the plugin will only recognize the new tags. Existing entries will need to be updated if you want them included in calculations.
 
