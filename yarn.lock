@@ -296,10 +296,10 @@
   dependencies:
     "@marijn/find-cluster-break" "^1.0.0"
 
-"@codemirror/view@^6.39.8":
-  version "6.39.8"
-  resolved "https://registry.yarnpkg.com/@codemirror/view/-/view-6.39.8.tgz#d761e161b2b72ed71b3c97a6ff622db1cc10099c"
-  integrity sha512-1rASYd9Z/mE3tkbC9wInRlCNyCkSn+nLsiQKZhEDUUJiUfs/5FHDpCUDaQpoTIaNGeDc6/bhaEAyLmeEucEFPw==
+"@codemirror/view@^6.39.9":
+  version "6.39.9"
+  resolved "https://registry.yarnpkg.com/@codemirror/view/-/view-6.39.9.tgz#66c93ca2591b941784fc154c6c5d48a5244a8453"
+  integrity sha512-miGSIfBOKC1s2oHoa80dp+BjtsL8sXsrgGlQnQuOcfvaedcQUtqddTmKbJSDkLl4mkgPvZyXuKic2HDNYcJLYA==
   dependencies:
     "@codemirror/state" "^6.5.0"
     crelt "^1.0.6"
