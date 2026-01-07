@@ -2961,9 +2961,9 @@ nwsapi@^2.2.16:
   integrity sha512-/ieB+mDe4MrrKMT8z+mQL8klXydZWGR5Dowt4RAGKbJ3kIGEx3X4ljUo+6V73IXtUPWgfOlU5B9MlGxFO5T+cA==
 
 obsidian@latest:
-  version "1.11.0"
-  resolved "https://registry.yarnpkg.com/obsidian/-/obsidian-1.11.0.tgz#b9a96e128980908ccacba4e25fbaeb70ec28151a"
-  integrity sha512-lVqN9AmDWHzhNATi2tDnjqVgI6WUYKeT+lIsAycAyLt4XCC6zRsWzb+tFCiB7Rn3PpttefjoovilhYwvS4Iqxw==
+  version "1.11.4"
+  resolved "https://registry.yarnpkg.com/obsidian/-/obsidian-1.11.4.tgz#41f3d0e98b44e82c3cd17f4779735720df5104cc"
+  integrity sha512-n0KD3S+VndgaByrEtEe8NELy0ya6/s+KZ7OcxA6xOm5NN4thxKpQjo6eqEudHEvfGCeT/TYToAKJzitQ1I3XTg==
   dependencies:
     "@types/codemirror" "5.60.8"
     moment "2.29.4"
