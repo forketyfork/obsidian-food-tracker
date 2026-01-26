@@ -163,6 +163,11 @@
 	border-color: rgb(var(--color-red-rgb));
 }
 
+.food-tracker-settings-collapsible-desc {
+	margin-top: 0.5em;
+	margin-bottom: 1em;
+}
+
 /* Fixed width for search button to prevent resizing */
 .food-tracker-search-button {
 	min-width: 110px;
