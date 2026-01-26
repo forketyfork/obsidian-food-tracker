@@ -155,12 +155,10 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			cls: "food-tracker-settings-collapsible-summary",
 		});
 
-		const descEl = detailsEl.createEl("p", {
+		detailsEl.createEl("p", {
 			cls: "food-tracker-settings-collapsible-desc setting-item-description",
 			text: "Customize the frontmatter field names used to store nutrition totals in daily notes.",
 		});
-		descEl.style.marginTop = "0.5em";
-		descEl.style.marginBottom = "1em";
 
 		const fieldConfigs: Array<{
 			key: keyof FrontmatterFieldNames;
