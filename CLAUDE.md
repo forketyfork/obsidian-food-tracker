@@ -86,6 +86,7 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 - All CSS classes should have the prefix `food-tracker-`.
 - All user data attributes should start with `data-food-tracker-`
 - Do not overwrite Obsidian core styling, always use custom classes or data attributes.
+- **Avoid inline styles**: Never assign styles via JavaScript (`element.style.x = y`) or inline HTML style attributes. Move all styles to CSS so themes and snippets can adapt them.
 
 ## Obsidian API Best Practices
 
@@ -101,3 +102,9 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 - **User input**: When letting users select files or folders, provide an `AbstractInputSuggest` for type-ahead support
 - **Type safety**: Always validate and coerce types from frontmatter and user input (e.g., `String(value)` for frontmatter fields that might not be strings)
 - **Component pattern**: Extend `Component` class for plugin sub-components to ensure proper cleanup and lifecycle management
+- **CodeMirror extensions**: When implementing editor decorations, consider updating on viewport change (not just document change) so decorations appear as the user scrolls through large files
+
+## Plugin Submission Guidelines
+
+- **Don't use "Obsidian" in plugin name or description**: The word "Obsidian" is reserved for first-party products
+- **manifest.json**: Don't add `"main": "main.js"` entry - it's not a valid manifest field and will be flagged during review
