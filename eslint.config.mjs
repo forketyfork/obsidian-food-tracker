@@ -8,6 +8,7 @@ export default [
 	{
 		ignores: [
 			"**/node_modules/",
+			"**/.yarn/",
 			"**/main.js",
 			"**/*.js",
 			"!eslint.config.mjs",
