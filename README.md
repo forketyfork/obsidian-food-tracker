@@ -298,6 +298,12 @@ Full release process (version bump, push, and tag):
 yarn release
 ```
 
+## My other plugins
+
+- [YouTrack Fetcher](https://github.com/forketyfork/obsidian-youtrack-fetcher): Fetch YouTrack issues into structured notes with templates.
+- [Grazie Plugin](https://github.com/forketyfork/obsidian-grazie-plugin): Grammar and spell checking powered by JetBrains AI Platform (in development).
+- [Speech Bubbles](https://github.com/forketyfork/obsidian-speech-bubbles): Render transcript notes as chat-style speech bubbles.
+
 ## License
 
 This plugin is licensed under the MIT License.
