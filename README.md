@@ -289,13 +289,13 @@ yarn build
 Bump the version in `package.json` and `manifest.json`:
 
 ```shell
-yarn version
+yarn version --immediate <strategy|version>
 ```
 
 Full release process (version bump, push, and tag):
 
 ```shell
-yarn release
+yarn release -- <strategy|version>
 ```
 
 ## My other plugins

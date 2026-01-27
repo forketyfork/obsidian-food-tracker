@@ -64,12 +64,13 @@ build-css:
     yarn build:css
 
 # Bump version
-version:
-    yarn version
+version VERSION:
+    yarn version --immediate {{VERSION}}
+    yarn run version
 
 # Full release (version, push, tags)
-release:
-    yarn release
+release VERSION:
+    yarn release -- {{VERSION}}
 
 # Tag release (after release command)
 tag-release:
