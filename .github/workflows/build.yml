@@ -20,7 +20,7 @@ jobs:
           node-version: "24.x"
       - name: Build plugin
         run: |
-          yarn install
+          yarn install --immutable
           yarn build
       - name: Fail if build modified files
         run: |
