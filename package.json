@@ -29,8 +29,10 @@
 	],
 	"author": "Forketyfork",
 	"license": "MIT",
+	"engines": {
+		"node": "^20.19.0 || ^22.13.0 || >=24"
+	},
 	"devDependencies": {
-		"@eslint/eslintrc": "^3.3.3",
 		"@eslint/js": "^10.0.1",
 		"@types/jest": "^30.0.0",
 		"@types/lodash": "^4.17.23",
