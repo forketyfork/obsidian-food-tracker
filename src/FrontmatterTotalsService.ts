@@ -1,7 +1,13 @@
 import { App, TFile } from "obsidian";
 import { NutrientData, calculateNutritionTotals } from "./NutritionCalculator";
 import NutrientCache from "./NutrientCache";
-import { DEFAULT_FRONTMATTER_FIELD_NAMES, FrontmatterFieldNames, SettingsService } from "./SettingsService";
+import {
+	DEFAULT_ENABLED_FRONTMATTER_FIELDS,
+	DEFAULT_FRONTMATTER_FIELD_NAMES,
+	EnabledFrontmatterFields,
+	FrontmatterFieldNames,
+	SettingsService,
+} from "./SettingsService";
 import GoalsService from "./GoalsService";
 import DailyNoteLocator from "./DailyNoteLocator";
 
@@ -69,12 +75,14 @@ export function nutrientDataToFrontmatterTotals(data: NutrientData): Frontmatter
 export function applyNutrientTotalsToFrontmatter(
 	frontmatter: Record<string, unknown>,
 	totals: NutrientData | null,
-	fieldNames: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES
+	fieldNames: FrontmatterFieldNames = DEFAULT_FRONTMATTER_FIELD_NAMES,
+	enabledFields: EnabledFrontmatterFields = DEFAULT_ENABLED_FRONTMATTER_FIELDS
 ): void {
 	const keys = Object.keys(fieldNames) as FrontmatterKey[];
 
 	if (!totals || Object.keys(totals).length === 0) {
 		for (const key of keys) {
+			if (!enabledFields[key]) continue;
 			const frontmatterKey = fieldNames[key];
 			if (frontmatterKey in frontmatter) {
 				frontmatter[frontmatterKey] = 0;
@@ -86,6 +94,7 @@ export function applyNutrientTotalsToFrontmatter(
 	const formattedTotals = nutrientDataToFrontmatterTotals(totals);
 
 	for (const key of keys) {
+		if (!enabledFields[key]) continue;
 		const frontmatterKey = fieldNames[key];
 		const value = formattedTotals[key];
 		if (value !== undefined) {
@@ -174,7 +183,12 @@ export default class FrontmatterTotalsService {
 	}
 
 	private updateFrontmatterValues(frontmatter: Record<string, unknown>, totals: NutrientData | null): void {
-		applyNutrientTotalsToFrontmatter(frontmatter, totals, this.settingsService.currentFrontmatterFieldNames);
+		applyNutrientTotalsToFrontmatter(
+			frontmatter,
+			totals,
+			this.settingsService.currentFrontmatterFieldNames,
+			this.settingsService.currentEnabledFrontmatterFields
+		);
 	}
 
 	cancelPendingUpdates(): void {
