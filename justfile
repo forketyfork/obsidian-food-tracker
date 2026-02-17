@@ -70,7 +70,7 @@ version VERSION:
 
 # Full release (version, push, tags)
 release VERSION:
-    yarn release -- {{VERSION}}
+    yarn release {{VERSION}}
 
 # Tag release (after release command)
 tag-release:

@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 
-const [versionArg] = process.argv.slice(2);
+const [versionArg] = process.argv.slice(2).filter((arg) => arg !== "--");
 
 if (!versionArg) {
 	console.error("Release version or strategy is required. Example: yarn release -- patch");
