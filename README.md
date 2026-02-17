@@ -99,13 +99,16 @@ This plugin works on **mobile** and **desktop**, with layouts that adapt to smal
    - **🔍 Search**: Use the search button to find foods in OpenFoodFacts database
      - Enter a product name to search by text
      - Enter a barcode (8-14 digits) to look up by barcode (EAN-8, UPC-A, EAN-13, ITF-14)
-   - **Nutritional values per 100g**:
+   - **Nutrient values are per serving** toggle:
+     - Off (default): values are interpreted as per 100g
+     - On: values are interpreted as per serving size and stored with `nutrition_per`
+   - **Nutritional values**:
      - Calories
      - Fats (in grams)
      - Carbohydrates, sugar, fiber (in grams)
      - Protein (in grams)
      - Sodium (in milligrams)
-   - _Optional_: **Serving size** to specify typical weight of one piece (in grams)
+   - **Serving size** in grams (used for piece-based units and for per-serving mode)
 4. Click "Create" to save the nutrient file
 
 ### Tracking Food Intake

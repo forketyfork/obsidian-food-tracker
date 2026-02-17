@@ -1,4 +1,54 @@
-import { INVALID_FILENAME_CHARS_REGEX, isBarcode } from "../constants";
+import { convertGermanUmlauts, getUnitMultiplier, INVALID_FILENAME_CHARS_REGEX, isBarcode } from "../constants";
+
+describe("convertGermanUmlauts", () => {
+	test("converts lowercase umlauts correctly", () => {
+		expect(convertGermanUmlauts("ü")).toBe("ue");
+		expect(convertGermanUmlauts("ä")).toBe("ae");
+		expect(convertGermanUmlauts("ö")).toBe("oe");
+	});
+
+	test("converts uppercase umlauts correctly", () => {
+		expect(convertGermanUmlauts("Ü")).toBe("Ue");
+		expect(convertGermanUmlauts("Ä")).toBe("Ae");
+		expect(convertGermanUmlauts("Ö")).toBe("Oe");
+	});
+
+	test("converts multiple umlauts in a single string", () => {
+		expect(convertGermanUmlauts("Müsli")).toBe("Muesli");
+		expect(convertGermanUmlauts("Käse")).toBe("Kaese");
+		expect(convertGermanUmlauts("Döner")).toBe("Doener");
+		expect(convertGermanUmlauts("Hühnchenbrösel")).toBe("Huehnchenbroesel");
+	});
+
+	test("handles mixed case umlauts", () => {
+		expect(convertGermanUmlauts("ÄpfelÖl")).toBe("AepfelOel");
+		expect(convertGermanUmlauts("GrünKöhl")).toBe("GruenKoehl");
+	});
+
+	test("preserves non-umlaut characters", () => {
+		expect(convertGermanUmlauts("Chicken")).toBe("Chicken");
+		expect(convertGermanUmlauts("123")).toBe("123");
+		expect(convertGermanUmlauts("Test-Food")).toBe("Test-Food");
+	});
+
+	test("handles empty strings and special cases", () => {
+		expect(convertGermanUmlauts("")).toBe("");
+		expect(convertGermanUmlauts("   ")).toBe("   ");
+		expect(convertGermanUmlauts("no umlauts here")).toBe("no umlauts here");
+	});
+
+	test("handles real food names", () => {
+		expect(convertGermanUmlauts("Müsli mit Früchten")).toBe("Muesli mit Fruechten");
+		expect(convertGermanUmlauts("Würstchen")).toBe("Wuerstchen");
+		expect(convertGermanUmlauts("Süßkartoffel")).toBe("Suesskartoffel");
+	});
+
+	test("converts Eszett (sharp s) correctly", () => {
+		expect(convertGermanUmlauts("ß")).toBe("ss");
+		expect(convertGermanUmlauts("Weißbrot")).toBe("Weissbrot");
+		expect(convertGermanUmlauts("Groß")).toBe("Gross");
+	});
+});
 
 describe("filename handling integration", () => {
 	test("preserves German umlauts and Eszett", () => {
@@ -100,5 +150,22 @@ describe("isBarcode", () => {
 	test("rejects strings with internal spaces", () => {
 		expect(isBarcode("301 762 401")).toBe(false);
 		expect(isBarcode("3017 6240 10701")).toBe(false);
+	});
+});
+
+describe("getUnitMultiplier", () => {
+	test("uses nutrition_per for gram-based units", () => {
+		expect(getUnitMultiplier(28, "g", undefined, 28)).toBeCloseTo(1);
+		expect(getUnitMultiplier(56, "g", undefined, 28)).toBeCloseTo(2);
+	});
+
+	test("falls back to 100 when nutrition_per is missing", () => {
+		expect(getUnitMultiplier(50, "g")).toBeCloseTo(0.5);
+		expect(getUnitMultiplier(100, "ml")).toBeCloseTo(1);
+	});
+
+	test("supports piece units with serving_size and nutrition_per", () => {
+		expect(getUnitMultiplier(1, "pc", 28, 28)).toBeCloseTo(1);
+		expect(getUnitMultiplier(2, "pcs", 28, 28)).toBeCloseTo(2);
 	});
 });

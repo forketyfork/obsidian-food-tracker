@@ -40,6 +40,52 @@ describe("calculateNutritionTotals", () => {
 		expect(result?.clampedTotals.calories).toBeCloseTo(190);
 	});
 
+	test("normalizes linked entries using nutrition_per when provided", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 150, nutrition_per: 28 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[trail-mix]] 28g",
+				getNutritionData,
+			})
+		);
+
+		expect(result).not.toBeNull();
+		expect(result?.linkedTotals.calories).toBeCloseTo(150);
+	});
+
+	test("keeps backward-compatible behavior when nutrition_per is missing", () => {
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 150 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[trail-mix]] 28g",
+				getNutritionData,
+			})
+		);
+
+		expect(result).not.toBeNull();
+		expect(result?.linkedTotals.calories).toBeCloseTo(42);
+	});
+
+	test("supports piece units together with nutrition_per", () => {
+		const getNutritionData = jest.fn().mockReturnValue({
+			calories: 150,
+			serving_size: 28,
+			nutrition_per: 28,
+		});
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[cookie]] 2pcs",
+				getNutritionData,
+			})
+		);
+
+		expect(result).not.toBeNull();
+		expect(result?.linkedTotals.calories).toBeCloseTo(300);
+	});
+
 	test("normalizes wikilink aliases (custom display names) to extract actual filename", () => {
 		const getNutritionData = jest
 			.fn()

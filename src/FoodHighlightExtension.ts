@@ -114,6 +114,16 @@ export default class FoodHighlightExtension extends Component {
 				const servingSize = data?.serving_size;
 				return typeof servingSize === "number" && isFinite(servingSize) ? servingSize : null;
 			},
+			getNutritionPer: (fileName: string) => {
+				const normalized = fileName.trim();
+				if (!normalized) {
+					return null;
+				}
+
+				const data = this.nutrientCache.getNutritionData(normalized);
+				const nutritionPer = data?.nutrition_per;
+				return typeof nutritionPer === "number" && isFinite(nutritionPer) ? nutritionPer : null;
+			},
 		};
 
 		class InlineCaloriesWidget extends WidgetType {

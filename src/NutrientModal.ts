@@ -1,4 +1,4 @@
-import { App, Modal, Setting, Notice, normalizePath, requestUrl } from "obsidian";
+import { App, Modal, Setting, Notice, normalizePath, requestUrl, ToggleComponent } from "obsidian";
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import { INVALID_FILENAME_CHARS_REGEX, isBarcode } from "./constants";
 
@@ -69,6 +69,8 @@ export default class NutrientModal extends Modal {
 	nameInput: HTMLInputElement | null = null;
 	searchButton: HTMLButtonElement | null = null;
 	isSearching: boolean = false;
+	isPerServingMode: boolean = false;
+	nutritionBasisToggle: ToggleComponent | null = null;
 
 	constructor(app: App, plugin: FoodTrackerPlugin) {
 		super(app);
@@ -160,6 +162,16 @@ export default class NutrientModal extends Modal {
 		});
 
 		new Setting(this.formContainer)
+			.setName("Nutrient values are per serving")
+			.setDesc("Off: values are per 100g. On: values are per serving size.")
+			.addToggle(toggle => {
+				this.nutritionBasisToggle = toggle;
+				return toggle.setValue(this.isPerServingMode).onChange(value => {
+					this.isPerServingMode = value;
+				});
+			});
+
+		new Setting(this.formContainer)
 			.addButton(button =>
 				button
 					.setButtonText("Create")
@@ -179,6 +191,7 @@ export default class NutrientModal extends Modal {
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
+		this.nutritionBasisToggle = null;
 	}
 
 	async createNutrientFile() {
@@ -209,6 +222,7 @@ export default class NutrientModal extends Modal {
 				await this.app.vault.createFolder(directory);
 			}
 			const servingSizeLine = this.nutrientData.serving_size ? `serving_size: ${this.nutrientData.serving_size}\n` : "";
+			const nutritionPerLine = this.isPerServingMode ? `nutrition_per: ${this.nutrientData.serving_size}\n` : "";
 			const content = `---
 name: ${this.nutrientData.name}
 calories: ${this.nutrientData.calories}
@@ -219,7 +233,7 @@ sugar: ${this.nutrientData.sugar}
 fiber: ${this.nutrientData.fiber}
 protein: ${this.nutrientData.protein}
 sodium: ${this.nutrientData.sodium}
-${servingSizeLine}barcode: "${this.nutrientData.barcode}"
+${servingSizeLine}${nutritionPerLine}barcode: "${this.nutrientData.barcode}"
 brand: "${this.nutrientData.brand}"
 url: "${this.nutrientData.url}"
 ---
@@ -384,6 +398,8 @@ url: "${this.nutrientData.url}"
 		this.nutrientData.fiber = Number(nutriments["fiber_100g"] ?? 0);
 		this.nutrientData.protein = Number(nutriments["proteins_100g"] ?? 0);
 		this.nutrientData.sodium = Number(nutriments["sodium_100g"] ?? 0) * 1000; // Convert from g to mg
+		this.isPerServingMode = false;
+		this.nutritionBasisToggle?.setValue(false);
 
 		const barcode = product.code ?? product.id ?? "";
 		this.nutrientData.barcode = barcode;
