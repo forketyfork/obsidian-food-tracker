@@ -17,13 +17,14 @@ describe("FoodTrackerPlugin", () => {
 		expect(plugin.settings.nutrientDirectory).toBe("nutrients");
 	});
 
-	test("loadSettings handles null from loadData (fresh install)", async () => {
-		plugin.loadData = () => Promise.resolve(null);
+	test("onload succeeds with null from loadData (fresh install)", async () => {
+		const freshPlugin = new FoodTrackerPlugin(new App(), {} as PluginManifest);
+		freshPlugin.loadData = () => Promise.resolve(null);
 
-		await plugin.loadSettings();
+		await freshPlugin.onload();
 
-		expect(plugin.settings).toBeDefined();
-		expect(plugin.settings.nutrientDirectory).toBe(DEFAULT_SETTINGS.nutrientDirectory);
-		expect(plugin.settings.frontmatterFieldNames).toEqual(DEFAULT_SETTINGS.frontmatterFieldNames);
+		expect(freshPlugin.settings).toBeDefined();
+		expect(freshPlugin.settings.nutrientDirectory).toBe(DEFAULT_SETTINGS.nutrientDirectory);
+		expect(freshPlugin.settings.frontmatterFieldNames).toEqual(DEFAULT_SETTINGS.frontmatterFieldNames);
 	});
 });
