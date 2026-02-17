@@ -100,14 +100,14 @@ export default class NutrientModal extends Modal {
 		// Create main container for side-by-side layout
 		this.mainContainer = contentEl.createDiv({ cls: "food-tracker-nutrient-modal-main" });
 		this.formContainer = this.mainContainer.createDiv({ cls: "food-tracker-nutrient-form-container" });
-		this.formContainer.appendChild(contentEl.createEl("h2", { text: "🍎 Add nutrient" }));
+		this.formContainer.appendChild(contentEl.createEl("h2", { text: "🍎 Add nutrient" })); // eslint-disable-line obsidianmd/ui/sentence-case -- modal heading, not a Setting
 
 		// Always create the search results container to maintain layout
 		this.searchResultsEl = this.mainContainer.createDiv({ cls: "food-tracker-search-results-container" });
 		this.searchResultsEl.hide();
 
 		new Setting(this.formContainer)
-			.setName("📝 Name or barcode")
+			.setName("📝 Name or barcode") // eslint-disable-line obsidianmd/ui/sentence-case -- emoji prefix
 			.addText(text => {
 				this.nameInput = text.inputEl;
 				text.setValue(this.nutrientData.name).onChange(value => {
@@ -124,12 +124,15 @@ export default class NutrientModal extends Modal {
 			.addButton(button => {
 				this.searchButton = button.buttonEl;
 				this.searchButton.addClass("food-tracker-search-button");
-				return button
-					.setButtonText("🔍 Search")
-					.setTooltip("Search OpenFoodFacts database")
-					.onClick(async () => {
-						await this.searchOpenFoodFacts();
-					});
+				return (
+					button
+						// eslint-disable-next-line obsidianmd/ui/sentence-case -- emoji prefix
+						.setButtonText("🔍 Search")
+						.setTooltip("Search OpenFoodFacts database")
+						.onClick(async () => {
+							await this.searchOpenFoodFacts();
+						})
+				);
 			});
 
 		const nutrientFields: NutrientField[] = [
@@ -331,7 +334,7 @@ url: "${this.nutrientData.url}"
 		}
 
 		const resultsContainer = this.searchResultsEl.createDiv({ cls: "food-tracker-search-results" });
-		resultsContainer.createEl("h3", { text: "🔍 Search results from OpenFoodFacts:" });
+		resultsContainer.createEl("h3", { text: "🔍 Search results from OpenFoodFacts:" }); // eslint-disable-line obsidianmd/ui/sentence-case -- proper noun
 
 		this.searchResults.forEach(product => {
 			const productEl = resultsContainer.createDiv({ cls: "food-tracker-search-result-item" });
@@ -430,10 +433,10 @@ url: "${this.nutrientData.url}"
 		if (this.searchButton) {
 			this.searchButton.disabled = searching;
 			if (searching) {
-				this.searchButton.textContent = "⏳ Searching...";
+				this.searchButton.textContent = "⏳ Searching..."; // eslint-disable-line obsidianmd/ui/sentence-case -- emoji prefix
 				this.searchButton.addClass("food-tracker-search-button-searching");
 			} else {
-				this.searchButton.textContent = "🔍 Search";
+				this.searchButton.textContent = "🔍 Search"; // eslint-disable-line obsidianmd/ui/sentence-case -- emoji prefix
 				this.searchButton.removeClass("food-tracker-search-button-searching");
 			}
 		}
