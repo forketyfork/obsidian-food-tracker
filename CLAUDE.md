@@ -108,3 +108,4 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 
 - **Don't use "Obsidian" in plugin name or description**: The word "Obsidian" is reserved for first-party products
 - **manifest.json**: Don't add `"main": "main.js"` entry - it's not a valid manifest field and will be flagged during review
+- **Settings headings**: Use `new Setting(containerEl).setName("...").setHeading()` instead of `containerEl.createEl("h2", ...)` or similar HTML heading elements

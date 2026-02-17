@@ -134,6 +134,7 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 			.setDesc("File containing daily nutrition goals")
 			.addText(text => {
 				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case -- file path placeholder
 					.setPlaceholder("nutrition-goals.md")
 					.setValue(this.plugin.settings.goalsFile)
 					.onChange(async value => {
