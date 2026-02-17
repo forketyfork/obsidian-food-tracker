@@ -266,7 +266,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const savedData = (await this.loadData()) as Partial<FoodTrackerPluginSettings>;
+		const savedData = ((await this.loadData()) ?? {}) as Partial<FoodTrackerPluginSettings>;
 
 		// Create mobile-aware default settings
 		const mobileAwareDefaults = {
