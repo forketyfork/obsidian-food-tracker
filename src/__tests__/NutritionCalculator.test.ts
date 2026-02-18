@@ -1,4 +1,4 @@
-import { calculateNutritionTotals, NutritionCalculationParams } from "../NutritionCalculator";
+import { calculateNutritionTotals, normalizeFilename, NutritionCalculationParams } from "../NutritionCalculator";
 
 describe("calculateNutritionTotals", () => {
 	const buildParams = (overrides: Partial<NutritionCalculationParams>): NutritionCalculationParams => ({
@@ -252,6 +252,23 @@ describe("calculateNutritionTotals", () => {
 		});
 	});
 
+	test("resolves linked food with percent in filename without errors", () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+		const getNutritionData = jest.fn().mockReturnValue({ calories: 67 });
+
+		const result = calculateNutritionTotals(
+			buildParams({
+				content: "#food [[Jogurt 3.7% (Pilos)]] 100g",
+				getNutritionData,
+			})
+		);
+
+		expect(getNutritionData).toHaveBeenCalledWith("Jogurt 3.7% (Pilos)");
+		expect(result?.linkedTotals.calories).toBeCloseTo(67);
+		expect(consoleSpy).not.toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
 	test("handles zero goal gracefully", () => {
 		const getNutritionData = jest.fn().mockReturnValue({ calories: 100 });
 
@@ -325,5 +342,52 @@ describe("calculateNutritionTotals", () => {
 			percentConsumed: 100,
 			percentRemaining: 0,
 		});
+	});
+});
+
+describe("normalizeFilename", () => {
+	test("decodes percent-encoded filenames", () => {
+		expect(normalizeFilename("Tartine%20brioche%20Nutella")).toBe("Tartine brioche Nutella");
+	});
+
+	test("handles filenames with literal percent sign without logging errors", () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+		expect(normalizeFilename("Jogurt 3.7% (Pilos)")).toBe("Jogurt 3.7% (Pilos)");
+		expect(consoleSpy).not.toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
+	test("handles percent at end of filename", () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+		expect(normalizeFilename("Fat 3.7%")).toBe("Fat 3.7%");
+		expect(consoleSpy).not.toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
+	test("handles mixed valid encoding and literal percent", () => {
+		const consoleSpy = jest.spyOn(console, "error").mockImplementation();
+		expect(normalizeFilename("Jogurt%203.7%25%20(Pilos)")).toBe("Jogurt 3.7% (Pilos)");
+		expect(consoleSpy).not.toHaveBeenCalled();
+		consoleSpy.mockRestore();
+	});
+
+	test("strips .md extension", () => {
+		expect(normalizeFilename("Apple.md")).toBe("Apple");
+	});
+
+	test("extracts filename from path", () => {
+		expect(normalizeFilename("folder/subfolder/Apple")).toBe("Apple");
+	});
+
+	test("strips alias from wikilink", () => {
+		expect(normalizeFilename("Apple|Green Apple")).toBe("Apple");
+	});
+
+	test("strips heading from wikilink", () => {
+		expect(normalizeFilename("Apple#Nutrition")).toBe("Apple");
+	});
+
+	test("returns undefined for empty input", () => {
+		expect(normalizeFilename("")).toBeUndefined();
 	});
 });

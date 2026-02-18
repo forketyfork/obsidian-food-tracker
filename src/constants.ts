@@ -36,30 +36,8 @@ export const SUGAR_REGEX = /(\d+(?:\.\d+)?)sugar/i;
 // File and content validation patterns
 // ================================
 
-/** Regex to identify invalid characters for filenames (preserves German umlauts and Eszett) */
-export const INVALID_FILENAME_CHARS_REGEX = /[^a-zA-Z0-9äöüÄÖÜß]/g;
-
-/** Lookup map for German umlaut and Eszett conversion - created once for performance */
-const UMLAUT_MAP: Record<string, string> = {
-	ü: "ue",
-	ä: "ae",
-	ö: "oe",
-	Ü: "Ue",
-	Ä: "Ae",
-	Ö: "Oe",
-	ß: "ss",
-};
-
-/**
- * Converts German umlauts and Eszett to their letter equivalents for filename safety
- * while preserving readability. Uses single regex pass for optimal performance.
- *
- * @param text - The text containing potential umlauts or Eszett
- * @returns Text with umlauts converted to letter pairs
- */
-export const convertGermanUmlauts = (text: string): string => {
-	return text.replace(/[üäöÜÄÖß]/g, match => UMLAUT_MAP[match]);
-};
+/** Regex to identify invalid characters for filenames (preserves all Unicode letters and digits) */
+export const INVALID_FILENAME_CHARS_REGEX = /[^\p{L}\p{N}]/gu;
 
 // ================================
 // Factory functions for dynamic regex creation

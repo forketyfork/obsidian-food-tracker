@@ -183,7 +183,7 @@ export function normalizeFilename(raw: string): string | undefined {
 	}
 
 	try {
-		filename = decodeURIComponent(filename);
+		filename = decodeURIComponent(filename.replace(/%(?![0-9A-Fa-f]{2})/g, "%25"));
 	} catch (error) {
 		console.error("Failed to decode filename:", filename, error);
 	}
