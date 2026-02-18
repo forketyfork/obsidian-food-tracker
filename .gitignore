@@ -34,3 +34,6 @@ coverage/
 
 # zenflow
 .zenflow
+
+.tmp/
+.architect/
