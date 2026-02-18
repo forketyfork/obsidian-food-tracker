@@ -31,6 +31,18 @@ describe("filename handling integration", () => {
 		expect(result).toBe("Jalapeño_picañón");
 	});
 
+	test("preserves decomposed Unicode accents (combining marks)", () => {
+		const decomposed = "Cafe\u0301";
+		const result = decomposed.replace(INVALID_FILENAME_CHARS_REGEX, "_");
+		expect(result).toBe("Cafe\u0301");
+	});
+
+	test("preserves Hindi script with combining marks", () => {
+		const hindi = "हिंदी";
+		const result = hindi.replace(INVALID_FILENAME_CHARS_REGEX, "_");
+		expect(result).toBe("हिंदी");
+	});
+
 	test("full filename conversion preserves umlauts and diacritics directly", () => {
 		const foodName = "Müsli mit Früchten & Nüssen!";
 		const converted = foodName.replace(INVALID_FILENAME_CHARS_REGEX, "_");

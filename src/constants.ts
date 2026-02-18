@@ -36,8 +36,8 @@ export const SUGAR_REGEX = /(\d+(?:\.\d+)?)sugar/i;
 // File and content validation patterns
 // ================================
 
-/** Regex to identify invalid characters for filenames (preserves all Unicode letters and digits) */
-export const INVALID_FILENAME_CHARS_REGEX = /[^\p{L}\p{N}]/gu;
+/** Regex to identify invalid characters for filenames (preserves all Unicode letters, combining marks, and digits) */
+export const INVALID_FILENAME_CHARS_REGEX = /[^\p{L}\p{M}\p{N}]/gu;
 
 // ================================
 // Factory functions for dynamic regex creation
