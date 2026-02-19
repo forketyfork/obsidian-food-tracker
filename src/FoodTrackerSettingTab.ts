@@ -2,7 +2,11 @@ import { App, PluginSettingTab, Setting, moment, normalizePath } from "obsidian"
 import type FoodTrackerPlugin from "./FoodTrackerPlugin";
 import FolderSuggest from "./FolderSuggest";
 import FileSuggest from "./FileSuggest";
-import { DEFAULT_FRONTMATTER_FIELD_NAMES, type FrontmatterFieldNames } from "./SettingsService";
+import {
+	DEFAULT_FRONTMATTER_FIELD_NAMES,
+	type EnabledFrontmatterFields,
+	type FrontmatterFieldNames,
+} from "./SettingsService";
 
 const obsidianMoment = moment as unknown as typeof import("moment");
 /**
@@ -158,28 +162,40 @@ export default class FoodTrackerSettingTab extends PluginSettingTab {
 
 		detailsEl.createEl("p", {
 			cls: "food-tracker-settings-collapsible-desc setting-item-description",
-			text: "Customize the frontmatter field names used to store nutrition totals in daily notes.",
+			text: "Choose which nutrition totals to display in daily note properties and customize their field names.",
 		});
 
 		const fieldConfigs: Array<{
-			key: keyof FrontmatterFieldNames;
+			key: keyof FrontmatterFieldNames & keyof EnabledFrontmatterFields;
 			name: string;
 			desc: string;
 		}> = [
-			{ key: "calories", name: "Calories field", desc: "Field name for total calories" },
-			{ key: "fats", name: "Fats field", desc: "Field name for total fats (g)" },
-			{ key: "saturated_fats", name: "Saturated fats field", desc: "Field name for saturated fats (g)" },
-			{ key: "protein", name: "Protein field", desc: "Field name for total protein (g)" },
-			{ key: "carbs", name: "Carbs field", desc: "Field name for total carbohydrates (g)" },
-			{ key: "fiber", name: "Fiber field", desc: "Field name for total fiber (g)" },
-			{ key: "sugar", name: "Sugar field", desc: "Field name for total sugar (g)" },
-			{ key: "sodium", name: "Sodium field", desc: "Field name for total sodium (mg)" },
+			{ key: "calories", name: "Calories", desc: "Total calories" },
+			{ key: "fats", name: "Fats", desc: "Total fats (g)" },
+			{ key: "saturated_fats", name: "Saturated fats", desc: "Saturated fats (g)" },
+			{ key: "protein", name: "Protein", desc: "Total protein (g)" },
+			{ key: "carbs", name: "Carbs", desc: "Total carbohydrates (g)" },
+			{ key: "fiber", name: "Fiber", desc: "Total fiber (g)" },
+			{ key: "sugar", name: "Sugar", desc: "Total sugar (g)" },
+			{ key: "sodium", name: "Sodium", desc: "Total sodium (mg)" },
 		];
 
 		for (const config of fieldConfigs) {
 			new Setting(detailsEl)
 				.setName(config.name)
 				.setDesc(config.desc)
+				.addToggle(toggle =>
+					toggle.setValue(this.plugin.settings.enabledFrontmatterFields[config.key]).onChange(async value => {
+						const enabledFields = this.plugin.settings.enabledFrontmatterFields;
+						enabledFields[config.key] = value;
+						this.plugin.settingsService.updateEnabledFrontmatterFields(enabledFields);
+						this.plugin.settings = {
+							...this.plugin.settings,
+							enabledFrontmatterFields: this.plugin.settingsService.currentEnabledFrontmatterFields,
+						};
+						await this.plugin.saveSettings();
+					})
+				)
 				.addText(text =>
 					text
 						.setPlaceholder(DEFAULT_FRONTMATTER_FIELD_NAMES[config.key])
