@@ -1,4 +1,4 @@
-import { INVALID_FILENAME_CHARS_REGEX, isBarcode } from "../constants";
+import { getUnitMultiplier, INVALID_FILENAME_CHARS_REGEX, isBarcode } from "../constants";
 
 describe("filename handling integration", () => {
 	test("preserves German umlauts and Eszett", () => {
@@ -100,5 +100,22 @@ describe("isBarcode", () => {
 	test("rejects strings with internal spaces", () => {
 		expect(isBarcode("301 762 401")).toBe(false);
 		expect(isBarcode("3017 6240 10701")).toBe(false);
+	});
+});
+
+describe("getUnitMultiplier", () => {
+	test("uses nutrition_per for gram-based units", () => {
+		expect(getUnitMultiplier(28, "g", undefined, 28)).toBeCloseTo(1);
+		expect(getUnitMultiplier(56, "g", undefined, 28)).toBeCloseTo(2);
+	});
+
+	test("falls back to 100 when nutrition_per is missing", () => {
+		expect(getUnitMultiplier(50, "g")).toBeCloseTo(0.5);
+		expect(getUnitMultiplier(100, "ml")).toBeCloseTo(1);
+	});
+
+	test("supports piece units with serving_size and nutrition_per", () => {
+		expect(getUnitMultiplier(1, "pc", 28, 28)).toBeCloseTo(1);
+		expect(getUnitMultiplier(2, "pcs", 28, 28)).toBeCloseTo(2);
 	});
 });

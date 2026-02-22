@@ -10,6 +10,7 @@ export interface NutrientData {
 	sugar?: number;
 	sodium?: number;
 	serving_size?: number;
+	nutrition_per?: number;
 }
 
 export interface NutrientGoals {
@@ -52,7 +53,7 @@ export interface NutritionCalculationResult {
 	workoutTotals: NutrientData;
 	combinedTotals: NutrientData;
 	clampedTotals: NutrientData;
-	goalProgress?: Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
+	goalProgress?: Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress>;
 }
 
 export interface NutritionCalculationParams {
@@ -284,10 +285,10 @@ function clampNutrientsToZero(nutrients: NutrientData): NutrientData {
 function calculateGoalProgress(
 	consumed: NutrientData,
 	goals: NutrientGoals
-): Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress> {
-	const progress = {} as Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
+): Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress> {
+	const progress = {} as Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress>;
 
-	const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size">> = [
+	const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size" | "nutrition_per">> = [
 		"calories",
 		"fats",
 		"saturated_fats",
@@ -334,7 +335,7 @@ function calculateTotals(
 		}
 
 		if (nutrients) {
-			const multiplier = getUnitMultiplier(entry.amount, entry.unit, nutrients.serving_size);
+			const multiplier = getUnitMultiplier(entry.amount, entry.unit, nutrients.serving_size, nutrients.nutrition_per);
 			addNutrients(totals, nutrients, multiplier);
 		}
 	}

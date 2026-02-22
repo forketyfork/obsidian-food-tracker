@@ -56,4 +56,26 @@ describe("NutrientCache", () => {
 		expect(cache.getNutrientNames()).toEqual(["apple"]);
 		expect(cache.getNutritionData("apple")?.calories).toBe(10);
 	});
+
+	test("reads nutrition_per from frontmatter", () => {
+		const file = createFile("nutrients/cookie.md");
+		const frontmatterMap: FrontmatterMap = {
+			[file.path]: {
+				frontmatter: {
+					name: "cookie",
+					calories: 150,
+					nutrition_per: 28,
+					serving_size: 28,
+				},
+			} as unknown as CachedMetadata,
+		};
+		const app = createApp(frontmatterMap, [file]);
+		const cache = new NutrientCache(app, "nutrients");
+
+		cache.initialize();
+
+		expect(cache.getNutritionData("cookie")?.nutrition_per).toBe(28);
+		expect(cache.getNutritionData("cookie")?.serving_size).toBe(28);
+		expect(cache.getNutritionData("cookie")?.calories).toBe(150);
+	});
 });

@@ -345,11 +345,16 @@ Regular text line
 			bread: 290,
 			pasta: 350,
 			rice: 130,
+			cookie: 150,
 			"tartine brioche nutella": 120,
 		};
 
 		const servingSizeMap: Record<string, number> = {
 			cookie: 50,
+		};
+
+		const nutritionPerMap: Record<string, number> = {
+			cookie: 28,
 		};
 
 		const provider = {
@@ -358,6 +363,9 @@ Regular text line
 			},
 			getServingSize: (fileName: string): number | null => {
 				return servingSizeMap[fileName.toLowerCase()] ?? null;
+			},
+			getNutritionPer: (fileName: string): number | null => {
+				return nutritionPerMap[fileName.toLowerCase()] ?? null;
 			},
 		};
 
@@ -430,6 +438,18 @@ Regular text line
 					{
 						position: text.length,
 						text: "184kcal",
+					},
+				]);
+			});
+
+			test("uses nutrition_per for calorie annotations when provided", () => {
+				const text = "#food [[Cookie]] 28g";
+				const annotations = extractInlineCalorieAnnotations(text, 0, defaultOptions, provider);
+
+				expect(annotations).toEqual([
+					{
+						position: text.length,
+						text: "150kcal",
 					},
 				]);
 			});
