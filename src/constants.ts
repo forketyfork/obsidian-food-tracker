@@ -193,24 +193,30 @@ export function isBarcode(input: string): boolean {
 // ================================
 
 /**
- * Converts various units to a multiplier based on 100g servings
+ * Converts various units to a multiplier based on nutrient reference grams
  * Handles weight and volume conversions with reasonable approximations
  * Volume units (cups, tbsp, tsp) are converted assuming water density (1ml ≈ 1g)
  *
  * @param amount - The amount of the unit
  * @param unit - The unit to convert (g, kg, lb, cups, tbsp, tsp, ml, oz, l, pcs)
  * @param servingSize - Optional serving size in grams for piece-based units
- * @returns The multiplier to apply to nutrition values (based on 100g)
+ * @param nutritionPer - The grams the nutrient values are based on (defaults to 100)
+ * @returns The multiplier to apply to nutrition values
  *
  * @example
  * ```typescript
- * const multiplier = getUnitMultiplier(200, "g"); // Returns 2
- * const multiplier = getUnitMultiplier(1, "cup"); // Returns 2.4
- * const multiplier = getUnitMultiplier(2, "pcs", 50); // Returns 1 (2 pieces * 50g / 100)
+ * const multiplier = getUnitMultiplier(200, "g"); // Returns 2 (per 100g default)
+ * const multiplier = getUnitMultiplier(28, "g", undefined, 28); // Returns 1 (per 28g)
+ * const multiplier = getUnitMultiplier(2, "pcs", 50, 100); // Returns 1 (2 pieces * 50g / 100)
  * ```
  */
-export function getUnitMultiplier(amount: number, unit: string, servingSize?: number): number {
-	const baseAmount = 100;
+export function getUnitMultiplier(
+	amount: number,
+	unit: string,
+	servingSize?: number,
+	nutritionPer: number = 100
+): number {
+	const baseAmount = nutritionPer > 0 ? nutritionPer : 100;
 
 	switch (unit.toLowerCase()) {
 		case "g":

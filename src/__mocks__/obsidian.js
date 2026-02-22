@@ -290,6 +290,9 @@ module.exports = {
 	StatusBarItem: class StatusBarItem {
 		setText() {}
 	},
+	Notice: class Notice {
+		constructor(_message, _timeout) {}
+	},
 	EditorSuggest: class EditorSuggest {
 		constructor(app) {
 			this.app = app;

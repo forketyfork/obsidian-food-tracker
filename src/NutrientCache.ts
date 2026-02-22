@@ -11,6 +11,7 @@ interface NutrientData {
 	sugar?: number;
 	sodium?: number;
 	serving_size?: number;
+	nutrition_per?: number;
 }
 
 /**
@@ -220,6 +221,7 @@ export default class NutrientCache implements NutrientProvider {
 				{ key: "sugar", aliases: ["sugar"] },
 				{ key: "sodium", aliases: ["sodium"] },
 				{ key: "serving_size", aliases: ["serving_size", "servingSize"] },
+				{ key: "nutrition_per", aliases: ["nutrition_per", "nutritionPer"] },
 			];
 
 			const data: NutrientData = {};

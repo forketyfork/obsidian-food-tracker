@@ -26,10 +26,10 @@ export default class NutritionTotal {
 	private calculateGoalProgress(
 		consumed: NutrientData,
 		goals: NutrientGoals
-	): Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress> {
-		const progress = {} as Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>;
+	): Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress> {
+		const progress = {} as Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress>;
 
-		const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size">> = [
+		const nutrientKeys: Array<keyof Omit<NutrientData, "serving_size" | "nutrition_per">> = [
 			"calories",
 			"fats",
 			"saturated_fats",
@@ -108,10 +108,10 @@ export default class NutritionTotal {
 		workoutTag?: string,
 		unclampedNutrients?: NutrientData,
 		showIcon: boolean = true,
-		goalProgress?: Record<keyof Omit<NutrientData, "serving_size">, NutrientGoalProgress>
+		goalProgress?: Record<keyof Omit<NutrientData, "serving_size" | "nutrition_per">, NutrientGoalProgress>
 	): HTMLElement | null {
 		const formatConfig: {
-			key: keyof Omit<NutrientData, "serving_size">;
+			key: keyof Omit<NutrientData, "serving_size" | "nutrition_per">;
 			emoji: string;
 			name: string;
 			unit: string;

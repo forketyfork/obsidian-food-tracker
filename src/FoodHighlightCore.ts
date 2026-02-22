@@ -15,6 +15,7 @@ export interface CalorieAnnotation {
 export interface CalorieProvider {
 	getCaloriesForFood(fileName: string): number | null;
 	getServingSize(fileName: string): number | null;
+	getNutritionPer(fileName: string): number | null;
 }
 
 export interface HighlightOptions {
@@ -177,7 +178,8 @@ export function extractInlineCalorieAnnotations(
 			}
 
 			const servingSize = calorieProvider.getServingSize(normalizedFileName);
-			const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined);
+			const nutritionPer = calorieProvider.getNutritionPer(normalizedFileName);
+			const multiplier = getUnitMultiplier(amount, unit, servingSize ?? undefined, nutritionPer ?? undefined);
 			const calculatedCalories = multiplier * caloriesPerHundred;
 
 			if (!Number.isFinite(calculatedCalories) || calculatedCalories < 0) {
