@@ -55,18 +55,20 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		// Initialize goals service
 		this.goalsService = new GoalsService(this.app, this.settings.goalsFile || "");
+
+		// Initialize UI components before registering layout-ready callback,
+		// because onLayoutReady may fire synchronously if layout is already ready
+		this.initializeUIComponents();
+
+		// Register commands and tabs
+		this.registerCommandsAndTabs();
+
 		// Delay goals loading until vault is ready
 		this.app.workspace.onLayoutReady(() => {
 			void this.goalsService.loadGoals();
 			// Update nutrition totals when workspace is ready
 			void this.updateNutritionTotal();
 		});
-
-		// Initialize UI components
-		this.initializeUIComponents();
-
-		// Register commands and tabs
-		this.registerCommandsAndTabs();
 	}
 
 	/**
