@@ -189,6 +189,7 @@ In both cases, the plugin subtracts the logged calories (and any other specified
    ```
    calories: 2000
    fats: 70
+   saturated_fats: 20
    protein: 120
    carbs: 250
    fiber: 25
