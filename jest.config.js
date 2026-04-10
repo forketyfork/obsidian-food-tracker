@@ -6,7 +6,12 @@ const tsJestTransformCfg = createDefaultPreset().transform;
 module.exports = {
 	testEnvironment: "jsdom",
 	transform: {
-		...tsJestTransformCfg,
+		...Object.fromEntries(
+			Object.entries(tsJestTransformCfg).map(([pattern, transformer]) => [
+				pattern,
+				[transformer[0], { ...transformer[1], tsconfig: "tsconfig.test.json" }],
+			])
+		),
 	},
 	coverageProvider: "v8",
 	coverageDirectory: "coverage",
