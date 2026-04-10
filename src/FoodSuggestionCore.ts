@@ -47,13 +47,13 @@ export interface NutrientProvider {
  */
 export class FoodSuggestionCore {
 	private settingsService: SettingsService;
-	private subscription: Subscription;
+	private subscription!: Subscription;
 	private nutritionKeywords = ["kcal", "fat", "satfat", "prot", "carbs", "sugar", "fiber", "sodium"];
 	private measureKeywords = ["g", "ml", "kg", "l", "oz", "lb", "cup", "tbsp", "tsp", "pc"];
 
 	// Precompiled regex patterns for performance
-	private combinedTagRegex: RegExp;
-	private tagDetectionRegex: RegExp;
+	private combinedTagRegex!: RegExp;
+	private tagDetectionRegex!: RegExp;
 	private currentFoodTag: string = "";
 	private currentWorkoutTag: string = "";
 	private nutritionQueryRegex: RegExp; // Matches text ending with number+letters (e.g., "apple 100g")

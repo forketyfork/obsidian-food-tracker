@@ -14,7 +14,7 @@ import { Component } from "obsidian";
 export default class GoalsHighlightExtension extends Component {
 	private settingsService: SettingsService;
 	private goalsFile: string = "";
-	private subscription: Subscription;
+	private subscription!: Subscription;
 
 	constructor(
 		settingsService: SettingsService,

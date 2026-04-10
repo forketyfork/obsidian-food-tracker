@@ -19,7 +19,7 @@ export default class FoodHighlightExtension extends Component {
 	private foodTag: string = "";
 	private workoutTag: string = "";
 	private showCalorieHints: boolean = true;
-	private subscription: Subscription;
+	private subscription!: Subscription;
 	private nutrientCache: NutrientCache;
 	private nutrientCacheUnsubscribe: (() => void) | null = null;
 	private compartment: Compartment;

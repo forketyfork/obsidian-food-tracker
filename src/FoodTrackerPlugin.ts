@@ -16,19 +16,19 @@ import StatsService from "./StatsService";
 import FrontmatterTotalsService from "./FrontmatterTotalsService";
 
 export default class FoodTrackerPlugin extends Plugin {
-	settings: FoodTrackerPluginSettings;
-	nutrientCache: NutrientCache;
-	foodSuggest: FoodSuggest;
-	nutritionTotal: NutritionTotal;
-	statusBarItem: HTMLElement;
-	documentTotalManager: DocumentTotalManager;
-	settingsService: SettingsService;
-	goalsService: GoalsService;
-	private statsService: StatsService;
-	private frontmatterTotalsService: FrontmatterTotalsService;
-	private foodHighlightExtension: FoodHighlightExtension;
-	private foodHighlightPostProcessor: FoodHighlightPostProcessor;
-	private goalsHighlightExtension: GoalsHighlightExtension;
+	settings!: FoodTrackerPluginSettings;
+	nutrientCache!: NutrientCache;
+	foodSuggest!: FoodSuggest;
+	nutritionTotal!: NutritionTotal;
+	statusBarItem!: HTMLElement;
+	documentTotalManager!: DocumentTotalManager;
+	settingsService!: SettingsService;
+	goalsService!: GoalsService;
+	private statsService!: StatsService;
+	private frontmatterTotalsService!: FrontmatterTotalsService;
+	private foodHighlightExtension!: FoodHighlightExtension;
+	private foodHighlightPostProcessor!: FoodHighlightPostProcessor;
+	private goalsHighlightExtension!: GoalsHighlightExtension;
 
 	async onload() {
 		// Register the Food Tracker icon
