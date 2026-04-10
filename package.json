@@ -59,7 +59,7 @@
 	"dependencies": {
 		"@codemirror/state": "^6.6.0",
 		"@codemirror/view": "^6.40.0",
-		"lodash": "^4.17.23",
+		"lodash": "^4.18.1",
 		"rxjs": "^7.8.1"
 	}
 }
