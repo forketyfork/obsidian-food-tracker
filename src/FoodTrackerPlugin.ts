@@ -45,9 +45,7 @@ export default class FoodTrackerPlugin extends Plugin {
 	 * Initialize core services and components
 	 */
 	private initializeCore(): void {
-		// Initialize nutrient cache
 		this.nutrientCache = new NutrientCache(this.app, this.settings.nutrientDirectory);
-		this.nutrientCache.initialize();
 
 		// Initialize settings service
 		this.settingsService = new SettingsService();
@@ -63,9 +61,11 @@ export default class FoodTrackerPlugin extends Plugin {
 		// Register commands and tabs
 		this.registerCommandsAndTabs();
 
-		// Delay goals loading until vault is ready
-		this.app.workspace.onLayoutReady(() => {
-			void this.goalsService.loadGoals();
+		// Delay cache initialization and note refresh until the workspace layout is ready
+		this.app.workspace.onLayoutReady(async () => {
+			this.nutrientCache.initialize();
+			await this.goalsService.loadGoals();
+			this.refreshActiveNoteFrontmatterTotals();
 			// Update nutrition totals when workspace is ready
 			void this.updateNutritionTotal();
 		});
@@ -190,6 +190,7 @@ export default class FoodTrackerPlugin extends Plugin {
 
 		const onResolved = () => {
 			this.nutrientCache.refresh();
+			this.refreshActiveNoteFrontmatterTotals();
 			void this.updateNutritionTotal();
 			this.app.metadataCache.off("resolved", onResolved);
 		};
@@ -357,5 +358,14 @@ export default class FoodTrackerPlugin extends Plugin {
 	private clearTotal(): void {
 		if (this.statusBarItem) this.statusBarItem.setText("");
 		this.documentTotalManager.remove();
+	}
+
+	private refreshActiveNoteFrontmatterTotals(): void {
+		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+		const activeFile = activeView?.file;
+
+		if (activeFile instanceof TFile) {
+			this.frontmatterTotalsService.updateFrontmatterTotals(activeFile);
+		}
 	}
 }

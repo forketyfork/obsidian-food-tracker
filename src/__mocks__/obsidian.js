@@ -256,6 +256,7 @@ module.exports = {
 					openFile: () => Promise.resolve(),
 				}),
 				getActiveViewOfType: () => null,
+				iterateAllLeaves: () => {},
 				on: () => ({}),
 				onLayoutReady: callback => {
 					// Call callback immediately in test environment

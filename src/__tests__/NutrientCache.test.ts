@@ -48,6 +48,7 @@ describe("NutrientCache", () => {
 
 		// Entry should remain until metadata becomes available again
 		expect(cache.getNutrientNames()).toEqual(["apple"]);
+		expect(cache.hasPendingMetadataFor("apple")).toBe(true);
 
 		// Metadata becomes available after parsing finishes
 		frontmatterMap[file.path] = { frontmatter: { name: "apple", calories: 10 } } as unknown as CachedMetadata;
@@ -55,6 +56,7 @@ describe("NutrientCache", () => {
 
 		expect(cache.getNutrientNames()).toEqual(["apple"]);
 		expect(cache.getNutritionData("apple")?.calories).toBe(10);
+		expect(cache.hasPendingMetadataFor("apple")).toBe(false);
 	});
 
 	test("reads nutrition_per from frontmatter", () => {

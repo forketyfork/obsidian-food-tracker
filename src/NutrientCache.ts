@@ -43,6 +43,7 @@ export default class NutrientCache implements NutrientProvider {
 	private nutrientDataCache: Map<string, { name: string; data: NutrientData }> = new Map(); // file path -> { name, data }
 	private nameToPathMap: Map<string, string> = new Map(); // nutrient name -> file path
 	private changeListeners: Set<() => void> = new Set();
+	private pendingMetadataFiles: Set<string> = new Set();
 
 	constructor(app: App, nutrientDirectory: string) {
 		this.app = app;
@@ -76,6 +77,7 @@ export default class NutrientCache implements NutrientProvider {
 	initialize(): void {
 		this.nutrientDataCache.clear();
 		this.nameToPathMap.clear();
+		this.pendingMetadataFiles.clear();
 
 		try {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
@@ -96,6 +98,7 @@ export default class NutrientCache implements NutrientProvider {
 	 * Used by delete operations and when files lose valid nutrient names
 	 */
 	private removeFileFromCache(filePath: string): void {
+		this.pendingMetadataFiles.delete(filePath);
 		const cachedEntry = this.nutrientDataCache.get(filePath);
 		if (cachedEntry) {
 			this.nameToPathMap.delete(cachedEntry.name);
@@ -111,9 +114,11 @@ export default class NutrientCache implements NutrientProvider {
 		const fileCache = this.app.metadataCache.getFileCache(file);
 		if (!fileCache) {
 			// Metadata cache is not ready yet; keep existing entry until it's available
+			this.pendingMetadataFiles.add(file.path);
 			return;
 		}
 
+		this.pendingMetadataFiles.delete(file.path);
 		const nutrientName = this.extractNutrientName(fileCache, file.path);
 		const nutritionData = this.extractNutritionData(fileCache, file.path);
 
@@ -248,6 +253,21 @@ export default class NutrientCache implements NutrientProvider {
 		return 0;
 	}
 
+	hasPendingMetadataFor(filename: string): boolean {
+		const normalizedFilename = filename.trim().toLowerCase();
+		if (!normalizedFilename) {
+			return false;
+		}
+
+		for (const filePath of this.pendingMetadataFiles) {
+			if (this.getBasenameWithoutExtension(filePath).toLowerCase() === normalizedFilename) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	/**
 	 * Gets all available nutrient names in alphabetical order
 	 * Used for autocomplete and suggestion systems
@@ -282,8 +302,7 @@ export default class NutrientCache implements NutrientProvider {
 		if (!filePath) return null;
 
 		// Extract basename from path for backward compatibility
-		const parts = filePath.split("/");
-		return parts[parts.length - 1].replace(".md", "");
+		return this.getBasenameWithoutExtension(filePath);
 	}
 
 	/**
@@ -304,12 +323,17 @@ export default class NutrientCache implements NutrientProvider {
 	getNutritionData(filename: string): NutrientData | null {
 		// Try direct lookup by filename (basename without .md)
 		for (const [path, entry] of this.nutrientDataCache) {
-			const basename = path.split("/").pop()?.replace(".md", "");
+			const basename = this.getBasenameWithoutExtension(path);
 			if (basename === filename) {
 				return entry.data;
 			}
 		}
 		return null;
+	}
+
+	private getBasenameWithoutExtension(filePath: string): string {
+		const basename = filePath.split("/").pop() ?? filePath;
+		return basename.replace(/\.md$/i, "");
 	}
 
 	updateNutrientDirectory(newDirectory: string): void {

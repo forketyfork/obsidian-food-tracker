@@ -1,5 +1,7 @@
 import FoodTrackerPlugin from "../main";
 import { App, PluginManifest } from "obsidian";
+import GoalsService from "../GoalsService";
+import NutrientCache from "../NutrientCache";
 import { DEFAULT_SETTINGS } from "../SettingsService";
 
 describe("FoodTrackerPlugin", () => {
@@ -26,5 +28,69 @@ describe("FoodTrackerPlugin", () => {
 		expect(freshPlugin.settings).toBeDefined();
 		expect(freshPlugin.settings.nutrientDirectory).toBe(DEFAULT_SETTINGS.nutrientDirectory);
 		expect(freshPlugin.settings.frontmatterFieldNames).toEqual(DEFAULT_SETTINGS.frontmatterFieldNames);
+	});
+
+	test("defers nutrient cache initialization until layout is ready", async () => {
+		jest.useFakeTimers();
+
+		const initializeSpy = jest.spyOn(NutrientCache.prototype, "initialize").mockImplementation(() => undefined);
+		try {
+			const delayedPlugin = new FoodTrackerPlugin(new App(), {} as PluginManifest);
+
+			await delayedPlugin.onload();
+
+			expect(initializeSpy).not.toHaveBeenCalled();
+
+			jest.runOnlyPendingTimers();
+			await Promise.resolve();
+
+			expect(initializeSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			initializeSpy.mockRestore();
+			jest.useRealTimers();
+		}
+	});
+
+	test("waits for goals before first totals update", async () => {
+		jest.useFakeTimers();
+
+		let resolveGoalsLoad: (() => void) | undefined;
+		const loadGoalsSpy = jest.spyOn(GoalsService.prototype, "loadGoals").mockImplementation(
+			() =>
+				new Promise<void>(resolve => {
+					resolveGoalsLoad = resolve;
+				})
+		);
+		const updateSpy = jest
+			.spyOn(
+				FoodTrackerPlugin.prototype as unknown as { updateNutritionTotal: () => Promise<void> },
+				"updateNutritionTotal"
+			)
+			.mockResolvedValue(undefined);
+
+		try {
+			const delayedPlugin = new FoodTrackerPlugin(new App(), {} as PluginManifest);
+
+			await delayedPlugin.onload();
+			jest.runOnlyPendingTimers();
+			await Promise.resolve();
+
+			expect(loadGoalsSpy).toHaveBeenCalledTimes(1);
+			expect(updateSpy).not.toHaveBeenCalled();
+
+			if (!resolveGoalsLoad) {
+				throw new Error("Expected loadGoals to be pending");
+			}
+
+			resolveGoalsLoad();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(updateSpy).toHaveBeenCalledTimes(1);
+		} finally {
+			updateSpy.mockRestore();
+			loadGoalsSpy.mockRestore();
+			jest.useRealTimers();
+		}
 	});
 });

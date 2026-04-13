@@ -1,4 +1,5 @@
 import {
+	default as FrontmatterTotalsService,
 	extractFrontmatterTotals,
 	nutrientDataToFrontmatterTotals,
 	applyNutrientTotalsToFrontmatter,
@@ -6,7 +7,24 @@ import {
 	FRONTMATTER_PREFIX,
 } from "../FrontmatterTotalsService";
 import { NutrientData } from "../NutritionCalculator";
-import { DEFAULT_FRONTMATTER_FIELD_NAMES, FrontmatterFieldNames } from "../SettingsService";
+import { App, TFile } from "obsidian";
+import GoalsService from "../GoalsService";
+import NutrientCache from "../NutrientCache";
+import {
+	DEFAULT_FRONTMATTER_FIELD_NAMES,
+	FrontmatterFieldNames,
+	SettingsService,
+	DEFAULT_SETTINGS,
+} from "../SettingsService";
+
+function createDailyNote(path: string): TFile {
+	return {
+		path,
+		name: path.split("/").pop() ?? path,
+		basename: (path.split("/").pop() ?? path).replace(/\.md$/, ""),
+		extension: "md",
+	} as unknown as TFile;
+}
 
 describe("FrontmatterTotalsService", () => {
 	describe("FRONTMATTER_PREFIX", () => {
@@ -320,7 +338,7 @@ describe("FrontmatterTotalsService", () => {
 				expect(frontmatter.title).toBe("My Note");
 			});
 
-			test("sets existing values to 0 when totals is empty object", () => {
+			test("sets existing values to 0 when totals is an empty object", () => {
 				const frontmatter: Record<string, unknown> = {
 					"ft-calories": 1000,
 				};
@@ -542,6 +560,180 @@ describe("FrontmatterTotalsService", () => {
 				expect(frontmatter["protein"]).toBe(60);
 				expect(frontmatter["carbohydrates"]).toBe(0);
 			});
+		});
+	});
+
+	describe("update scheduling", () => {
+		let app: App;
+		let settingsService: SettingsService;
+		let goalsService: GoalsService;
+
+		beforeEach(() => {
+			jest.useFakeTimers();
+			app = new App();
+			settingsService = new SettingsService();
+			settingsService.initialize(DEFAULT_SETTINGS);
+			goalsService = new GoalsService(app, "");
+		});
+
+		afterEach(() => {
+			jest.runOnlyPendingTimers();
+			jest.useRealTimers();
+		});
+
+		test("replays nutrient-triggered recalculation after an in-flight write finishes", async () => {
+			const file = createDailyNote("2024-01-15.md");
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 50,
+			};
+			let currentCalories = 100;
+			let processCallCount = 0;
+			const pendingWriteResolvers: Array<() => void> = [];
+
+			const vault = app.vault as unknown as {
+				cachedRead: (file: TFile) => Promise<string>;
+				getMarkdownFiles: () => TFile[];
+			};
+			vault.cachedRead = () => Promise.resolve("#food [[apple]] 100g");
+			vault.getMarkdownFiles = () => [file];
+
+			const metadataCache = app.metadataCache as unknown as {
+				getFileCache: (file: TFile) => { links?: Array<{ link: string }> } | null;
+			};
+			metadataCache.getFileCache = requestedFile => {
+				if (requestedFile.path !== file.path) {
+					return null;
+				}
+
+				return {
+					links: [{ link: "apple" }],
+				};
+			};
+
+			const fileManager = app.fileManager as unknown as {
+				processFrontMatter: (file: TFile, fn: (frontmatter: Record<string, unknown>) => void) => Promise<void>;
+			};
+			fileManager.processFrontMatter = async (_file, fn) => {
+				processCallCount += 1;
+				fn(frontmatter);
+
+				if (processCallCount === 1) {
+					await new Promise<void>(resolve => {
+						pendingWriteResolvers.push(resolve);
+					});
+				}
+			};
+
+			const nutrientCache = {
+				getNutritionData: () => ({
+					calories: currentCalories,
+					serving_size: 100,
+					nutrition_per: 100,
+				}),
+			} as unknown as NutrientCache;
+
+			const service = new FrontmatterTotalsService(app, nutrientCache, settingsService, goalsService);
+
+			service.updateFrontmatterTotals(file);
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(1);
+			expect(frontmatter["ft-calories"]).toBe(100);
+
+			currentCalories = 200;
+			service.updateNotesReferencingNutrient("apple");
+
+			const releaseFirstWrite = pendingWriteResolvers[0];
+			if (!releaseFirstWrite) {
+				throw new Error("Expected the first write to be pending");
+			}
+
+			releaseFirstWrite();
+			await Promise.resolve();
+			await Promise.resolve();
+
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(2);
+			expect(frontmatter["ft-calories"]).toBe(200);
+		});
+
+		test("preserves existing frontmatter while nutrient metadata is still pending", async () => {
+			const file = createDailyNote("2024-01-15.md");
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 150,
+			};
+			let processCallCount = 0;
+
+			const vault = app.vault as unknown as {
+				cachedRead: (file: TFile) => Promise<string>;
+			};
+			vault.cachedRead = () => Promise.resolve("#food [[apple]] 100g");
+
+			const fileManager = app.fileManager as unknown as {
+				processFrontMatter: (file: TFile, fn: (frontmatter: Record<string, unknown>) => void) => Promise<void>;
+			};
+			fileManager.processFrontMatter = (_file, fn) => {
+				processCallCount += 1;
+				fn(frontmatter);
+				return Promise.resolve();
+			};
+
+			const nutrientCache = {
+				getNutritionData: () => null,
+				hasPendingMetadataFor: (filename: string) => filename === "apple",
+			} as unknown as NutrientCache;
+
+			const service = new FrontmatterTotalsService(app, nutrientCache, settingsService, goalsService);
+
+			service.updateFrontmatterTotals(file);
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(0);
+			expect(frontmatter["ft-calories"]).toBe(150);
+		});
+
+		test("clears stale frontmatter when missing nutrient data is not pending", async () => {
+			const file = createDailyNote("2024-01-15.md");
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 150,
+			};
+			let processCallCount = 0;
+
+			const vault = app.vault as unknown as {
+				cachedRead: (file: TFile) => Promise<string>;
+			};
+			vault.cachedRead = () => Promise.resolve("#food [[apple]] 100g");
+
+			const fileManager = app.fileManager as unknown as {
+				processFrontMatter: (file: TFile, fn: (frontmatter: Record<string, unknown>) => void) => Promise<void>;
+			};
+			fileManager.processFrontMatter = (_file, fn) => {
+				processCallCount += 1;
+				fn(frontmatter);
+				return Promise.resolve();
+			};
+
+			const nutrientCache = {
+				getNutritionData: () => null,
+				hasPendingMetadataFor: () => false,
+			} as unknown as NutrientCache;
+
+			const service = new FrontmatterTotalsService(app, nutrientCache, settingsService, goalsService);
+
+			service.updateFrontmatterTotals(file);
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(1);
+			expect(frontmatter["ft-calories"]).toBe(0);
 		});
 	});
 });
