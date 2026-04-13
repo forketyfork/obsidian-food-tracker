@@ -1,5 +1,6 @@
 import FoodTrackerPlugin from "../main";
 import { App, PluginManifest } from "obsidian";
+import NutrientCache from "../NutrientCache";
 import { DEFAULT_SETTINGS } from "../SettingsService";
 
 describe("FoodTrackerPlugin", () => {
@@ -26,5 +27,24 @@ describe("FoodTrackerPlugin", () => {
 		expect(freshPlugin.settings).toBeDefined();
 		expect(freshPlugin.settings.nutrientDirectory).toBe(DEFAULT_SETTINGS.nutrientDirectory);
 		expect(freshPlugin.settings.frontmatterFieldNames).toEqual(DEFAULT_SETTINGS.frontmatterFieldNames);
+	});
+
+	test("defers nutrient cache initialization until layout is ready", async () => {
+		jest.useFakeTimers();
+
+		const initializeSpy = jest.spyOn(NutrientCache.prototype, "initialize").mockImplementation(() => undefined);
+		const delayedPlugin = new FoodTrackerPlugin(new App(), {} as PluginManifest);
+
+		await delayedPlugin.onload();
+
+		expect(initializeSpy).not.toHaveBeenCalled();
+
+		jest.runOnlyPendingTimers();
+		await Promise.resolve();
+
+		expect(initializeSpy).toHaveBeenCalledTimes(1);
+
+		initializeSpy.mockRestore();
+		jest.useRealTimers();
 	});
 });

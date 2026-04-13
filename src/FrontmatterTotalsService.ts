@@ -73,13 +73,17 @@ export function applyNutrientTotalsToFrontmatter(
 ): void {
 	const keys = Object.keys(fieldNames) as FrontmatterKey[];
 
-	if (!totals || Object.keys(totals).length === 0) {
+	if (!totals) {
 		for (const key of keys) {
 			const frontmatterKey = fieldNames[key];
 			if (frontmatterKey in frontmatter) {
 				frontmatter[frontmatterKey] = 0;
 			}
 		}
+		return;
+	}
+
+	if (Object.keys(totals).length === 0) {
 		return;
 	}
 
@@ -107,7 +111,9 @@ export default class FrontmatterTotalsService {
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
 	private pendingUpdates: Map<string, NodeJS.Timeout> = new Map();
+	private activeUpdates: Set<string> = new Set();
 	private filesBeingWritten: Set<string> = new Set();
+	private queuedUpdates: Set<string> = new Set();
 	private debounceMs = 500;
 
 	constructor(app: App, nutrientCache: NutrientCache, settingsService: SettingsService, goalsService: GoalsService) {
@@ -126,14 +132,30 @@ export default class FrontmatterTotalsService {
 	}
 
 	updateFrontmatterTotals(file: TFile): void {
+		this.requestUpdate(file, false);
+	}
+
+	private requestUpdate(file: TFile, queueWhileWriting: boolean): void {
 		if (!this.isDailyNote(file)) {
 			return;
 		}
 
 		if (this.filesBeingWritten.has(file.path)) {
+			if (queueWhileWriting) {
+				this.queuedUpdates.add(file.path);
+			}
 			return;
 		}
 
+		if (this.activeUpdates.has(file.path)) {
+			this.queuedUpdates.add(file.path);
+			return;
+		}
+
+		this.scheduleUpdate(file);
+	}
+
+	private scheduleUpdate(file: TFile): void {
 		const existingTimeout = this.pendingUpdates.get(file.path);
 		if (existingTimeout) {
 			clearTimeout(existingTimeout);
@@ -141,6 +163,10 @@ export default class FrontmatterTotalsService {
 
 		const timeout = setTimeout(() => {
 			this.pendingUpdates.delete(file.path);
+			if (this.activeUpdates.has(file.path) || this.filesBeingWritten.has(file.path)) {
+				this.queuedUpdates.add(file.path);
+				return;
+			}
 			void this.performUpdate(file);
 		}, this.debounceMs);
 
@@ -148,6 +174,7 @@ export default class FrontmatterTotalsService {
 	}
 
 	private async performUpdate(file: TFile): Promise<void> {
+		this.activeUpdates.add(file.path);
 		try {
 			const content = await this.app.vault.cachedRead(file);
 			const result = calculateNutritionTotals({
@@ -170,6 +197,11 @@ export default class FrontmatterTotalsService {
 			}
 		} catch (error) {
 			console.error(`Error updating frontmatter totals for ${file.path}:`, error);
+		} finally {
+			this.activeUpdates.delete(file.path);
+			if (this.queuedUpdates.delete(file.path)) {
+				this.scheduleUpdate(file);
+			}
 		}
 	}
 
@@ -182,6 +214,7 @@ export default class FrontmatterTotalsService {
 			clearTimeout(timeout);
 		}
 		this.pendingUpdates.clear();
+		this.queuedUpdates.clear();
 	}
 
 	updateNotesReferencingNutrient(nutrientBasename: string): void {
@@ -205,7 +238,7 @@ export default class FrontmatterTotalsService {
 			});
 
 			if (referencesNutrient) {
-				this.updateFrontmatterTotals(file);
+				this.requestUpdate(file, true);
 			}
 		}
 	}
