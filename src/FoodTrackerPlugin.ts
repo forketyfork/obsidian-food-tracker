@@ -62,9 +62,9 @@ export default class FoodTrackerPlugin extends Plugin {
 		this.registerCommandsAndTabs();
 
 		// Delay cache initialization and note refresh until the workspace layout is ready
-		this.app.workspace.onLayoutReady(() => {
+		this.app.workspace.onLayoutReady(async () => {
 			this.nutrientCache.initialize();
-			void this.goalsService.loadGoals();
+			await this.goalsService.loadGoals();
 			this.refreshActiveNoteFrontmatterTotals();
 			// Update nutrition totals when workspace is ready
 			void this.updateNutritionTotal();

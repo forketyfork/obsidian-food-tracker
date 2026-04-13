@@ -73,17 +73,13 @@ export function applyNutrientTotalsToFrontmatter(
 ): void {
 	const keys = Object.keys(fieldNames) as FrontmatterKey[];
 
-	if (!totals) {
+	if (!totals || Object.keys(totals).length === 0) {
 		for (const key of keys) {
 			const frontmatterKey = fieldNames[key];
 			if (frontmatterKey in frontmatter) {
 				frontmatter[frontmatterKey] = 0;
 			}
 		}
-		return;
-	}
-
-	if (Object.keys(totals).length === 0) {
 		return;
 	}
 
@@ -177,15 +173,26 @@ export default class FrontmatterTotalsService {
 		this.activeUpdates.add(file.path);
 		try {
 			const content = await this.app.vault.cachedRead(file);
+			const pendingMetadataLookups = new Set<string>();
 			const result = calculateNutritionTotals({
 				content,
 				foodTag: this.settingsService.currentEscapedFoodTag,
 				escapedFoodTag: true,
 				workoutTag: this.settingsService.currentEscapedWorkoutTag,
 				workoutTagEscaped: true,
-				getNutritionData: (filename: string) => this.nutrientCache.getNutritionData(filename),
+				getNutritionData: (filename: string) => {
+					const nutrientData = this.nutrientCache.getNutritionData(filename);
+					if (!nutrientData && this.nutrientCache.hasPendingMetadataFor(filename)) {
+						pendingMetadataLookups.add(filename);
+					}
+					return nutrientData;
+				},
 				goals: this.goalsService.currentGoals,
 			});
+
+			if (pendingMetadataLookups.size > 0) {
+				return;
+			}
 
 			this.filesBeingWritten.add(file.path);
 			try {

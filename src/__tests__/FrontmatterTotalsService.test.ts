@@ -338,14 +338,14 @@ describe("FrontmatterTotalsService", () => {
 				expect(frontmatter.title).toBe("My Note");
 			});
 
-			test("preserves existing values when totals is an empty object", () => {
+			test("sets existing values to 0 when totals is an empty object", () => {
 				const frontmatter: Record<string, unknown> = {
 					"ft-calories": 1000,
 				};
 
 				applyNutrientTotalsToFrontmatter(frontmatter, {});
 
-				expect(frontmatter["ft-calories"]).toBe(1000);
+				expect(frontmatter["ft-calories"]).toBe(0);
 				expect(frontmatter["ft-protein"]).toBeUndefined();
 			});
 
@@ -660,6 +660,80 @@ describe("FrontmatterTotalsService", () => {
 
 			expect(processCallCount).toBe(2);
 			expect(frontmatter["ft-calories"]).toBe(200);
+		});
+
+		test("preserves existing frontmatter while nutrient metadata is still pending", async () => {
+			const file = createDailyNote("2024-01-15.md");
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 150,
+			};
+			let processCallCount = 0;
+
+			const vault = app.vault as unknown as {
+				cachedRead: (file: TFile) => Promise<string>;
+			};
+			vault.cachedRead = () => Promise.resolve("#food [[apple]] 100g");
+
+			const fileManager = app.fileManager as unknown as {
+				processFrontMatter: (file: TFile, fn: (frontmatter: Record<string, unknown>) => void) => Promise<void>;
+			};
+			fileManager.processFrontMatter = (_file, fn) => {
+				processCallCount += 1;
+				fn(frontmatter);
+				return Promise.resolve();
+			};
+
+			const nutrientCache = {
+				getNutritionData: () => null,
+				hasPendingMetadataFor: (filename: string) => filename === "apple",
+			} as unknown as NutrientCache;
+
+			const service = new FrontmatterTotalsService(app, nutrientCache, settingsService, goalsService);
+
+			service.updateFrontmatterTotals(file);
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(0);
+			expect(frontmatter["ft-calories"]).toBe(150);
+		});
+
+		test("clears stale frontmatter when missing nutrient data is not pending", async () => {
+			const file = createDailyNote("2024-01-15.md");
+			const frontmatter: Record<string, unknown> = {
+				"ft-calories": 150,
+			};
+			let processCallCount = 0;
+
+			const vault = app.vault as unknown as {
+				cachedRead: (file: TFile) => Promise<string>;
+			};
+			vault.cachedRead = () => Promise.resolve("#food [[apple]] 100g");
+
+			const fileManager = app.fileManager as unknown as {
+				processFrontMatter: (file: TFile, fn: (frontmatter: Record<string, unknown>) => void) => Promise<void>;
+			};
+			fileManager.processFrontMatter = (_file, fn) => {
+				processCallCount += 1;
+				fn(frontmatter);
+				return Promise.resolve();
+			};
+
+			const nutrientCache = {
+				getNutritionData: () => null,
+				hasPendingMetadataFor: () => false,
+			} as unknown as NutrientCache;
+
+			const service = new FrontmatterTotalsService(app, nutrientCache, settingsService, goalsService);
+
+			service.updateFrontmatterTotals(file);
+			jest.advanceTimersByTime(500);
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect(processCallCount).toBe(1);
+			expect(frontmatter["ft-calories"]).toBe(0);
 		});
 	});
 });
