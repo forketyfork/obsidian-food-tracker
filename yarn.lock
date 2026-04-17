@@ -3251,6 +3251,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"eslint-plugin-no-unsanitized@npm:^4.1.5":
+  version: 4.1.5
+  resolution: "eslint-plugin-no-unsanitized@npm:4.1.5"
+  peerDependencies:
+    eslint: ^9 || ^10
+  checksum: 10c0/c3dc2636ec698d4e4b7bc5bb744e8bf24975dc513b5dc9aaf616df5a32392ae5f5eaed91050b8a647cfa1ec717edea6e870d0418887d62a8afa8f1f5fcc1ed0c
+  languageName: node
+  linkType: hard
+
 "eslint-plugin-obsidianmd@npm:^0.2.3":
   version: 0.2.3
   resolution: "eslint-plugin-obsidianmd@npm:0.2.3"
@@ -5793,6 +5802,7 @@ __metadata:
     csso-cli: "npm:^4.0.2"
     esbuild: "npm:^0.28.0"
     eslint: "npm:^10.2.0"
+    eslint-plugin-no-unsanitized: "npm:^4.1.5"
     eslint-plugin-obsidianmd: "npm:^0.2.3"
     globals: "npm:^17.5.0"
     jest: "npm:^30.3.0"
