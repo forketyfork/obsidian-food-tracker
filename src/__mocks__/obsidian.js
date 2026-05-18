@@ -179,16 +179,39 @@ function createObsidianElement(tag, options, callback) {
 	const normalizedOptions = normalizeDomOptions(options);
 
 	if (normalizedOptions.cls) {
-		const classes = Array.isArray(normalizedOptions.cls) ? normalizedOptions.cls : [normalizedOptions.cls];
+		const classes = Array.isArray(normalizedOptions.cls)
+			? normalizedOptions.cls
+			: normalizedOptions.cls.split(/\s+/).filter(Boolean);
 		element.classList.add(...classes);
 	}
 	if (normalizedOptions.text) {
-		element.textContent = normalizedOptions.text;
+		if (normalizedOptions.text instanceof DocumentFragment) {
+			element.appendChild(normalizedOptions.text);
+		} else {
+			element.textContent = normalizedOptions.text;
+		}
 	}
 	if (normalizedOptions.attr) {
 		Object.entries(normalizedOptions.attr).forEach(([key, value]) => {
-			element.setAttribute(key, value);
+			if (value === null) {
+				element.removeAttribute(key);
+			} else {
+				element.setAttribute(key, String(value));
+			}
 		});
+	}
+	if (normalizedOptions.title !== undefined) element.title = normalizedOptions.title;
+	if (normalizedOptions.value !== undefined) element.value = normalizedOptions.value;
+	if (normalizedOptions.type !== undefined) element.type = normalizedOptions.type;
+	if (normalizedOptions.placeholder !== undefined) element.placeholder = normalizedOptions.placeholder;
+	if (normalizedOptions.href !== undefined) element.href = normalizedOptions.href;
+
+	if (normalizedOptions.parent) {
+		if (normalizedOptions.prepend) {
+			normalizedOptions.parent.prepend(element);
+		} else {
+			normalizedOptions.parent.appendChild(element);
+		}
 	}
 
 	element.addClass = (...classes) => {
@@ -320,7 +343,7 @@ module.exports = {
 				onLayoutReady: callback => {
 					// Call callback immediately in test environment
 					if (typeof callback === "function") {
-						setTimeout(callback, 0);
+						window.setTimeout(callback, 0);
 					}
 				},
 			};
