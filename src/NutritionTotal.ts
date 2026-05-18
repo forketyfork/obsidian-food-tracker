@@ -135,7 +135,7 @@ export default class NutritionTotal {
 				const formattedValue = config.decimals === 0 ? Math.round(value) : value.toFixed(config.decimals);
 				const tooltipText = `${config.name}: ${formattedValue} ${config.unit}`;
 
-				const span = createEl("span", {
+				const span = createSpan({
 					cls: ["food-tracker-nutrient-item", "food-tracker-tooltip-host"],
 					text: config.emoji,
 				});
@@ -209,26 +209,22 @@ export default class NutritionTotal {
 
 		if (elements.length === 0) return null;
 
-		// Create the main nutrition bar container
-		const container = createEl("div", { cls: "food-tracker-nutrition-bar" });
+		const container = createDiv({ cls: "food-tracker-nutrition-bar" });
 
-		// Add the Food Tracker icon if showIcon is true
 		if (showIcon) {
-			const iconContainer = createEl("span", { cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
-			iconContainer.setAttribute("data-food-tracker-tooltip", "Food tracker");
-			iconContainer.setAttribute("aria-label", "Food tracker");
+			const iconContainer = createSpan({ cls: ["food-tracker-icon", "food-tracker-tooltip-host"] });
+			iconContainer.setAttribute("data-food-tracker-tooltip", "Food Tracker");
+			iconContainer.setAttribute("aria-label", "Food Tracker");
 			setIcon(iconContainer, FOOD_TRACKER_ICON_NAME);
 			container.appendChild(iconContainer);
 
-			// Add separator after icon
-			container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+			container.appendChild(createDiv({ cls: "food-tracker-separator" }));
 		}
 
-		// Add nutrient elements with separators between them
 		elements.forEach((element, index) => {
 			container.appendChild(element);
 			if (index < elements.length - 1) {
-				container.appendChild(createEl("div", { cls: "food-tracker-separator" }));
+				container.appendChild(createDiv({ cls: "food-tracker-separator" }));
 			}
 		});
 

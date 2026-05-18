@@ -135,10 +135,10 @@ export default class FoodHighlightExtension extends Component {
 			}
 
 			toDOM(): HTMLElement {
-				const span = document.createElement("span");
-				span.classList.add("food-tracker-inline-calories");
-				span.textContent = ` ${this.text}`;
-				return span;
+				return createSpan({
+					cls: "food-tracker-inline-calories",
+					text: ` ${this.text}`,
+				});
 			}
 		}
 

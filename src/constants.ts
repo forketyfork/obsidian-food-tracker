@@ -239,9 +239,10 @@ export function getUnitMultiplier(
 		case "tsp":
 			return (amount * 5) / baseAmount;
 		case "pc":
-		case "pcs":
+		case "pcs": {
 			const effectiveServingSize = servingSize && servingSize > 0 ? servingSize : 100;
 			return (amount * effectiveServingSize) / baseAmount;
+		}
 		default:
 			return amount / baseAmount;
 	}

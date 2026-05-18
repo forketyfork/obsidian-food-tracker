@@ -69,7 +69,7 @@ export default class FoodHighlightPostProcessor extends Component {
 		} else {
 			const elements = el.querySelectorAll("p, li, div.HyperMD-list-line");
 			elements.forEach(element => {
-				if (element instanceof HTMLElement) {
+				if (element.instanceOf(HTMLElement)) {
 					containers.push(element);
 				}
 			});
@@ -97,9 +97,10 @@ export default class FoodHighlightPostProcessor extends Component {
 				const insertionPoint = this.findInsertionNodeAtPosition(container, position);
 				if (insertionPoint) {
 					const insertionElement = this.findInsertionPoint(insertionPoint, container);
-					const span = document.createElement("span");
-					span.className = "food-tracker-inline-calories";
-					span.textContent = " " + hintText;
+					const span = createSpan({
+						cls: "food-tracker-inline-calories",
+						text: " " + hintText,
+					});
 
 					if (insertionElement?.parentNode) {
 						if (insertionElement.nextSibling) {
@@ -128,7 +129,7 @@ export default class FoodHighlightPostProcessor extends Component {
 		container
 			.querySelectorAll(".food-tracker-value, .food-tracker-nutrition-value, .food-tracker-negative-kcal")
 			.forEach(el => {
-				const textNode = document.createTextNode(el.textContent ?? "");
+				const textNode = container.doc.createTextNode(el.textContent ?? "");
 				el.replaceWith(textNode);
 			});
 
@@ -144,13 +145,13 @@ export default class FoodHighlightPostProcessor extends Component {
 
 	private reconstructMarkdownText(container: HTMLElement): string {
 		let result = "";
-		const walker = document.createTreeWalker(container, NodeFilter.SHOW_ALL);
+		const walker = container.doc.createTreeWalker(container, NodeFilter.SHOW_ALL);
 
 		let node: Node | null;
 		while ((node = walker.nextNode())) {
 			if (node.nodeType === Node.TEXT_NODE) {
 				result += node.textContent ?? "";
-			} else if (node.nodeType === Node.ELEMENT_NODE && node instanceof HTMLElement) {
+			} else if (node.nodeType === Node.ELEMENT_NODE && node.instanceOf(HTMLElement)) {
 				if (node.classList.contains("food-tracker-inline-calories")) {
 					this.skipNodeChildren(walker, node);
 				} else if (node.classList.contains("internal-link")) {
@@ -193,7 +194,7 @@ export default class FoodHighlightPostProcessor extends Component {
 	}
 
 	private findInsertionNodeAtPosition(container: HTMLElement, position: number): Node | null {
-		const walker = document.createTreeWalker(container, NodeFilter.SHOW_ALL);
+		const walker = container.doc.createTreeWalker(container, NodeFilter.SHOW_ALL);
 		let currentPosition = 0;
 
 		let node: Node | null;
@@ -207,7 +208,7 @@ export default class FoodHighlightPostProcessor extends Component {
 					break;
 				}
 				currentPosition += textLength;
-			} else if (node.nodeType === Node.ELEMENT_NODE && node instanceof HTMLElement) {
+			} else if (node.nodeType === Node.ELEMENT_NODE && node.instanceOf(HTMLElement)) {
 				if (node.classList.contains("food-tracker-inline-calories")) {
 					this.skipNodeChildren(walker, node);
 				} else if (node.classList.contains("internal-link")) {
@@ -247,7 +248,7 @@ export default class FoodHighlightPostProcessor extends Component {
 
 		while (current && current !== container) {
 			if (
-				current instanceof HTMLElement &&
+				current.instanceOf(HTMLElement) &&
 				(current.classList.contains("food-tracker-value") ||
 					current.classList.contains("food-tracker-nutrition-value") ||
 					current.classList.contains("food-tracker-negative-kcal"))
@@ -272,14 +273,14 @@ export default class FoodHighlightPostProcessor extends Component {
 	}
 
 	private wrapTextAtPosition(container: HTMLElement, startPos: number, endPos: number, className: string): void {
-		const walker = document.createTreeWalker(container, NodeFilter.SHOW_ALL);
+		const walker = container.doc.createTreeWalker(container, NodeFilter.SHOW_ALL);
 		let currentPosition = 0;
 
 		const nodesToWrap: Array<{ node: Text; startOffset: number; endOffset: number }> = [];
 
 		let node: Node | null;
 		while ((node = walker.nextNode())) {
-			if (node.nodeType === Node.TEXT_NODE && node instanceof Text) {
+			if (node.nodeType === Node.TEXT_NODE && node.instanceOf(Text)) {
 				const textLength = (node.textContent ?? "").length;
 				const nodeStart = currentPosition;
 				const nodeEnd = currentPosition + textLength;
@@ -293,7 +294,7 @@ export default class FoodHighlightPostProcessor extends Component {
 				currentPosition += textLength;
 
 				if (currentPosition >= endPos) break;
-			} else if (node.nodeType === Node.ELEMENT_NODE && node instanceof HTMLElement) {
+			} else if (node.nodeType === Node.ELEMENT_NODE && node.instanceOf(HTMLElement)) {
 				if (node.classList.contains("food-tracker-inline-calories")) {
 					this.skipNodeChildren(walker, node);
 				} else if (node.classList.contains("internal-link")) {
@@ -323,20 +324,17 @@ export default class FoodHighlightPostProcessor extends Component {
 			const match = content.substring(startOffset, endOffset);
 			const after = content.substring(endOffset);
 
-			const span = document.createElement("span");
-			span.className = className;
-			span.textContent = match;
+			const span = createSpan({ cls: className, text: match });
 
 			const parent = textNode.parentElement;
 			if (!parent) return;
 
-			if (before) parent.insertBefore(document.createTextNode(before), textNode);
+			if (before) parent.insertBefore(container.doc.createTextNode(before), textNode);
 			parent.insertBefore(span, textNode);
-			if (after) parent.insertBefore(document.createTextNode(after), textNode);
+			if (after) parent.insertBefore(container.doc.createTextNode(after), textNode);
 			parent.removeChild(textNode);
 		} else {
-			const span = document.createElement("span");
-			span.className = className;
+			const span = createSpan({ cls: className });
 
 			for (let i = 0; i < nodesToWrap.length; i++) {
 				const { node: textNode, startOffset, endOffset } = nodesToWrap[i];
@@ -347,7 +345,7 @@ export default class FoodHighlightPostProcessor extends Component {
 					const match = content.substring(startOffset, endOffset);
 
 					if (before) {
-						textNode.parentElement?.insertBefore(document.createTextNode(before), textNode);
+						textNode.parentElement?.insertBefore(container.doc.createTextNode(before), textNode);
 					}
 					span.textContent = match;
 					textNode.parentElement?.insertBefore(span, textNode);
@@ -358,7 +356,7 @@ export default class FoodHighlightPostProcessor extends Component {
 
 					span.textContent += match;
 					if (after) {
-						textNode.parentElement?.insertBefore(document.createTextNode(after), textNode);
+						textNode.parentElement?.insertBefore(container.doc.createTextNode(after), textNode);
 					}
 					textNode.remove();
 				} else {

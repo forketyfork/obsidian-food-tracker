@@ -58,7 +58,7 @@ export default class FoodSuggest extends EditorSuggest<string> {
 	}
 
 	renderSuggestion(nutrient: string, el: HTMLElement): void {
-		el.createEl("div", { text: nutrient });
+		el.createDiv({ text: nutrient });
 	}
 
 	/**

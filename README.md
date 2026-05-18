@@ -232,7 +232,7 @@ Go to Settings > Food Tracker to configure:
 
 ## Requirements
 
-- Obsidian v0.15.0 or higher
+- Obsidian v1.6.6 or higher
 
 ## Development
 
@@ -252,6 +252,18 @@ Run the linter:
 
 ```shell
 yarn lint
+```
+
+Run the CSS linter:
+
+```shell
+yarn lint:css
+```
+
+Run release workflow checks:
+
+```shell
+yarn lint:release
 ```
 
 Run the tests:

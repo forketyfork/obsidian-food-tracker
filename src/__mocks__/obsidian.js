@@ -167,7 +167,66 @@ function createMoment(input, format, strict) {
 	};
 }
 
+function normalizeDomOptions(options) {
+	if (typeof options === "string") {
+		return { cls: options };
+	}
+	return options ?? {};
+}
+
+function createObsidianElement(tag, options, callback) {
+	const element = document.createElement(tag);
+	const normalizedOptions = normalizeDomOptions(options);
+
+	if (normalizedOptions.cls) {
+		const classes = Array.isArray(normalizedOptions.cls) ? normalizedOptions.cls : [normalizedOptions.cls];
+		element.classList.add(...classes);
+	}
+	if (normalizedOptions.text) {
+		element.textContent = normalizedOptions.text;
+	}
+	if (normalizedOptions.attr) {
+		Object.entries(normalizedOptions.attr).forEach(([key, value]) => {
+			element.setAttribute(key, value);
+		});
+	}
+
+	element.addClass = (...classes) => {
+		element.classList.add(...classes);
+		return element;
+	};
+	element.addClasses = classes => {
+		element.classList.add(...classes);
+		return element;
+	};
+	element.removeClass = (...classes) => {
+		element.classList.remove(...classes);
+		return element;
+	};
+	element.setText = value => {
+		element.textContent = value;
+		return element;
+	};
+	element.empty = () => {
+		element.textContent = "";
+		return element;
+	};
+
+	if (callback) {
+		callback(element);
+	}
+
+	return element;
+}
+
+globalThis.createEl = (tag, options, callback) => createObsidianElement(tag, options, callback);
+globalThis.createDiv = (options, callback) => globalThis.createEl("div", options, callback);
+globalThis.createSpan = (options, callback) => globalThis.createEl("span", options, callback);
+
 module.exports = {
+	createEl: globalThis.createEl,
+	createDiv: globalThis.createDiv,
+	createSpan: globalThis.createSpan,
 	moment: createMoment,
 	Component: class Component {
 		addChild() {}
