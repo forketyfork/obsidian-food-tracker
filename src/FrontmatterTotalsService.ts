@@ -106,7 +106,7 @@ export default class FrontmatterTotalsService {
 	private settingsService: SettingsService;
 	private goalsService: GoalsService;
 	private dailyNoteLocator: DailyNoteLocator;
-	private pendingUpdates: Map<string, NodeJS.Timeout> = new Map();
+	private pendingUpdates: Map<string, number> = new Map();
 	private activeUpdates: Set<string> = new Set();
 	private filesBeingWritten: Set<string> = new Set();
 	private queuedUpdates: Set<string> = new Set();
@@ -154,10 +154,10 @@ export default class FrontmatterTotalsService {
 	private scheduleUpdate(file: TFile): void {
 		const existingTimeout = this.pendingUpdates.get(file.path);
 		if (existingTimeout) {
-			clearTimeout(existingTimeout);
+			window.clearTimeout(existingTimeout);
 		}
 
-		const timeout = setTimeout(() => {
+		const timeout = window.setTimeout(() => {
 			this.pendingUpdates.delete(file.path);
 			if (this.activeUpdates.has(file.path) || this.filesBeingWritten.has(file.path)) {
 				this.queuedUpdates.add(file.path);
@@ -218,7 +218,7 @@ export default class FrontmatterTotalsService {
 
 	cancelPendingUpdates(): void {
 		for (const timeout of this.pendingUpdates.values()) {
-			clearTimeout(timeout);
+			window.clearTimeout(timeout);
 		}
 		this.pendingUpdates.clear();
 		this.queuedUpdates.clear();

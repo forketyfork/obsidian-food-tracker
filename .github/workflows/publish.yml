@@ -26,12 +26,6 @@ jobs:
             git status --porcelain
             exit 1
           fi
-      - name: Create plugin archives
-        run: |
-          mkdir -p obsidian-food-tracker
-          cp main.js manifest.json styles.css obsidian-food-tracker/
-          zip -r obsidian-food-tracker.zip obsidian-food-tracker/
-          tar -czf obsidian-food-tracker.tar.gz obsidian-food-tracker/
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,4 +35,4 @@ jobs:
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            main.js manifest.json styles.css obsidian-food-tracker.zip obsidian-food-tracker.tar.gz
+            main.js manifest.json styles.css

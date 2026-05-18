@@ -69,7 +69,7 @@ export class FoodSuggestionCore {
 		// Validate that text is just number+letters (supports negative numbers)
 		this.nutritionValidationRegex = /^-?\d+[a-z]*$/;
 		// Match wikilink or markdown link followed by space and number+letters (supports negative numbers)
-		this.foodWithMeasureRegex = /(?:\[\[[^\]]+\]\]|\[[^\]]*\]\([^\)]+\))\s+(-?\d+[a-z]*)$/;
+		this.foodWithMeasureRegex = /(?:\[\[[^\]]+\]\]|\[[^\]]*\]\([^)]+\))\s+(-?\d+[a-z]*)$/;
 
 		// Initialize with current tags
 		this.updateTagRegexes(this.settingsService.currentFoodTag, this.settingsService.currentWorkoutTag);

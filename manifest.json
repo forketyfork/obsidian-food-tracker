@@ -3,8 +3,8 @@
 	"name": "Food Tracker",
 	"version": "0.17.2",
 	"author": "Forketyfork",
-	"minAppVersion": "0.15.0",
-	"description": "Track your food intake (calories, macronutrients) and nutritional information",
+	"minAppVersion": "1.6.6",
+	"description": "Track your food intake (calories, macronutrients) and nutritional information.",
 	"authorUrl": "https://github.com/forketyfork",
 	"isDesktopOnly": false
 }
