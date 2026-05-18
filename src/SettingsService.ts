@@ -48,7 +48,7 @@ function sanitizeFrontmatterFieldNames(
 		...fieldNames,
 	};
 
-	const sanitized: FrontmatterFieldNames = { ...merged } as FrontmatterFieldNames;
+	const sanitized: FrontmatterFieldNames = { ...merged };
 	const seen = new Set<string>();
 
 	for (const key of FRONTMATTER_KEYS_ORDER) {

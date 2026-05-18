@@ -21,7 +21,7 @@ global.createEl = jest.fn().mockImplementation((tag: string, options?: any) => {
 	}
 	if (options?.attr) {
 		Object.entries(options.attr).forEach(([key, value]) => {
-			element.setAttribute(key, value as string);
+			element.setAttribute(key, value);
 		});
 	}
 

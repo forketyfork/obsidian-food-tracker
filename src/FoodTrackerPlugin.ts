@@ -276,7 +276,7 @@ export default class FoodTrackerPlugin extends Plugin {
 			...DEFAULT_SETTINGS,
 			// On mobile devices, default to "document" display mode for better visibility
 			totalDisplayMode: Platform.isMobile ? "document" : DEFAULT_SETTINGS.totalDisplayMode,
-		} as FoodTrackerPluginSettings;
+		};
 
 		const merged = Object.assign({}, mobileAwareDefaults, savedData);
 		merged.frontmatterFieldNames = {
