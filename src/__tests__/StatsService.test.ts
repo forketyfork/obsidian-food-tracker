@@ -66,7 +66,7 @@ function createApp(config: AppTestConfig): App {
 		if (frontmatter === null) {
 			return null;
 		}
-		return { frontmatter } as unknown as CachedMetadata;
+		return { frontmatter };
 	};
 
 	const fileManager = app.fileManager as unknown as {

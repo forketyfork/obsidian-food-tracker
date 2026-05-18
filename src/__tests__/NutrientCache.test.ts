@@ -33,7 +33,7 @@ describe("NutrientCache", () => {
 		const file = createFile("nutrients/apple.md");
 
 		const frontmatterMap: FrontmatterMap = {
-			[file.path]: { frontmatter: { name: "apple" } } as unknown as CachedMetadata,
+			[file.path]: { frontmatter: { name: "apple" } },
 		};
 
 		const app = createApp(frontmatterMap, [file]);
@@ -51,7 +51,7 @@ describe("NutrientCache", () => {
 		expect(cache.hasPendingMetadataFor("apple")).toBe(true);
 
 		// Metadata becomes available after parsing finishes
-		frontmatterMap[file.path] = { frontmatter: { name: "apple", calories: 10 } } as unknown as CachedMetadata;
+		frontmatterMap[file.path] = { frontmatter: { name: "apple", calories: 10 } };
 		cache.updateCache(file, "modify");
 
 		expect(cache.getNutrientNames()).toEqual(["apple"]);
@@ -69,7 +69,7 @@ describe("NutrientCache", () => {
 					nutrition_per: 28,
 					serving_size: 28,
 				},
-			} as unknown as CachedMetadata,
+			},
 		};
 		const app = createApp(frontmatterMap, [file]);
 		const cache = new NutrientCache(app, "nutrients");
