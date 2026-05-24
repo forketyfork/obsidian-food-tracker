@@ -16,12 +16,12 @@
           buildInputs = with pkgs; [
             # Node.js and package manager
             nodejs_24
-            yarn
+            pnpm_10
 
             # Development tools
             just
             typescript
-            
+
             # Build tools
             esbuild
 
@@ -32,7 +32,7 @@
           shellHook = ''
             echo "🚀 Obsidian Food Tracker development environment"
             echo "📦 Node.js $(node --version)"
-            echo "🧶 Yarn $(yarn --version)"
+            echo "📦 pnpm $(pnpm --version)"
             echo "⚡ TypeScript $(tsc --version)"
             echo ""
             echo "Available commands:"

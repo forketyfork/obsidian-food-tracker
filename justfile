@@ -13,65 +13,65 @@ clean:
 
 # Install dependencies
 install:
-    yarn install
+    pnpm install
 
 # Full production build (typecheck, lint, format, build, test)
 build:
-    yarn build
+    pnpm build
 
 # Development build
 dev:
-    yarn dev
+    pnpm dev
 
 # Development build with watch mode
 watch:
-    yarn dev:watch
+    pnpm dev:watch
 
 # Production build without tests
 prod:
-    yarn prod
+    pnpm prod
 
 # Run TypeScript type checking
 typecheck:
-    yarn typecheck
+    pnpm typecheck
 
 # Run tests
 test:
-    yarn test
+    pnpm test
 
 # Run tests in development mode
 test-dev:
-    yarn test:dev
+    pnpm test:dev
 
 # Run tests in watch mode
 test-watch:
-    yarn test:watch
+    pnpm test:watch
 
 # Run tests with coverage
 coverage:
-    yarn coverage
+    pnpm coverage
 
 # Run ESLint
 lint:
-    yarn lint
+    pnpm lint
 
 # Format code with Prettier
 format:
-    yarn format
+    pnpm format
 
 # Build CSS from source
 build-css:
-    yarn build:css
+    pnpm build:css
 
 # Bump version
 version VERSION:
-    yarn version --immediate {{VERSION}}
-    yarn run version
+    npm version --no-git-tag-version {{VERSION}}
+    pnpm run version
 
 # Full release (version, push, tags)
 release VERSION:
-    yarn release {{VERSION}}
+    pnpm release {{VERSION}}
 
 # Tag release (after release command)
 tag-release:
-    yarn tag-release
+    pnpm tag-release

@@ -29,26 +29,26 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 - `just release` - Full release (version, push, tags)
 - `just tag-release` - Tag release (after release command)
 
-### Yarn Commands (Alternative)
+### pnpm Commands (Alternative)
 
 ## Build Commands
 
-- `yarn dev` - Development build
-- `yarn dev:watch` - Development build with watch mode
-- `yarn prod` - Production build without tests or type checking
-- `yarn typecheck` — TypeScript typecheck
-- `yarn format` - Format code with Prettier
-- `yarn lint` - Check code style with ESLint
-- `yarn test` - Run Jest tests
-- `yarn test:dev` - Run development build and then tests
-- `yarn test:watch` - Run development build and then tests in watch mode
-- `yarn build` - Production build (includes tests, typecheck and formatting)
-- `yarn build:css` - Minify CSS with CSSO (from src/styles.src.css to styles.css)
-- `yarn version` - Bump version in manifest.json and versions.json
+- `pnpm dev` - Development build
+- `pnpm dev:watch` - Development build with watch mode
+- `pnpm prod` - Production build without tests or type checking
+- `pnpm typecheck` — TypeScript typecheck
+- `pnpm format` - Format code with Prettier
+- `pnpm lint` - Check code style with ESLint
+- `pnpm test` - Run Jest tests
+- `pnpm test:dev` - Run development build and then tests
+- `pnpm test:watch` - Run development build and then tests in watch mode
+- `pnpm build` - Production build (includes tests, typecheck and formatting)
+- `pnpm build:css` - Minify CSS with CSSO (from src/styles.src.css to styles.css)
+- `pnpm version` - Bump version in manifest.json and versions.json
 
 ## General guidelines
 
-- IMPORTANT: After finishing your task, make sure to run `just build` (if using Nix/Just) or `yarn build` and fix any introduced issues.
+- IMPORTANT: After finishing your task, make sure to run `just build` (if using Nix/Just) or `pnpm build` and fix any introduced issues.
 - IMPORTANT: Commit any source file changes from the build (e.g., formatting). Do not commit generated files (`main.js`, `styles.css`) - they are gitignored and uploaded to GitHub releases instead.
 - IMPORTANT: On finishing your task, make sure the README.md file is up to date with regards to the new features, usage, and development.
 - IMPORTANT: Always try to extract testable logic that can be independent of Obsidian plugins to separate classes or functions and write unit tests for it.
@@ -58,9 +58,9 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 
 - Strict null checks required (strictNullChecks: true)
 - No implicit any values (noImplicitAny: true)
-- Run type check with `yarn typecheck`
+- Run type check with `pnpm typecheck`
 - ESLint is configured with typescript-eslint plugin
-- Testing is done with Jest (`yarn test:dev`); make sure to always run the build before running the tests (`yarn test:dev` already takes care of that)
+- Testing is done with Jest (`pnpm test:dev`); make sure to always run the build before running the tests (`pnpm test:dev` already takes care of that)
 - All tests are in the `__tests__` directory
 - Test files should end with `.test.ts`
 
@@ -77,8 +77,8 @@ If you're using the Nix development environment (via `nix develop` or direnv), u
 - Use consistent indentation (tabs) and spacing
 - Class methods order: lifecycle methods first, then functionality
 - Any text in UI elements should use "Sentence case" instead of "Title Case"
-- Avoid committing changes in `yarn.lock` if you didn't change the `package.json` file, reset the `yarn.lock` file instead
-- Avoid committing package-lock.json, since we use yarn; if this file is created as a result of your actions, remove it
+- Avoid committing changes in `pnpm-lock.yaml` if you didn't change the `package.json` file, reset the `pnpm-lock.yaml` file instead
+- Avoid committing `package-lock.json` or `yarn.lock`, since we use pnpm; if either is created as a result of your actions, remove it
 - **Create separate files for new classes**: As a rule, add new classes as separate files unless they are tightly coupled to existing code
 
 ## CSS Best Practices

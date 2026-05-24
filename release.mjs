@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 const [versionArg] = process.argv.slice(2).filter(arg => arg !== "--");
 
 if (!versionArg) {
-	console.error("Release version or strategy is required. Example: yarn release -- patch");
+	console.error("Release version or strategy is required. Example: pnpm release -- patch");
 	process.exit(1);
 }
 
@@ -12,8 +12,8 @@ const run = (command, args) => {
 };
 
 try {
-	run("yarn", ["version", "--immediate", versionArg]);
-	run("yarn", ["run", "version"]);
+	run("npm", ["version", "--no-git-tag-version", versionArg]);
+	run("pnpm", ["run", "version"]);
 
 	const version = execFileSync("node", ["-p", "require('./package.json').version"], {
 		encoding: "utf8",
