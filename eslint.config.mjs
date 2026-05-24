@@ -71,7 +71,6 @@ export default [
 	{
 		ignores: [
 			"**/node_modules/",
-			"**/.yarn/",
 			"**/main.js",
 			"coverage/**",
 			"eslint.config.mjs",

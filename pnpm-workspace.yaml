@@ -1,0 +1,4 @@
+nodeLinker: hoisted
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

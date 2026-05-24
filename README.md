@@ -239,79 +239,79 @@ Go to Settings > Food Tracker to configure:
 Run the development build with change watch:
 
 ```shell
-yarn dev:watch
+pnpm dev:watch
 ```
 
 Run the TypeScript type check:
 
 ```shell
-yarn typecheck
+pnpm typecheck
 ```
 
 Run the linter:
 
 ```shell
-yarn lint
+pnpm lint
 ```
 
 Run the CSS linter:
 
 ```shell
-yarn lint:css
+pnpm lint:css
 ```
 
 Run release workflow checks:
 
 ```shell
-yarn lint:release
+pnpm lint:release
 ```
 
 Run the tests:
 
 ```shell
-yarn test
+pnpm test
 ```
 
 Run the tests in watch mode:
 
 ```shell
-yarn test:watch
+pnpm test:watch
 ```
 
 Generate a coverage report:
 
 ```shell
-yarn coverage
+pnpm coverage
 ```
 
 Format the code:
 
 ```shell
-yarn format
+pnpm format
 ```
 
 Build CSS from source:
 
 ```shell
-yarn build:css
+pnpm build:css
 ```
 
 Run the production build (includes tests, type checking, and formatting):
 
 ```shell
-yarn build
+pnpm build
 ```
 
 Bump the version in `package.json` and `manifest.json`:
 
 ```shell
-yarn version --immediate <strategy|version>
+npm version --no-git-tag-version <strategy|version>
 ```
 
 Full release process (version bump, push, and tag):
 
 ```shell
-yarn release -- <strategy|version>
+pnpm release -- <strategy|version>
 ```
 
 ## My other plugins
