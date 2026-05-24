@@ -16,7 +16,7 @@
           buildInputs = with pkgs; [
             # Node.js and package manager
             nodejs_24
-            pnpm_10
+            pnpm_11
 
             # Development tools
             just
