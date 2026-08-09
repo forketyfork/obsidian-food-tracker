@@ -13,6 +13,28 @@ export interface FrontmatterFieldNames {
 	sodium: string;
 }
 
+export interface EnabledFrontmatterFields {
+	calories: boolean;
+	fats: boolean;
+	saturated_fats: boolean;
+	protein: boolean;
+	carbs: boolean;
+	fiber: boolean;
+	sugar: boolean;
+	sodium: boolean;
+}
+
+export const DEFAULT_ENABLED_FRONTMATTER_FIELDS: EnabledFrontmatterFields = Object.freeze({
+	calories: true,
+	fats: true,
+	saturated_fats: true,
+	protein: true,
+	carbs: true,
+	fiber: true,
+	sugar: true,
+	sodium: true,
+});
+
 const FRONTMATTER_KEYS_ORDER: Array<keyof FrontmatterFieldNames> = [
 	"calories",
 	"fats",
@@ -37,6 +59,10 @@ export const DEFAULT_FRONTMATTER_FIELD_NAMES: FrontmatterFieldNames = Object.fre
 
 export function cloneFrontmatterFieldNames(names: FrontmatterFieldNames): FrontmatterFieldNames {
 	return { ...names };
+}
+
+export function cloneEnabledFrontmatterFields(fields: EnabledFrontmatterFields): EnabledFrontmatterFields {
+	return { ...fields };
 }
 
 function sanitizeFrontmatterFieldNames(
@@ -72,6 +98,8 @@ export function sanitizeSettings(settings: FoodTrackerPluginSettings): FoodTrack
 	return {
 		...settings,
 		frontmatterFieldNames: sanitizeFrontmatterFieldNames(settings.frontmatterFieldNames),
+		enabledFrontmatterFields:
+			settings.enabledFrontmatterFields ?? cloneEnabledFrontmatterFields(DEFAULT_ENABLED_FRONTMATTER_FIELDS),
 	};
 }
 
@@ -84,6 +112,7 @@ export interface FoodTrackerPluginSettings {
 	showCalorieHints: boolean;
 	dailyNoteFormat: string;
 	frontmatterFieldNames: FrontmatterFieldNames;
+	enabledFrontmatterFields: EnabledFrontmatterFields;
 	linkType: "wikilink" | "markdown";
 }
 
@@ -96,6 +125,7 @@ export const DEFAULT_SETTINGS: FoodTrackerPluginSettings = {
 	showCalorieHints: true,
 	dailyNoteFormat: "YYYY-MM-DD",
 	frontmatterFieldNames: cloneFrontmatterFieldNames(DEFAULT_FRONTMATTER_FIELD_NAMES),
+	enabledFrontmatterFields: cloneEnabledFrontmatterFields(DEFAULT_ENABLED_FRONTMATTER_FIELDS),
 	linkType: "wikilink",
 };
 
@@ -184,6 +214,13 @@ export class SettingsService {
 	}
 
 	/**
+	 * Observable stream of the enabled frontmatter fields
+	 */
+	get enabledFrontmatterFields$(): Observable<EnabledFrontmatterFields> {
+		return this.settings$.pipe(map(settings => settings.enabledFrontmatterFields));
+	}
+
+	/**
 	 * Get the current settings value synchronously
 	 */
 	get currentSettings(): FoodTrackerPluginSettings {
@@ -258,6 +295,13 @@ export class SettingsService {
 	 */
 	get currentFrontmatterFieldNames(): FrontmatterFieldNames {
 		return cloneFrontmatterFieldNames(this.currentSettings.frontmatterFieldNames);
+	}
+
+	/**
+	 * Get the current enabled frontmatter fields synchronously
+	 */
+	get currentEnabledFrontmatterFields(): EnabledFrontmatterFields {
+		return cloneEnabledFrontmatterFields(this.currentSettings.enabledFrontmatterFields);
 	}
 
 	/**
@@ -341,6 +385,17 @@ export class SettingsService {
 	updateFrontmatterFieldNames(fieldNames: Partial<FrontmatterFieldNames>): void {
 		const sanitized = sanitizeFrontmatterFieldNames(fieldNames, this.currentFrontmatterFieldNames);
 		this.updateSetting("frontmatterFieldNames", sanitized);
+	}
+
+	/**
+	 * Updates enabled frontmatter fields (partial update supported)
+	 */
+	updateEnabledFrontmatterFields(fields: Partial<EnabledFrontmatterFields>): void {
+		const merged = {
+			...this.currentEnabledFrontmatterFields,
+			...fields,
+		};
+		this.updateSetting("enabledFrontmatterFields", merged);
 	}
 
 	/**
