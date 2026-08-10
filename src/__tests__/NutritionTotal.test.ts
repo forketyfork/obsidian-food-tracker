@@ -2,16 +2,20 @@ import NutritionTotal from "../NutritionTotal";
 import NutrientCache from "../NutrientCache";
 
 // Mock createEl function to simulate Obsidian's DOM creation
-declare global {
-	function createEl<T extends keyof HTMLElementTagNameMap>(
-		tag: T,
-		options?: { cls?: string | string[]; text?: string; attr?: Record<string, string> }
-	): HTMLElementTagNameMap[T];
+interface CreateElOptions {
+	cls?: string | string[];
+	text?: string;
+	attr?: Record<string, string>;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
-global.createEl = jest.fn().mockImplementation((tag: string, options?: any) => {
-	const element = document.createElement(tag) as any;
+declare global {
+	function createEl<T extends keyof HTMLElementTagNameMap>(tag: T, options?: CreateElOptions): HTMLElementTagNameMap[T];
+}
+
+type ObsidianElement = HTMLElement & { addClass: jest.Mock };
+
+global.createEl = jest.fn().mockImplementation((tag: string, options?: CreateElOptions) => {
+	const element = document.createElement(tag) as ObsidianElement;
 	if (options?.cls) {
 		const classes = Array.isArray(options.cls) ? options.cls : [options.cls];
 		element.classList.add(...classes);
@@ -36,12 +40,11 @@ global.createEl = jest.fn().mockImplementation((tag: string, options?: any) => {
 
 // Mock createElementNS for SVG creation
 global.document.createElementNS = jest.fn().mockImplementation((_namespace: string, tag: string) => {
-	const element = document.createElement(tag) as any;
+	const element = document.createElement(tag);
 	element.setAttribute = jest.fn();
 	element.appendChild = jest.fn();
 	return element;
 });
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return */
 
 describe("NutritionTotal", () => {
 	let nutritionTotal: NutritionTotal;

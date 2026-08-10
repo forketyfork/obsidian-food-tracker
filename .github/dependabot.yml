@@ -9,6 +9,11 @@ updates:
       semver-major-days: 7
       semver-minor-days: 7
       semver-patch-days: 7
+    ignore:
+      # typescript-eslint (peer: typescript <6.1.0) and ts-jest (peer: typescript <7)
+      # reject the TypeScript 7 native compiler. Track typescript-eslint#10940.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
     groups:
       all-dependencies:
         patterns:
