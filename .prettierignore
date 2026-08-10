@@ -5,3 +5,7 @@ node_modules/
 main.js
 styles.css
 *.json
+
+# pnpm owns this file's formatting; letting prettier rewrite it makes every
+# lockfile update churn the whole file and trips the build's modified-files gate.
+pnpm-lock.yaml
