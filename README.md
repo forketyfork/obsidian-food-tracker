@@ -260,6 +260,8 @@ Run the CSS linter:
 pnpm lint:css
 ```
 
+CSS linting uses Obsidian's official Stylelint configuration, targets the plugin's minimum supported Electron version, and treats review warnings as build failures.
+
 Run release workflow checks:
 
 ```shell

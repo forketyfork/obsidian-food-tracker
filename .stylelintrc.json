@@ -1,6 +1,14 @@
 {
-	"extends": ["stylelint-config-standard"],
+	"extends": ["stylelint-config-obsidianmd"],
 	"rules": {
-		"declaration-no-important": true
+		"declaration-no-important": true,
+		"plugin/no-unsupported-browser-features": [
+			true,
+			{
+				"severity": "warning",
+				"browsers": ["electron >= 30"],
+				"ignore": ["css-nesting", "css-cascade-layers"]
+			}
+		]
 	}
 }
