@@ -1,4 +1,17 @@
 nodeLinker: hoisted
 allowBuilds:
+  # This transitive watcher is not used by the plugin.
+  "@parcel/watcher": false
   esbuild: true
   unrs-resolver: true
+overrides:
+  # Keep transitive resolutions above GitHub security advisory patches.
+  "@babel/core@7": ">=7.29.6 <8"
+  baseline-browser-mapping: ">=2.11.0 <3"
+  browserslist: ">=4.28.7 <5"
+  colord: ">=2.9.4 <3"
+  "fast-uri@2": ">=2.4.5 <3"
+  "fast-uri@3": ">=3.1.6 <4"
+  "fast-uri@4": ">=4.1.3 <5"
+  "js-yaml@3": ">=3.15.2 <4"
+  "js-yaml@4": ">=4.3.2 <5"
